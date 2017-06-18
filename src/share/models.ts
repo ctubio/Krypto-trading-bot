@@ -149,6 +149,7 @@ export class SubmitNewOrder {
                 public type: OrderType,
                 public price: number,
                 public timeInForce: TimeInForce,
+                public isPong: boolean,
                 public exchange: Exchange,
                 public generatedTime: Date,
                 public preferPostOnly: boolean,
@@ -197,6 +198,7 @@ export interface OrderStatusReport {
     exchange : Exchange;
     computationalLatency : number;
     version : number;
+    isPong : boolean;
     preferPostOnly: boolean;
     source: OrderSource;
     partiallyFilled : boolean;
@@ -229,7 +231,7 @@ export class TradeChart implements ITimestamped {
                 public side: Side,
                 public quantity: number,
                 public value: number,
-                public type: string,
+                public pong: boolean,
                 public time: Date) {}
 }
 
@@ -293,7 +295,8 @@ export enum QuoteSent { First, Modify, UnsentDuplicate, Delete, UnsentDelete, Un
 
 export class Quote {
     constructor(public price: number,
-                public size: number) {}
+                public size: number,
+                public isPong: boolean) {}
 }
 
 export class TwoSidedQuote implements ITimestamped {
@@ -373,6 +376,9 @@ export interface QuotingParameters {
     stepOverSize?: number;
     profitHourInterval?: number;
     delayUI?: number;
+    time?: Date;
+    pair?: CurrencyPair;
+    exchange?: Exchange;
 }
 
 export class ExchangePairMessage<T> {

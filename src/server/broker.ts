@@ -188,6 +188,7 @@ export class OrderBroker {
             quantity: order.quantity,
             leavesQuantity: order.quantity,
             type: order.type,
+            isPong: order.isPong,
             price: this.roundPrice(order.price, order.side),
             timeInForce: order.timeInForce,
             orderStatus: Models.OrderStatus.New,
@@ -250,8 +251,7 @@ export class OrderBroker {
         this._oeGateway.cancelOrder(this.updateOrderState(report));
     };
 
-    private _reTrade = (reTrades: Models.Trade[], trade: Models.Trade): string => {
-      let tradePingPongType = 'Ping';
+    private _reTrade = (reTrades: Models.Trade[], trade: Models.Trade) => {
       let gowhile = true;
       while (gowhile && trade.quantity>0 && reTrades!=null && reTrades.length) {
         var reTrade = reTrades.shift();
@@ -269,7 +269,6 @@ export class OrderBroker {
             if (this._trades[i].quantity<=this._trades[i].Kqty)
               this._trades[i].Kdiff = Math.abs((this._trades[i].quantity*this._trades[i].price)-(this._trades[i].Kqty*this._trades[i].Kprice));
             this._trades[i].loadedFromDB = false;
-            tradePingPongType = 'Pong';
             this._tradePublisher.publish(this._trades[i]);
             this._tradePersister.repersist(this._trades[i]);
             break;
@@ -296,24 +295,21 @@ export class OrderBroker {
           this._trades.push(trade);
         }
       }
-      return tradePingPongType;
     };
 
     public updateOrderState = (osr : Models.OrderStatusUpdate) : Models.OrderStatusReport => {
-        let orig : Models.OrderStatusUpdate;
+        let orig: Models.OrderStatusUpdate;
         if (osr.orderStatus === Models.OrderStatus.New) {
             orig = osr;
         } else {
             orig = this._orderCache.allOrders.get(osr.orderId);
-
-            if (typeof orig === "undefined") {
+            if (typeof orig === "undefined" && osr.exchangeId) {
                 const secondChance = this._orderCache.exchIdsToClientIds.get(osr.exchangeId);
                 if (typeof secondChance !== "undefined") {
                     osr.orderId = secondChance;
                     orig = this._orderCache.allOrders.get(secondChance);
                 }
             }
-
             if (typeof orig === "undefined") {
               return;
             }
@@ -333,7 +329,7 @@ export class OrderBroker {
 
         const partiallyFilled = cumQuantity > 0 && cumQuantity !== quantity;
 
-        const o : Models.OrderStatusReport = {
+        const o: Models.OrderStatusReport = {
           pair: getOrFallback(osr.pair, orig.pair),
           side: getOrFallback(osr.side, orig.side),
           quantity: quantity,
@@ -347,6 +343,7 @@ export class OrderBroker {
           time: getOrFallback(osr.time, this._timeProvider.utcNow()),
           lastQuantity: osr.lastQuantity,
           lastPrice: osr.lastPrice,
+          isPong: getOrFallback(osr.isPong, orig.isPong),
           leavesQuantity: getOrFallback(osr.leavesQuantity, orig.leavesQuantity),
           cumQuantity: cumQuantity,
           averagePrice: cumQuantity > 0 ? osr.averagePrice || orig.averagePrice : undefined,
@@ -393,12 +390,11 @@ export class OrderBroker {
             const trade = new Models.Trade(o.orderId+"."+o.version, o.time, o.exchange, o.pair,
                 o.lastPrice, o.lastQuantity, o.side, value, o.liquidity, null, 0, 0, 0, 0, feeCharged, false);
             this.Trade.trigger(trade);
-            let tradePingPongType = 'Ping';
             if (this._qlParamRepo.latest.mode === Models.QuotingMode.Boomerang || this._qlParamRepo.latest.mode === Models.QuotingMode.HamelinRat || this._qlParamRepo.latest.mode === Models.QuotingMode.AK47) {
               var widthPong = (this._qlParamRepo.latest.widthPercentage)
                   ? this._qlParamRepo.latest.widthPongPercentage * trade.price / 100
                   : this._qlParamRepo.latest.widthPong;
-              tradePingPongType = this._reTrade(this._trades.filter((x: Models.Trade) => (
+              this._reTrade(this._trades.filter((x: Models.Trade) => (
                 (trade.side==Models.Side.Bid?(x.price > (trade.price + widthPong)):(x.price < (trade.price - widthPong)))
                 && (x.side == (trade.side==Models.Side.Bid?Models.Side.Ask:Models.Side.Bid))
                 && ((x.quantity - x.Kqty) > 0)
@@ -420,7 +416,7 @@ export class OrderBroker {
               this._trades.push(trade);
             }
 
-            this._tradeChartPublisher.publish(new Models.TradeChart(o.lastPrice, o.side, o.lastQuantity, Math.round(value * 100) / 100, tradePingPongType, o.time));
+            this._tradeChartPublisher.publish(new Models.TradeChart(o.lastPrice, o.side, o.lastQuantity, Math.round(value * 100) / 100, o.isPong, o.time));
 
             if (this._qlParamRepo.latest.cleanPongsAuto>0) {
               const cleanTime = o.time.getTime() - (this._qlParamRepo.latest.cleanPongsAuto * 864e5);
@@ -484,7 +480,7 @@ export class OrderBroker {
         _submittedOrderReciever.registerReceiver((o : Models.OrderRequestFromUI) => {
             try {
                 const order = new Models.SubmitNewOrder(Models.Side[o.side], o.quantity, Models.OrderType[o.orderType],
-                    o.price, Models.TimeInForce[o.timeInForce], this._baseBroker.exchange(), this._timeProvider.utcNow(), false, Models.OrderSource.OrderTicket);
+                    o.price, Models.TimeInForce[o.timeInForce], false, this._baseBroker.exchange(), this._timeProvider.utcNow(), false, Models.OrderSource.OrderTicket);
                 this.sendOrder(order);
             }
             catch (e) {
