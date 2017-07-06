@@ -496,8 +496,8 @@ BeginString=FIX.4.2
 StartTime=00:00:00
 EndTime=23:59:59
 HeartBtInt=30
-SocketConnectPort=4198
-SocketConnectHost=127.0.0.1
+SocketConnectPort=${config.GetString("CoinbaseFixPort")}
+SocketConnectHost=${config.GetString("CoinbaseFixUrl")}
 UseDataDictionary=N
 ResetOnLogon=Y`
           });
