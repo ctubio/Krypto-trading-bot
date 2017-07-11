@@ -1,157 +1,168 @@
 import Models = require("../share/models");
-import Monitor = require("./monitor");
 
-export interface IPublish<T> {
-    publish: (msg: T) => void;
-    registerSnapshot: (generator: () => T[]) => IPublish<T>;
-}
+export class Publisher {
+  private _lastMarketData: number = new Date().getTime();
 
-export class Publisher<T> implements IPublish<T> {
-    private _snapshot: () => T[] = null;
-    private _lastMarketData: number = new Date().getTime();
-    constructor(private topic: string,
-                private _io: SocketIO.Server,
-                private _monitor: Monitor.ApplicationState,
-                private snapshot: () => T[]) {
-        this.registerSnapshot(snapshot || null);
+  public publish = (topic: string, msg: any, monitor?: boolean) => {
+    if (topic === Models.Topics.MarketData) {
+      if (this._lastMarketData+369>new Date().getTime()) return;
+      msg = this.compressMarketDataInc(msg);
+    } else if (topic === Models.Topics.OrderStatusReports)
+      msg = this.compressOSRInc(msg);
+    else if (topic === Models.Topics.Position)
+      msg = this.compressPositionInc(msg);
+    if (monitor) this.delay(topic, msg);
+    else this._socket.up(topic, msg);
+  };
 
-        var onConnection = s => {
-            s.on(Models.Prefixes.SUBSCRIBE + topic, () => {
-                if (this._snapshot !== null) {
-                  let snap: T[] = this._snapshot();
-                  if (this.topic === Models.Topics.MarketData)
-                      snap = this.compressSnapshot(this._snapshot(), this.compressMarketDataInc);
-                  else if (this.topic === Models.Topics.OrderStatusReports)
-                    snap = this.compressSnapshot(this._snapshot(), this.compressOSRInc);
-                  else if (this.topic === Models.Topics.Position)
-                    snap = this.compressSnapshot(this._snapshot(), this.compressPositionInc);
-                  s.emit(Models.Prefixes.SNAPSHOT + topic, snap);
-                }
-            });
-        };
+  public registerReceiver = (topic: string, handler : (msg : any) => void) => {
+    this._socket.on(Models.Prefixes.MESSAGE + topic, (topic, msg) => {
+      handler(msg);
+    });
+  };
 
-        this._io.on("connection", onConnection);
+  public registerSnapshot = (topic: string, snapshot: () => any[]) => {
+    this._socket.on(Models.Prefixes.SNAPSHOT + topic, (topic, msg) => {
+      let snap: any[];
+      if (topic === Models.Topics.MarketData)
+        snap = this.compressSnapshot(snapshot(), this.compressMarketDataInc);
+      else if (topic === Models.Topics.OrderStatusReports)
+        snap = this.compressSnapshot(snapshot(), this.compressOSRInc);
+      else if (topic === Models.Topics.Position)
+        snap = this.compressSnapshot(snapshot(), this.compressPositionInc);
+      else snap = snapshot();
+      return snap;
+    });
+  }
 
-        Object.keys(this._io.sockets.connected).forEach(s => {
-            onConnection(this._io.sockets.connected[s]);
-        });
-    }
+  private compressSnapshot = (data: any[], compressIncremental:(data: any) => any): any[] => {
+    let ret: any[] = [];
+    data.forEach(x => ret.push(compressIncremental(x)));
+    return ret;
+  };
 
-    public publish = (msg: T) => {
-      if (this.topic === Models.Topics.MarketData) {
-        if (this._lastMarketData+369>new Date().getTime()) return;
-        msg = this.compressMarketDataInc(msg);
-      } else if (this.topic === Models.Topics.OrderStatusReports)
-        msg = this.compressOSRInc(msg);
-      else if (this.topic === Models.Topics.Position)
-        msg = this.compressPositionInc(msg);
-      if (this._monitor && this._monitor.io)
-        this._monitor.delay(Models.Prefixes.MESSAGE, this.topic, msg)
-      else this._io.emit(Models.Prefixes.MESSAGE + this.topic, msg);
-    };
+  private compressMarketDataInc = (data: any): any => {
+    let ret: any = new Models.Timestamped([[],[]], data.time);
+    data.bids.forEach(bid => ret.data[0].push(bid.price, bid.size));
+    data.asks.forEach(ask => ret.data[1].push(ask.price, ask.size));
+    this._lastMarketData = new Date().getTime();
+    return ret;
+  };
 
-    public registerSnapshot = (generator: () => T[]) => {
-        if (this._snapshot === null) this._snapshot = generator;
-        else throw new Error("already registered snapshot generator for topic " + this.topic);
-        return this;
-    }
+  private compressOSRInc = (data: any): any => {
+    return <any>new Models.Timestamped(
+      (data.orderStatus == Models.OrderStatus.Cancelled
+      || data.orderStatus == Models.OrderStatus.Complete)
+    ? [
+      data.orderId,
+      data.orderStatus,
+      data.side,
+      data.price,
+      data.quantity
+    ] : [
+      data.orderId,
+      data.orderStatus,
+      data.side,
+      data.exchange,
+      data.price,
+      data.quantity,
+      data.type,
+      data.timeInForce,
+      data.computationalLatency,
+      data.leavesQuantity,
+      data.isPong,
+      data.pair.quote
+    ], data.time);
+  };
 
-    private compressSnapshot = (data: T[], compressIncremental:(data: any) => T): T[] => {
-      let ret: T[] = [];
-      data.forEach(x => ret.push(compressIncremental(x)));
-      return ret;
-    };
+  private compressPositionInc = (data: any): any => {
+    return <any>new Models.Timestamped([
+      data.baseAmount,
+      data.quoteAmount,
+      data.baseHeldAmount,
+      data.quoteHeldAmount,
+      data.value,
+      data.quoteValue,
+      data.profitBase,
+      data.profitQuote,
+      data.pair.base,
+      data.pair.quote
+    ], data.time);
+  };
 
-    private compressMarketDataInc = (data: any): T => {
-      let ret: any = new Models.Timestamped([[],[]], data.time);
-      data.bids.forEach(bid => ret.data[0].push(bid.price, bid.size));
-      data.asks.forEach(ask => ret.data[1].push(ask.price, ask.size));
-      this._lastMarketData = new Date().getTime();
-      return ret;
-    };
+  constructor(
+    private _sqlite,
+    private _socket,
+    private _evOn,
+    private _delayUI
+  ) {
+    this.setTick();
+    this._evOn('QuotingParameters', (qp) => {
+      this._delayUI = qp.delayUI;
+      this.setTick();
+    });
 
-    private compressOSRInc = (data: any): T => {
-      return <any>new Models.Timestamped(
-        (data.orderStatus == Models.OrderStatus.Cancelled
-        || data.orderStatus == Models.OrderStatus.Complete
-        || data.orderStatus == Models.OrderStatus.Rejected)
-      ? [
-        data.orderId,
-        data.orderStatus,
-        data.side,
-        data.price,
-        data.quantity
-      ] : [
-        data.orderId,
-        data.orderStatus,
-        data.exchange,
-        data.price,
-        data.quantity,
-        data.side,
-        data.type,
-        data.timeInForce,
-        data.computationalLatency,
-        data.leavesQuantity,
-        data.pair.quote
-      ], data.time);
-    };
+    this.registerSnapshot(Models.Topics.ApplicationState, () => [this._app_state]);
 
-    private compressPositionInc = (data: any): T => {
-      return <any>new Models.Timestamped([
-        Math.round(data.baseAmount * 1e8) / 1e8,
-        Math.round(data.quoteAmount * 1e2) / 1e2,
-        Math.round(data.baseHeldAmount * 1e8) / 1e8,
-        Math.round(data.quoteHeldAmount * 1e2) / 1e2,
-        Math.round(data.value * 1e8) / 1e8,
-        Math.round(data.quoteValue * 1e2) / 1e2,
-        Math.round(data.profitBase * 1e2) / 1e2,
-        Math.round(data.profitQuote * 1e2) / 1e2,
-        data.pair.base,
-        data.pair.quote
-      ], data.time);
-    };
-}
+    this.registerSnapshot(Models.Topics.Notepad, () => [this._notepad]);
 
-export class NullPublisher<T> implements IPublish<T> {
-  public publish = (msg: T) => {};
-  public registerSnapshot = (generator: () => T[]) => this;
-}
+    this.registerSnapshot(Models.Topics.ToggleConfigs, () => [this._toggleConfigs]);
 
+    this.registerReceiver(Models.Topics.Notepad, (notepad: string) => {
+      this._notepad = notepad;
+    });
 
-export interface IReceive<T> {
-    registerReceiver(handler: (msg: T) => void) : void;
-}
+    this.registerReceiver(Models.Topics.ToggleConfigs, (toggleConfigs: boolean) => {
+      this._toggleConfigs = toggleConfigs;
+    });
+  }
 
-export class NullReceiver<T> implements IReceive<T> {
-    registerReceiver = (handler: (msg: T) => void) => {};
-}
+  private _delayed: any[] = [];
+  private _app_state: Models.ApplicationState;
+  private _notepad: string;
+  private _toggleConfigs: boolean = true;
+  private _newOrderMinute: number = 0;
+  private _tick: number = 0;
+  private _interval = null;
 
-export class Receiver<T> implements IReceive<T> {
-    private _handler: (msg: T) => void = null;
-    constructor(private topic: string, io: SocketIO.Server) {
-        var onConnection = (s: SocketIO.Socket) => {
-            // this._log("socket", s.id, "connected for Receiver", topic);
-            s.on(Models.Prefixes.MESSAGE + this.topic, msg => {
-                if (this._handler !== null)
-                    this._handler(msg);
-            });
-            // s.on("error", e => {
-                // _log("error in Receiver", e.stack, e.message);
-            // });
-        };
+  private onTick = () => {
+    this._tick = 0;
+    this._app_state = new Models.ApplicationState(
+      process.memoryUsage().rss,
+      (new Date()).getHours(),
+      this._newOrderMinute / 2,
+      this._sqlite.size()
+    );
+    this._newOrderMinute = 0;
+    this.publish(Models.Topics.ApplicationState, this._app_state);
+  };
 
-        io.on("connection", onConnection);
-        Object.keys(io.sockets.connected).forEach(s => {
-            onConnection(io.sockets.connected[s]);
-        });
-    }
+  private onDelay = () => {
+    this._tick += this._delayUI;
+    if (this._tick>=6e1) this.onTick();
+    let orders: any[] = this._delayed.filter(x => x[0]===Models.Topics.OrderStatusReports);
+    this._delayed = this._delayed.filter(x => x[0]!==Models.Topics.OrderStatusReports);
+    if (orders.length) this._delayed.push([Models.Topics.OrderStatusReports, {data: orders.map(x => x[1])}]);
+    this._delayed.forEach(x => this._socket.up(x[0], x[1]));
+    this._delayed = orders.filter(x => x[1].data[1]===Models.OrderStatus.Working);
+  };
 
-    registerReceiver = (handler : (msg : T) => void) => {
-        if (this._handler === null) {
-            this._handler = handler;
-        }
-        else {
-            throw new Error("already registered receive handler for topic " + this.topic);
-        }
-    };
+  private delay = (topic: string, msg: any) => {
+    const isOSR: boolean = topic === Models.Topics.OrderStatusReports;
+    if (isOSR && msg.data[1] === Models.OrderStatus.New) return ++this._newOrderMinute;
+    if (!this._delayUI) return this._socket.up(topic, msg);
+    this._delayed = this._delayed.filter(x => x[0] !== topic || (isOSR?x[1].data[0] !== msg.data[0]:false));
+    this._delayed.push([topic, msg]);
+  };
+
+  private setTick = () => {
+    if (this._interval) clearInterval(this._interval);
+    if (this._delayUI<1) this._delayUI = 0;
+    this._delayed = [];
+    this._interval = setInterval(
+      this._delayUI ? this.onDelay : this.onTick,
+      (this._delayUI || 6e1) * 1e3
+    );
+    this.onTick();
+  };
 }

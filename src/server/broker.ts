@@ -1,184 +1,121 @@
 import Models = require("../share/models");
 import Publish = require("./publish");
 import Utils = require("./utils");
-import _ = require("lodash");
-import Quoter = require("./quoter");
 import Interfaces = require("./interfaces");
-import Persister = require("./persister");
 import QuotingParameters = require("./quoting-parameters");
 import FairValue = require("./fair-value");
 import moment = require("moment");
-import * as Promises from './promises';
 
 export class MarketDataBroker {
-    MarketData = new Utils.Evt<Models.Market>();
-    public get currentBook(): Models.Market { return this._currentBook; }
+  public get currentBook(): Models.Market { return this._currentBook; }
 
-    private _currentBook: Models.Market = null;
-    private handleMarketData = (book: Models.Market) => {
-        this._currentBook = book;
-        this.MarketData.trigger(this.currentBook);
-        this._marketPublisher.publish(this.currentBook);
-    };
+  private _currentBook: Models.Market = null;
+  private handleMarketData = (book: Models.Market) => {
+      this._currentBook = book;
+      this._evUp('MarketDataBroker');
+      this._publisher.publish(Models.Topics.MarketData, this.currentBook, true);
+  };
 
-    constructor(
-      private _mdGateway: Interfaces.IMarketDataGateway,
-      private _marketPublisher: Publish.IPublish<Models.Market>
-    ) {
-      _marketPublisher.registerSnapshot(() => this.currentBook === null ? []: [this.currentBook]);
+  constructor(
+    private _publisher: Publish.Publisher,
+    private _evOn,
+    private _evUp
+  ) {
+    _publisher.registerSnapshot(Models.Topics.MarketData, () => this.currentBook === null ? []: [this.currentBook]);
 
-      this._mdGateway.MarketData.on(this.handleMarketData);
-      this._mdGateway.ConnectChanged.on(s => {
-        if (s == Models.ConnectivityStatus.Disconnected) this._currentBook = null;
-      });
-    }
+    this._evOn('MarketDataGateway', this.handleMarketData);
+    this._evOn('GatewayMarketConnect', s => {
+      if (s == Models.ConnectivityStatus.Disconnected) this._currentBook = null;
+    });
+  }
 }
 
 class OrderStateCache {
-    public allOrders = new Map<string, Models.OrderStatusReport>();
-    public exchIdsToClientIds = new Map<string, string>();
+  public allOrders = new Map<string, Models.OrderStatusReport>();
+  public exchIdsToClientIds = new Map<string, string>();
 }
 
 export class OrderBroker {
-    async cancelOpenOrders() : Promise<number> {
+    cancelOpenOrders() {
         if (this._oeGateway.supportsCancelAllOpenOrders()) {
             return this._oeGateway.cancelAllOpenOrders();
         }
 
-        const promiseMap = new Map<string, Promises.Deferred<void>>();
-
-        const orderUpdate = (o : Models.OrderStatusReport) => {
-            const p = promiseMap.get(o.orderId);
-            if (p && (o.orderStatus == Models.OrderStatus.Complete || o.orderStatus == Models.OrderStatus.Cancelled || o.orderStatus == Models.OrderStatus.Rejected))
-                p.resolve(null);
-        };
-
-        this.OrderUpdate.on(orderUpdate);
-
-        for (let e of this._orderCache.allOrders.values()) {
-            if (e.pendingCancel || e.orderStatus == Models.OrderStatus.Complete || e.orderStatus == Models.OrderStatus.Cancelled || e.orderStatus == Models.OrderStatus.Rejected)
-                continue;
-
-            this.cancelOrder(new Models.OrderCancel(e.orderId, e.exchange, this._timeProvider.utcNow()));
-            promiseMap.set(e.orderId, Promises.defer<void>());
+        for (let e of this.orderCache.allOrders.values()) {
+            if (e.orderStatus == Models.OrderStatus.New || e.orderStatus == Models.OrderStatus.Working)
+              this.cancelOrder(new Models.OrderCancel(e.orderId, e.exchange, this._timeProvider.utcNow()));
         }
-
-        const promises = Array.from(promiseMap.values());
-        await Promise.all(promises);
-
-        this.OrderUpdate.off(orderUpdate);
-
-        return promises.length;
     }
 
-    cleanClosedOrders() : Promise<number> {
-        var deferred = Promises.defer<number>();
+    cleanClosedOrders() {
+      var lateCleans : {[id: string] : boolean} = {};
+      for(var i = 0;i<this.tradesMemory.length;i++) {
+        if (this.tradesMemory[i].Kqty+0.0001 >= this.tradesMemory[i].quantity) {
+          lateCleans[this.tradesMemory[i].tradeId] = true;
+        }
+      }
 
-        var lateCleans : {[id: string] : boolean} = {};
-        for(var i = 0;i<this._trades.length;i++) {
-          if (this._trades[i].Kqty+0.0001 >= this._trades[i].quantity) {
-            lateCleans[this._trades[i].tradeId] = true;
+      for (var k in lateCleans) {
+        if (!(k in lateCleans)) continue;
+        for(var i = 0;i<this.tradesMemory.length;i++) {
+          if (k == this.tradesMemory[i].tradeId) {
+            this.tradesMemory[i].Kqty = -1;
+            this._publisher.publish(Models.Topics.Trades, this.tradesMemory[i]);
+            this._sqlite.insert(Models.Topics.Trades, undefined, false, this.tradesMemory[i].tradeId);
+            this.tradesMemory.splice(i, 1);
+            break;
           }
         }
-
-        if (_.isEmpty(_.keys(lateCleans))) {
-            deferred.resolve(0);
-        }
-
-        for (var k in lateCleans) {
-          if (!(k in lateCleans)) continue;
-          for(var i = 0;i<this._trades.length;i++) {
-            if (k == this._trades[i].tradeId) {
-              this._trades[i].Kqty = -1;
-              this._tradePublisher.publish(this._trades[i]);
-              this._tradePersister.repersist(this._trades[i]);
-              this._trades.splice(i, 1);
-              break;
-            }
-          }
-        }
-
-        if (_.every(_.values(lateCleans)))
-            deferred.resolve(_.size(lateCleans));
-
-        return deferred.promise;
+      }
     }
 
-    cleanTrade(tradeId: string) : Promise<number> {
-        var deferred = Promises.defer<number>();
+    cleanTrade(tradeId: string) {
+      var lateCleans : {[id: string] : boolean} = {};
+      for(var i = 0;i<this.tradesMemory.length;i++) {
+        if (this.tradesMemory[i].tradeId == tradeId) {
+          lateCleans[this.tradesMemory[i].tradeId] = true;
+        }
+      }
 
-        var lateCleans : {[id: string] : boolean} = {};
-        for(var i = 0;i<this._trades.length;i++) {
-          if (this._trades[i].tradeId == tradeId) {
-            lateCleans[this._trades[i].tradeId] = true;
+      for (var k in lateCleans) {
+        if (!(k in lateCleans)) continue;
+        for(var i = 0;i<this.tradesMemory.length;i++) {
+          if (k == this.tradesMemory[i].tradeId) {
+            this.tradesMemory[i].Kqty = -1;
+            this._publisher.publish(Models.Topics.Trades, this.tradesMemory[i]);
+            this._sqlite.insert(Models.Topics.Trades, undefined, false, this.tradesMemory[i].tradeId);
+            this.tradesMemory.splice(i, 1);
+            break;
           }
         }
+      }
+    }
 
-        if (_.isEmpty(_.keys(lateCleans))) {
-            deferred.resolve(0);
-        }
+    cleanOrders() {
+      var lateCleans : {[id: string] : boolean} = {};
+      for(var i = 0;i<this.tradesMemory.length;i++) {
+        lateCleans[this.tradesMemory[i].tradeId] = true;
+      }
 
-        for (var k in lateCleans) {
-          if (!(k in lateCleans)) continue;
-          for(var i = 0;i<this._trades.length;i++) {
-            if (k == this._trades[i].tradeId) {
-              this._trades[i].Kqty = -1;
-              this._tradePublisher.publish(this._trades[i]);
-              this._tradePersister.repersist(this._trades[i]);
-              this._trades.splice(i, 1);
-              break;
-            }
+      for (var k in lateCleans) {
+        if (!(k in lateCleans)) continue;
+        for(var i = 0;i<this.tradesMemory.length;i++) {
+          if (k == this.tradesMemory[i].tradeId) {
+            this.tradesMemory[i].Kqty = -1;
+            this._publisher.publish(Models.Topics.Trades, this.tradesMemory[i]);
+            this._sqlite.insert(Models.Topics.Trades, undefined, false, this.tradesMemory[i].tradeId);
+            this.tradesMemory.splice(i, 1);
+            break;
           }
         }
-
-        if (_.every(_.values(lateCleans)))
-            deferred.resolve(_.size(lateCleans));
-
-        return deferred.promise;
+      }
     }
 
-    cleanOrders() : Promise<number> {
-        var deferred = Promises.defer<number>();
-
-        var lateCleans : {[id: string] : boolean} = {};
-        for(var i = 0;i<this._trades.length;i++) {
-          lateCleans[this._trades[i].tradeId] = true;
-        }
-
-        if (_.isEmpty(_.keys(lateCleans))) {
-            deferred.resolve(0);
-        }
-
-        for (var k in lateCleans) {
-          if (!(k in lateCleans)) continue;
-          for(var i = 0;i<this._trades.length;i++) {
-            if (k == this._trades[i].tradeId) {
-              this._trades[i].Kqty = -1;
-              this._tradePublisher.publish(this._trades[i]);
-              this._tradePersister.repersist(this._trades[i]);
-              this._trades.splice(i, 1);
-              break;
-            }
-          }
-        }
-
-        if (_.every(_.values(lateCleans)))
-            deferred.resolve(_.size(lateCleans));
-
-        return deferred.promise;
-    }
-
-    private roundPrice = (price: number, side: Models.Side) : number => {
-        return Utils.roundSide(price, this._baseBroker.minTickIncrement, side);
-    }
-
-    OrderUpdate = new Utils.Evt<Models.OrderStatusReport>();
     private _cancelsWaitingForExchangeOrderId: {[clId : string]: Models.OrderCancel} = {};
 
-    Trade = new Utils.Evt<Models.Trade>();
-    _trades : Models.Trade[] = [];
+    tradesMemory : Models.Trade[] = [];
 
-    sendOrder = (order : Models.SubmitNewOrder) : Models.SentOrder => {
+    sendOrder = (order : Models.SubmitNewOrder) => {
         const orderId = this._oeGateway.generateClientOrderId();
 
         const rpt : Models.OrderStatusUpdate = {
@@ -188,7 +125,8 @@ export class OrderBroker {
             quantity: order.quantity,
             leavesQuantity: order.quantity,
             type: order.type,
-            price: this.roundPrice(order.price, order.side),
+            isPong: order.isPong,
+            price: Utils.roundSide(order.price, this._baseBroker.minTickIncrement, order.side),
             timeInForce: order.timeInForce,
             orderStatus: Models.OrderStatus.New,
             preferPostOnly: order.preferPostOnly,
@@ -198,29 +136,24 @@ export class OrderBroker {
         };
 
         this._oeGateway.sendOrder(this.updateOrderState(rpt));
-
-        return new Models.SentOrder(rpt.orderId);
     };
 
-    replaceOrder = (replace : Models.CancelReplaceOrder) : Models.SentOrder => {
-        const rpt = this._orderCache.allOrders.get(replace.origOrderId);
+    replaceOrder = (replace : Models.CancelReplaceOrder) => { /* nobody calls broker.replaceOrder */
+        const rpt = this.orderCache.allOrders.get(replace.origOrderId);
         if (!rpt) throw new Error("Unknown order, cannot replace " + replace.origOrderId);
 
         const report : Models.OrderStatusUpdate = {
             orderId: replace.origOrderId,
             orderStatus: Models.OrderStatus.Working,
-            pendingReplace: true,
-            price: this.roundPrice(replace.price, rpt.side),
+            price: Utils.roundSide(replace.price, this._baseBroker.minTickIncrement, rpt.side),
             quantity: replace.quantity
         };
 
         this._oeGateway.replaceOrder(this.updateOrderState(rpt));
-
-        return new Models.SentOrder(report.orderId);
     };
 
     cancelOrder = (cancel: Models.OrderCancel) => {
-        const rpt = this._orderCache.allOrders.get(cancel.origOrderId);
+        const rpt = this.orderCache.allOrders.get(cancel.origOrderId);
         if (!rpt) {
           this.updateOrderState(<Models.OrderStatusUpdate>{
               orderId: cancel.origOrderId,
@@ -239,84 +172,72 @@ export class OrderBroker {
             }
         }
 
-        if (!rpt) throw new Error("Unknown order, cannot cancel " + cancel.origOrderId);
-
-        const report: Models.OrderStatusUpdate = {
+        this._oeGateway.cancelOrder(this.updateOrderState(<Models.OrderStatusUpdate>{
             orderId: cancel.origOrderId,
-            orderStatus: Models.OrderStatus.Working,
-            pendingCancel: true
-        };
-
-        this._oeGateway.cancelOrder(this.updateOrderState(report));
+            orderStatus: Models.OrderStatus.Working
+        }));
     };
 
-    private _reTrade = (reTrades: Models.Trade[], trade: Models.Trade): string => {
-      let tradePingPongType = 'Ping';
+    private _reTrade = (reTrades: Models.Trade[], trade: Models.Trade) => {
       let gowhile = true;
       while (gowhile && trade.quantity>0 && reTrades!=null && reTrades.length) {
         var reTrade = reTrades.shift();
         gowhile = false;
-        for(var i = 0;i<this._trades.length;i++) {
-          if (this._trades[i].tradeId==reTrade.tradeId) {
+        for(var i = 0;i<this.tradesMemory.length;i++) {
+          if (this.tradesMemory[i].tradeId==reTrade.tradeId) {
             gowhile = true;
-            var Kqty = Math.min(trade.quantity, this._trades[i].quantity - this._trades[i].Kqty);
-            this._trades[i].Ktime = trade.time;
-            this._trades[i].Kprice = ((Kqty*trade.price) + (this._trades[i].Kqty*this._trades[i].Kprice)) / (this._trades[i].Kqty+Kqty);
-            this._trades[i].Kqty += Kqty;
-            this._trades[i].Kvalue = Math.abs(this._trades[i].Kprice*this._trades[i].Kqty);
+            var Kqty = Math.min(trade.quantity, this.tradesMemory[i].quantity - this.tradesMemory[i].Kqty);
+            this.tradesMemory[i].Ktime = trade.time;
+            this.tradesMemory[i].Kprice = ((Kqty*trade.price) + (this.tradesMemory[i].Kqty*this.tradesMemory[i].Kprice)) / (this.tradesMemory[i].Kqty+Kqty);
+            this.tradesMemory[i].Kqty += Kqty;
+            this.tradesMemory[i].Kvalue = Math.abs(this.tradesMemory[i].Kprice*this.tradesMemory[i].Kqty);
             trade.quantity -= Kqty;
             trade.value = Math.abs(trade.price*trade.quantity);
-            if (this._trades[i].quantity<=this._trades[i].Kqty)
-              this._trades[i].Kdiff = Math.abs((this._trades[i].quantity*this._trades[i].price)-(this._trades[i].Kqty*this._trades[i].Kprice));
-            this._trades[i].loadedFromDB = false;
-            tradePingPongType = 'Pong';
-            this._tradePublisher.publish(this._trades[i]);
-            this._tradePersister.repersist(this._trades[i]);
+            if (this.tradesMemory[i].quantity<=this.tradesMemory[i].Kqty)
+              this.tradesMemory[i].Kdiff = Math.abs((this.tradesMemory[i].quantity*this.tradesMemory[i].price)-(this.tradesMemory[i].Kqty*this.tradesMemory[i].Kprice));
+            this.tradesMemory[i].loadedFromDB = false;
+            this._publisher.publish(Models.Topics.Trades, this.tradesMemory[i]);
+            this._sqlite.insert(Models.Topics.Trades, this.tradesMemory[i], false, this.tradesMemory[i].tradeId);
             break;
           }
         }
       }
       if (trade.quantity>0) {
         var exists = false;
-        for(var i = 0;i<this._trades.length;i++) {
-          if (this._trades[i].price==trade.price && this._trades[i].side==trade.side && this._trades[i].quantity>this._trades[i].Kqty) {
+        for(var i = 0;i<this.tradesMemory.length;i++) {
+          if (this.tradesMemory[i].price==trade.price && this.tradesMemory[i].side==trade.side && this.tradesMemory[i].quantity>this.tradesMemory[i].Kqty) {
             exists = true;
-            this._trades[i].time = trade.time;
-            this._trades[i].quantity += trade.quantity;
-            this._trades[i].value += trade.value;
-            this._trades[i].loadedFromDB = false;
-            this._tradePublisher.publish(this._trades[i]);
-            this._tradePersister.repersist(this._trades[i]);
+            this.tradesMemory[i].time = trade.time;
+            this.tradesMemory[i].quantity += trade.quantity;
+            this.tradesMemory[i].value += trade.value;
+            this.tradesMemory[i].loadedFromDB = false;
+            this._publisher.publish(Models.Topics.Trades, this.tradesMemory[i]);
+            this._sqlite.insert(Models.Topics.Trades, this.tradesMemory[i], false, this.tradesMemory[i].tradeId);
             break;
           }
         }
         if (!exists) {
-          this._tradePublisher.publish(trade);
-          this._tradePersister.persist(trade);
-          this._trades.push(trade);
+          this._publisher.publish(Models.Topics.Trades, trade);
+          this._sqlite.insert(Models.Topics.Trades, trade, false, trade.tradeId);
+          this.tradesMemory.push(trade);
         }
       }
-      return tradePingPongType;
     };
 
-    public updateOrderState = (osr : Models.OrderStatusUpdate) : Models.OrderStatusReport => {
-        let orig : Models.OrderStatusUpdate;
+    public updateOrderState = (osr: Models.OrderStatusUpdate): Models.OrderStatusReport => {
+        let orig: Models.OrderStatusUpdate;
         if (osr.orderStatus === Models.OrderStatus.New) {
             orig = osr;
         } else {
-            orig = this._orderCache.allOrders.get(osr.orderId);
-
-            if (typeof orig === "undefined") {
-                const secondChance = this._orderCache.exchIdsToClientIds.get(osr.exchangeId);
+            orig = this.orderCache.allOrders.get(osr.orderId);
+            if (typeof orig === "undefined" && osr.exchangeId) {
+                const secondChance = this.orderCache.exchIdsToClientIds.get(osr.exchangeId);
                 if (typeof secondChance !== "undefined") {
                     osr.orderId = secondChance;
-                    orig = this._orderCache.allOrders.get(secondChance);
+                    orig = this.orderCache.allOrders.get(secondChance);
                 }
             }
-
-            if (typeof orig === "undefined") {
-              return;
-            }
+            if (typeof orig === "undefined") return;
         }
 
         const getOrFallback = <T>(n: T, o: T) => typeof n !== "undefined" ? n : o;
@@ -331,9 +252,7 @@ export class OrderBroker {
             cumQuantity = getOrFallback(orig.cumQuantity, 0) + getOrFallback(osr.lastQuantity, 0);
         }
 
-        const partiallyFilled = cumQuantity > 0 && cumQuantity !== quantity;
-
-        const o : Models.OrderStatusReport = {
+        const o: Models.OrderStatusReport = {
           pair: getOrFallback(osr.pair, orig.pair),
           side: getOrFallback(osr.side, orig.side),
           quantity: quantity,
@@ -347,17 +266,13 @@ export class OrderBroker {
           time: getOrFallback(osr.time, this._timeProvider.utcNow()),
           lastQuantity: osr.lastQuantity,
           lastPrice: osr.lastPrice,
+          isPong: getOrFallback(osr.isPong, orig.isPong),
           leavesQuantity: getOrFallback(osr.leavesQuantity, orig.leavesQuantity),
           cumQuantity: cumQuantity,
           averagePrice: cumQuantity > 0 ? osr.averagePrice || orig.averagePrice : undefined,
           liquidity: getOrFallback(osr.liquidity, orig.liquidity),
           exchange: getOrFallback(osr.exchange, orig.exchange),
           computationalLatency: getOrFallback(osr.computationalLatency, 0) + getOrFallback(orig.computationalLatency, 0),
-          version: (typeof orig.version === "undefined") ? 0 : orig.version + 1,
-          partiallyFilled: partiallyFilled,
-          pendingCancel: osr.pendingCancel,
-          pendingReplace: osr.pendingReplace,
-          cancelRejected: osr.cancelRejected,
           preferPostOnly: getOrFallback(osr.preferPostOnly, orig.preferPostOnly),
           source: getOrFallback(osr.source, orig.source)
         };
@@ -375,8 +290,8 @@ export class OrderBroker {
           }
         }
 
-        this.OrderUpdate.trigger(o);
-        this._orderStatusPublisher.publish(o);
+        this._evUp('OrderUpdateBroker', o);
+        this._publisher.publish(Models.Topics.OrderStatusReports, o, true);
 
         if (osr.lastQuantity > 0) {
             let value = Math.abs(o.lastPrice * o.lastQuantity);
@@ -390,15 +305,14 @@ export class OrderBroker {
                 value = value * (1 + sign * feeCharged);
             }
 
-            const trade = new Models.Trade(o.orderId+"."+o.version, o.time, o.exchange, o.pair,
+            const trade = new Models.Trade(this._timeProvider.utcNow().getTime().toString(), o.time, o.exchange, o.pair,
                 o.lastPrice, o.lastQuantity, o.side, value, o.liquidity, null, 0, 0, 0, 0, feeCharged, false);
-            this.Trade.trigger(trade);
-            let tradePingPongType = 'Ping';
+            this._evUp('OrderTradeBroker', trade);
             if (this._qlParamRepo.latest.mode === Models.QuotingMode.Boomerang || this._qlParamRepo.latest.mode === Models.QuotingMode.HamelinRat || this._qlParamRepo.latest.mode === Models.QuotingMode.AK47) {
               var widthPong = (this._qlParamRepo.latest.widthPercentage)
                   ? this._qlParamRepo.latest.widthPongPercentage * trade.price / 100
                   : this._qlParamRepo.latest.widthPong;
-              tradePingPongType = this._reTrade(this._trades.filter((x: Models.Trade) => (
+              this._reTrade(this.tradesMemory.filter((x: Models.Trade) => (
                 (trade.side==Models.Side.Bid?(x.price > (trade.price + widthPong)):(x.price < (trade.price - widthPong)))
                 && (x.side == (trade.side==Models.Side.Bid?Models.Side.Ask:Models.Side.Bid))
                 && ((x.quantity - x.Kqty) > 0)
@@ -415,27 +329,27 @@ export class OrderBroker {
                 )
               )), trade);
             } else {
-              this._tradePublisher.publish(trade);
-              this._tradePersister.persist(trade);
-              this._trades.push(trade);
+              this._publisher.publish(Models.Topics.Trades, trade);
+              this._sqlite.insert(Models.Topics.Trades, trade, false, trade.tradeId);
+              this.tradesMemory.push(trade);
             }
 
-            this._tradeChartPublisher.publish(new Models.TradeChart(o.lastPrice, o.side, o.lastQuantity, Math.round(value * 100) / 100, tradePingPongType, o.time));
+            this._publisher.publish(Models.Topics.TradesChart, new Models.TradeChart(o.lastPrice, o.side, o.lastQuantity, Math.round(value * 100) / 100, o.isPong, o.time));
 
             if (this._qlParamRepo.latest.cleanPongsAuto>0) {
               const cleanTime = o.time.getTime() - (this._qlParamRepo.latest.cleanPongsAuto * 864e5);
-              var cleanTrades = this._trades.filter((x: Models.Trade) => x.Kqty >= x.quantity && x.time.getTime() < cleanTime);
+              var cleanTrades = this.tradesMemory.filter((x: Models.Trade) => x.Kqty >= x.quantity && x.time.getTime() < cleanTime);
               var goWhile = true;
               while (goWhile && cleanTrades.length) {
                 var cleanTrade = cleanTrades.shift();
                 goWhile = false;
-                for(let i = this._trades.length;i--;) {
-                  if (this._trades[i].tradeId==cleanTrade.tradeId) {
+                for(let i = this.tradesMemory.length;i--;) {
+                  if (this.tradesMemory[i].tradeId==cleanTrade.tradeId) {
                     goWhile = true;
-                    this._trades[i].Kqty = -1;
-                    this._tradePublisher.publish(this._trades[i]);
-                    this._tradePersister.repersist(this._trades[i]);
-                    this._trades.splice(i, 1);
+                    this.tradesMemory[i].Kqty = -1;
+                    this._publisher.publish(Models.Topics.Trades, this.tradesMemory[i]);
+                    this._sqlite.insert(Models.Topics.Trades, undefined, false, this.tradesMemory[i].tradeId);
+                    this.tradesMemory.splice(i, 1);
                   }
                 }
               }
@@ -446,69 +360,71 @@ export class OrderBroker {
     };
 
     private updateOrderStatusInMemory = (osr : Models.OrderStatusReport) => {
-        if (osr.orderStatus != Models.OrderStatus.Cancelled && osr.orderStatus != Models.OrderStatus.Complete && osr.orderStatus != Models.OrderStatus.Rejected) {
-          this._orderCache.exchIdsToClientIds.set(osr.exchangeId, osr.orderId);
-          this._orderCache.allOrders.set(osr.orderId, osr);
+        if (osr.orderStatus != Models.OrderStatus.Cancelled && osr.orderStatus != Models.OrderStatus.Complete) {
+          this.orderCache.exchIdsToClientIds.set(osr.exchangeId, osr.orderId);
+          this.orderCache.allOrders.set(osr.orderId, osr);
         } else {
-          this._orderCache.exchIdsToClientIds.delete(osr.exchangeId);
-          this._orderCache.allOrders.delete(osr.orderId);
+          this.orderCache.exchIdsToClientIds.delete(osr.exchangeId);
+          this.orderCache.allOrders.delete(osr.orderId);
         }
     };
 
-    private _orderCache: OrderStateCache;
+    public orderCache: OrderStateCache;
 
-    constructor(private _timeProvider: Utils.ITimeProvider,
-                private _qlParamRepo: QuotingParameters.QuotingParametersRepository,
-                private _baseBroker : ExchangeBroker,
-                private _oeGateway : Interfaces.IOrderEntryGateway,
-                private _tradePersister : Persister.IPersist<Models.Trade>,
-                private _orderStatusPublisher : Publish.IPublish<Models.OrderStatusReport>,
-                private _tradePublisher : Publish.IPublish<Models.Trade>,
-                private _tradeChartPublisher : Publish.IPublish<Models.TradeChart>,
-                private _submittedOrderReciever : Publish.IReceive<Models.OrderRequestFromUI>,
-                private _cancelOrderReciever : Publish.IReceive<Models.OrderStatusReport>,
-                private _cancelAllOrdersReciever : Publish.IReceive<object>,
-                private _cleanAllClosedOrdersReciever : Publish.IReceive<object>,
-                private _cleanAllOrdersReciever : Publish.IReceive<object>,
-                private _cleanTradeReciever : Publish.IReceive<Models.Trade>,
-                initTrades : Models.Trade[]) {
-        this._orderCache = new OrderStateCache();
-        if (_qlParamRepo.latest.mode === Models.QuotingMode.Boomerang || _qlParamRepo.latest.mode === Models.QuotingMode.HamelinRat || _qlParamRepo.latest.mode === Models.QuotingMode.AK47)
-          _oeGateway.cancelAllOpenOrders();
+    constructor(
+      private _timeProvider: Utils.ITimeProvider,
+      private _qlParamRepo: QuotingParameters.QuotingParametersRepository,
+      private _baseBroker : ExchangeBroker,
+      private _oeGateway : Interfaces.IOrderEntryGateway,
+      private _sqlite,
+      private _publisher : Publish.Publisher,
+      private _evOn,
+      private _evUp,
+      initTrades : Models.Trade[]
+    ) {
+        this.tradesMemory = initTrades;
+        this.orderCache = new OrderStateCache();
+
         _timeProvider.setInterval(() => { if (this._qlParamRepo.latest.cancelOrdersAuto) this._oeGateway.cancelAllOpenOrders(); }, moment.duration(5, 'minutes'));
 
-        _.each(initTrades, t => this._trades.push(t));
-        _orderStatusPublisher.registerSnapshot(() => Array.from(this._orderCache.allOrders.values()).filter(o => o.orderStatus === Models.OrderStatus.New || o.orderStatus === Models.OrderStatus.Working));
-        _tradePublisher.registerSnapshot(() => this._trades.map(t => Object.assign(t, { loadedFromDB: true})).slice(-1000));
+        _publisher.registerSnapshot(Models.Topics.Trades, () => this.tradesMemory.map(t => Object.assign(t, { loadedFromDB: true})).slice(-1000));
+        _publisher.registerSnapshot(Models.Topics.OrderStatusReports, () => {
+          let orderCache = [];
+          this.orderCache.allOrders.forEach(x => { if (x.orderStatus === Models.OrderStatus.Working) orderCache.push(x); });
+          return orderCache;
+        });
 
-        _submittedOrderReciever.registerReceiver((o : Models.OrderRequestFromUI) => {
+        _publisher.registerReceiver(Models.Topics.SubmitNewOrder, (o : Models.OrderRequestFromUI) => {
             try {
-                const order = new Models.SubmitNewOrder(Models.Side[o.side], o.quantity, Models.OrderType[o.orderType],
-                    o.price, Models.TimeInForce[o.timeInForce], this._baseBroker.exchange(), this._timeProvider.utcNow(), false, Models.OrderSource.OrderTicket);
-                this.sendOrder(order);
+              this.sendOrder(new Models.SubmitNewOrder(
+                o.side == 'Ask' ? Models.Side.Ask : Models.Side.Bid,
+                o.quantity,
+                Models.OrderType[o.orderType],
+                o.price,
+                Models.TimeInForce[o.timeInForce],
+                false,
+                this._baseBroker.exchange(),
+                this._timeProvider.utcNow(),
+                false,
+                Models.OrderSource.OrderTicket
+              ));
             }
             catch (e) {
-                console.error('broker', e, 'unhandled exception while submitting order', o);
+              console.error('broker', e, 'unhandled exception while submitting order', o);
             }
         });
 
-        _cancelOrderReciever.registerReceiver(o => this.cancelOrder(new Models.OrderCancel(o.orderId, o.exchange, this._timeProvider.utcNow())));
-        _cancelAllOrdersReciever.registerReceiver(() => this.cancelOpenOrders());
-        _cleanAllClosedOrdersReciever.registerReceiver(() => this.cleanClosedOrders());
-        _cleanAllOrdersReciever.registerReceiver(() => this.cleanOrders());
-        _cleanTradeReciever.registerReceiver(t => this.cleanTrade(t.tradeId));
+        _publisher.registerReceiver(Models.Topics.CancelOrder, o => this.cancelOrder(new Models.OrderCancel(o.orderId, o.exchange, this._timeProvider.utcNow())));
+        _publisher.registerReceiver(Models.Topics.CancelAllOrders, () => this.cancelOpenOrders());
+        _publisher.registerReceiver(Models.Topics.CleanAllClosedOrders, () => this.cleanClosedOrders());
+        _publisher.registerReceiver(Models.Topics.CleanAllOrders, () => this.cleanOrders());
+        _publisher.registerReceiver(Models.Topics.CleanTrade, t => this.cleanTrade(t.tradeId));
 
-        _oeGateway.OrderUpdate.on(this.updateOrderState);
-
-        // _oeGateway.ConnectChanged.on(s => {
-            // console.info('broker', 'Gateway connectivity status changed', Models.ConnectivityStatus[s]);
-        // });
+        this._evOn('OrderUpdateGateway', this.updateOrderState);
     }
 }
 
 export class PositionBroker {
-    public NewReport = new Utils.Evt<Models.PositionReport>();
-
     private _lastPositions: any[] = [];
     private _report : Models.PositionReport = null;
     public get latestReport() : Models.PositionReport {
@@ -522,9 +438,9 @@ export class PositionBroker {
 
     private onPositionUpdate = (rpt : Models.CurrencyPosition) => {
         if (rpt !== null) this._currencies[rpt.currency] = rpt;
-        if (!this._currencies[this._base.pair.base] || !this._currencies[this._base.pair.quote]) return;
-        var basePosition = this.getPosition(this._base.pair.base);
-        var quotePosition = this.getPosition(this._base.pair.quote);
+        if (!this._currencies[this._broker.pair.base] || !this._currencies[this._broker.pair.quote]) return;
+        var basePosition = this.getPosition(this._broker.pair.base);
+        var quotePosition = this.getPosition(this._broker.pair.quote);
         var fv = this._fvEngine.latestFairValue;
         if (typeof basePosition === "undefined" || typeof quotePosition === "undefined" || fv === null) return;
 
@@ -541,39 +457,41 @@ export class PositionBroker {
         const profitQuote = ((quoteValue - this._lastPositions[0].quoteValue) / quoteValue) * 1e+2;
 
         const positionReport = new Models.PositionReport(baseAmount, quoteAmount, basePosition.heldAmount,
-            quotePosition.heldAmount, baseValue, quoteValue, profitBase, profitQuote, this._base.pair, this._base.exchange(), timeNow);
+            quotePosition.heldAmount, baseValue, quoteValue, profitBase, profitQuote, this._broker.pair, this._broker.exchange(), timeNow);
 
-        if (this._report !== null &&
-          Math.abs(positionReport.value - this._report.value) < 2e-6 &&
-          Math.abs(positionReport.quoteValue - this._report.quoteValue) < 2e-2 &&
-          Math.abs(positionReport.baseAmount - this._report.baseAmount) < 2e-6 &&
-          Math.abs(positionReport.quoteAmount - this._report.quoteAmount) < 2e-2 &&
-          Math.abs(positionReport.baseHeldAmount - this._report.baseHeldAmount) < 2e-6 &&
-          Math.abs(positionReport.quoteHeldAmount - this._report.quoteHeldAmount) < 2e-2 &&
-          Math.abs(positionReport.profitBase - this._report.profitBase) < 2e-2 &&
-          Math.abs(positionReport.profitQuote - this._report.profitQuote) < 2e-2
-        ) return;
+        let sameValue = true;
+        if (this._report !== null) {
+          sameValue = Math.abs(positionReport.value - this._report.value) < 2e-6;
+          if(sameValue &&
+            Math.abs(positionReport.quoteValue - this._report.quoteValue) < 2e-2 &&
+            Math.abs(positionReport.baseAmount - this._report.baseAmount) < 2e-6 &&
+            Math.abs(positionReport.quoteAmount - this._report.quoteAmount) < 2e-2 &&
+            Math.abs(positionReport.baseHeldAmount - this._report.baseHeldAmount) < 2e-6 &&
+            Math.abs(positionReport.quoteHeldAmount - this._report.quoteHeldAmount) < 2e-2 &&
+            Math.abs(positionReport.profitBase - this._report.profitBase) < 2e-2 &&
+            Math.abs(positionReport.profitQuote - this._report.profitQuote) < 2e-2
+          ) return;
+        }
 
         this._report = positionReport;
-        this.NewReport.trigger(positionReport);
-        this._positionPublisher.publish(positionReport);
+        if (!sameValue) this._evUp('PositionBroker');
+        this._publisher.publish(Models.Topics.Position, positionReport, true);
     };
 
     private handleOrderUpdate = (o: Models.OrderStatusReport) => {
-        const qs = this._quoter.quotesActive(o.side);
-        if (!qs.length || !this._report) return;
+        if (!this._report) return;
+        var heldAmount = 0;
         var amount = o.side == Models.Side.Ask
           ? this._report.baseAmount + this._report.baseHeldAmount
           : this._report.quoteAmount + this._report.quoteHeldAmount;
-        var heldAmount = 0;
-        qs.forEach((q) => {
-          let held = q.quote.size * (o.side == Models.Side.Bid ? q.quote.price : 1);
+        this._orderBroker.orderCache.allOrders.forEach(x => {
+          if (x.side !== o.side) return;
+          let held = x.quantity * (x.side == Models.Side.Bid ? x.price : 1);
           if (amount>=held) {
             amount -= held;
             heldAmount += held;
           }
         });
-
         this.onPositionUpdate(new Models.CurrencyPosition(
           amount,
           heldAmount,
@@ -581,19 +499,21 @@ export class PositionBroker {
         ));
     };
 
-    constructor(private _timeProvider: Utils.ITimeProvider,
-                private _qlParamRepo: QuotingParameters.QuotingParametersRepository,
-                private _base: ExchangeBroker,
-                private _broker: OrderBroker,
-                private _quoter: Quoter.Quoter,
-                private _fvEngine: FairValue.FairValueEngine,
-                private _posGateway : Interfaces.IPositionGateway,
-                private _positionPublisher : Publish.IPublish<Models.PositionReport>) {
-        this._posGateway.PositionUpdate.on(this.onPositionUpdate);
-        this._broker.OrderUpdate.on(this.handleOrderUpdate);
-        this._fvEngine.FairValueChanged.on(() => this.onPositionUpdate(null));
+    constructor(
+      private _timeProvider: Utils.ITimeProvider,
+      private _qlParamRepo: QuotingParameters.QuotingParametersRepository,
+      private _broker: ExchangeBroker,
+      private _orderBroker: OrderBroker,
+      private _fvEngine: FairValue.FairValueEngine,
+      private _publisher : Publish.Publisher,
+      private _evOn,
+      private _evUp
+    ) {
+        this._evOn('PositionGateway', this.onPositionUpdate);
+        this._evOn('OrderUpdateBroker', this.handleOrderUpdate);
+        this._evOn('FairValue', () => this.onPositionUpdate(null));
 
-        this._positionPublisher.registerSnapshot(() => (this._report === null ? [] : [this._report]));
+        _publisher.registerSnapshot(Models.Topics.Position, () => (this._report === null ? [] : [this._report]));
     }
 }
 
@@ -626,7 +546,6 @@ export class ExchangeBroker {
         return this._baseGateway.minSize;
     }
 
-    ConnectChanged = new Utils.Evt<Models.ConnectivityStatus>();
     private mdConnected = Models.ConnectivityStatus.Disconnected;
     private oeConnected = Models.ConnectivityStatus.Disconnected;
     private _connectStatus = Models.ConnectivityStatus.Disconnected;
@@ -646,10 +565,10 @@ export class ExchangeBroker {
             : Models.ConnectivityStatus.Disconnected;
 
         this._connectStatus = newStatus;
-        this.ConnectChanged.trigger(newStatus);
+        this._evUp('ExchangeConnect');
 
-        // console.info('broker', 'Connection status changed ::', Models.ConnectivityStatus[this._connectStatus], ':: (md:',Models.ConnectivityStatus[this.mdConnected],') (oe:',Models.ConnectivityStatus[this.oeConnected],')');
-        this._connectivityPublisher.publish(this.connectStatus);
+        this.updateConnectivity();
+        this._publisher.publish(Models.Topics.ExchangeConnectivity, this.connectStatus);
     };
 
     public get connectStatus(): Models.ConnectivityStatus {
@@ -658,19 +577,62 @@ export class ExchangeBroker {
 
     constructor(
       private _pair: Models.CurrencyPair,
-      private _mdGateway: Interfaces.IMarketDataGateway,
       private _baseGateway: Interfaces.IExchangeDetailsGateway,
-      private _oeGateway: Interfaces.IOrderEntryGateway,
-      private _connectivityPublisher: Publish.IPublish<Models.ConnectivityStatus>
+      private _publisher: Publish.Publisher,
+      private _evOn,
+      private _evUp,
+      startQuoting: boolean
     ) {
-      this._mdGateway.ConnectChanged.on(s => {
+      this._savedQuotingMode = startQuoting;
+
+      this._evOn('GatewayMarketConnect', s => {
         this.onConnect(Models.GatewayType.MarketData, s);
       });
 
-      this._oeGateway.ConnectChanged.on(s => {
+      this._evOn('GatewayOrderConnect', s => {
         this.onConnect(Models.GatewayType.OrderEntry, s)
       });
 
-      this._connectivityPublisher.registerSnapshot(() => [this.connectStatus]);
+      _publisher.registerSnapshot(Models.Topics.ExchangeConnectivity, () => [this.connectStatus]);
+      _publisher.registerSnapshot(Models.Topics.ActiveState, () => [this._latestState]);
+      _publisher.registerReceiver(Models.Topics.ActiveState, this.handleNewQuotingModeChangeRequest);
+
+      console.info(new Date().toISOString().slice(11, -1), 'broker', 'Exchange details' ,{
+          exchange: Models.Exchange[this.exchange()],
+          pair: this.pair.toString(),
+          minTick: this.minTickIncrement,
+          minSize: this.minSize,
+          makeFee: this.makeFee(),
+          takeFee: this.takeFee(),
+          hasSelfTradePrevention: this.hasSelfTradePrevention,
+      });
     }
+
+  private _savedQuotingMode: boolean = false;
+
+  private _latestState: boolean = false;
+  public get latestState() {
+      return this._latestState;
+  }
+
+  private handleNewQuotingModeChangeRequest = (v: boolean) => {
+    if (v !== this._savedQuotingMode) {
+      this._savedQuotingMode = v;
+      this.updateConnectivity();
+      this._evUp('ExchangeConnect');
+    }
+
+    this._publisher.publish(Models.Topics.ActiveState, this._latestState);
+  };
+
+  private updateConnectivity = () => {
+    var newMode = (this.connectStatus !== Models.ConnectivityStatus.Connected)
+      ? false : this._savedQuotingMode;
+
+    if (newMode !== this._latestState) {
+      this._latestState = newMode;
+      console.log(new Date().toISOString().slice(11, -1), 'active', 'Changed quoting mode to', !!this._latestState);
+      this._publisher.publish(Models.Topics.ActiveState, this._latestState);
+    }
+  };
 }

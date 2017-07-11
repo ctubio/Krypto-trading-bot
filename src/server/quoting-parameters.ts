@@ -1,25 +1,22 @@
 import Models = require("../share/models");
-import Persister = require("./persister");
 import Publish = require("./publish");
-import _ = require("lodash");
-import Utils = require("./utils");
 
 export class QuotingParametersRepository {
-  NewParameters = new Utils.Evt();
-
   private _latest: Models.QuotingParameters;
   public get latest(): Models.QuotingParameters {
     return this._latest;
   }
 
   constructor(
-    private _paramsPersister: Persister.IPersist<Models.QuotingParameters>,
-    private _pub: Publish.IPublish<Models.QuotingParameters>,
-    rec: Publish.IReceive<Models.QuotingParameters>,
-    initParams: Models.QuotingParameters,
+    private _sqlite,
+    private _publisher: Publish.Publisher,
+    private _evUp,
+    initParams: Models.QuotingParameters
   ) {
-    if (_pub) _pub.registerSnapshot(() => [this.latest]);
-    if (rec) rec.registerReceiver(this.updateParameters);
+    if (_publisher) {
+      _publisher.registerSnapshot(Models.Topics.QuotingParametersChange, () => [this.latest]);
+      _publisher.registerReceiver(Models.Topics.QuotingParametersChange, this.updateParameters);
+    }
     this._latest = initParams;
   }
 
@@ -30,10 +27,10 @@ export class QuotingParametersRepository {
         p.widthPercentage = false;
 
       this._latest = p;
-      this._paramsPersister.persist(p)
-      this.NewParameters.trigger();
+      this._sqlite.insert(Models.Topics.QuotingParametersChange, p);
+      this._evUp('QuotingParameters', p);
     }
 
-    this._pub.publish(this._latest);
+    this._publisher.publish(Models.Topics.QuotingParametersChange, this._latest);
   };
 }

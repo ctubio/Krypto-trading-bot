@@ -5,31 +5,33 @@
 [![Software License](https://img.shields.io/badge/license-ISC-111111.svg)](https://raw.githubusercontent.com/ctubio/Krypto-trading-bot/master/LICENSE)
 [![Software License](https://img.shields.io/badge/license-MIT-111111.svg)](https://raw.githubusercontent.com/ctubio/Krypto-trading-bot/master/COPYING)
 
-[`K.js`](https://github.com/ctubio/Krypto-trading-bot) is a very low latency cryptocurrency [market making](https://github.com/ctubio/Krypto-trading-bot/blob/master/MANUAL.md#what-is-market-making) trading bot with a full featured [web client](https://github.com/ctubio/Krypto-trading-bot#web-ui), [backtester](https://github.com/ctubio/Krypto-trading-bot/blob/master/MANUAL.md#how-can-i-test-new-trading-strategies), and supports direct connectivity to [several cryptocoin exchanges](https://github.com/ctubio/Krypto-trading-bot/tree/master/etc#configuration-options). On modern hardware, it can react to market data by placing and canceling orders in under a millisecond.
+[`K.js`](https://github.com/ctubio/Krypto-trading-bot) is a very low latency cryptocurrency [market making](https://github.com/ctubio/Krypto-trading-bot/blob/master/MANUAL.md#what-is-market-making) trading bot with a full featured [web interface](https://github.com/ctubio/Krypto-trading-bot#web-ui) and [backtester](https://github.com/ctubio/Krypto-trading-bot/blob/master/MANUAL.md#how-can-i-test-new-trading-strategies), it directly connects to [several cryptocoin exchanges](https://github.com/ctubio/Krypto-trading-bot/tree/master/etc#configuration-options). On a decent machine, it reacts to market data by placing and canceling orders in under a millisecond.
 
 [![Build Status](https://img.shields.io/travis/ctubio/Krypto-trading-bot/master.svg?label=test%20build)](https://travis-ci.org/ctubio/Krypto-trading-bot)
 [![Coverage Status](https://img.shields.io/coveralls/ctubio/Krypto-trading-bot/master.svg?label=code%20coverage)](https://coveralls.io/r/ctubio/Krypto-trading-bot?branch=master)
-[![Quality Status](https://img.shields.io/codacy/grade/21564745dbb0449ca05912f77d484b0c/master.svg)](https://www.codacy.com/app/ctubio/Krypto-trading-bot)
+[![Quality Status](https://img.shields.io/codacy/grade/d48a59c313504f7988e3df031665f90f/master.svg)](https://www.codacy.com/app/ctubio/Krypto-trading-bot)
 [![Dependency Status](https://img.shields.io/david/ctubio/Krypto-trading-bot.svg)](https://david-dm.org/ctubio/Krypto-trading-bot)
 [![Open Issues](https://img.shields.io/github/issues/ctubio/Krypto-trading-bot.svg)](https://github.com/ctubio/Krypto-trading-bot/issues)
 
-### <img src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f4be.png" align="middle" /> Latest version at https://github.com/ctubio/Krypto-trading-bot <img src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f51e.png" align="middle" />
+### <img src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f4be.png" align="middle" /> Latest version at https://github.com/ctubio/Krypto-trading-bot <img src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f51e.png" align="middle" /> <img src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f4b8.png" align="middle" />
 
 [![Total Downloads](https://img.shields.io/npm/dt/hacktimer.svg)](https://github.com/ctubio/Krypto-trading-bot)
 [![Week Downloads](https://img.shields.io/npm/dw/hacktimer.svg)](https://github.com/ctubio/Krypto-trading-bot)
 [![Month Downloads](https://img.shields.io/npm/dm/hacktimer.svg)](https://github.com/ctubio/Krypto-trading-bot)
 [![Day Downloads](https://img.shields.io/npm/dy/hacktimer.svg)](https://github.com/ctubio/Krypto-trading-bot)
 
-Runs on the latest node.js (v6 or v7 [but not v6.1]). Persistence is achieved using mongodb. Installation via Docker is supported, but manual installation in a dedicated Debian, CentOS or macOS fresh instance is recommended.
+Runs on the latest node.js (v7 or v8). Persistence is achieved using a built-in server-less SQLite C++ interface. Installation via Docker is supported, but manual installation in a dedicated Debian 8, CentOS 7 or macOS 10.12 instance is recommended.
 
 ![Web UI Preview](https://raw.githubusercontent.com/ctubio/Krypto-trading-bot/master/dist/img/web_ui_preview.png)
+
+The web UI is compatible with most web browsers/devices/resolutions, but Firefox or Chrome at 1600px are recommended. Doesn't require configuration of any web server (unless installed behind your own reverse proxy).
 
 ### Compatible Exchanges
 
 ||with Post-Only Orders support|without Post-Only|
 |---|---|---|
-|**without Maker fees**|[Coinbase GDAX](https://www.gdax.com/)<br> &#10239; _REST + WebSocket + FIX_|[OKCoin.com](https://www.okcoin.com/)<br>[OKCoin.cn](https://www.okcoin.cn/)<br> &#10239; _REST + WebSocket_|
-|**with Maker and Taker fees**|[Bitfinex](https://www.bitfinex.com/)<br> &#10239; _REST + WebSocket_<br><br>[Poloniex](https://www.poloniex.com/) (under development)<br> &#10239; _REST + WebSocket_|[HitBTC](https://hitbtc.com/)<br> &#10239; _REST + WebSocket_<br><br>[Korbit](https://www.korbit.co.kr/)<br> &#10239; _REST_|
+|**without Maker fees**|[Coinbase GDAX](https://www.gdax.com/)<br> &#10239; _REST + WebSocket + FIX_||
+|**with Maker and Taker fees**|[Bitfinex](https://www.bitfinex.com/)<br> &#10239; _REST + WebSocket_<br><br>[Poloniex](https://www.poloniex.com/)<br> &#10239; _REST_|[OKCoin.com](https://www.okcoin.com/)<br>[OKCoin.cn](https://www.okcoin.cn/)<br> &#10239; _REST + WebSocket_<br><br>[HitBTC](https://hitbtc.com/)<br> &#10239; _REST + WebSocket_<br><br>[Korbit](https://www.korbit.co.kr/)<br> &#10239; _REST_|
 
 All currency pairs are supported, otherwise please open a [new issue](https://github.com/ctubio/Krypto-trading-bot/issues/new?title=Missing%20currency%20pair) to easily include any missing currency that you would like.
 
@@ -37,11 +39,9 @@ All currency pairs are supported, otherwise please open a [new issue](https://gi
 
 See [dist/Dockerfile](https://github.com/ctubio/Krypto-trading-bot/tree/master/dist#dockerfile) section if you use winy (because the Manual Installation only works on unix-like platforms).
 
-Docker installation method is not heavily tested, please open a [new issue](https://github.com/ctubio/Krypto-trading-bot/issues/new?title=Docker%20installation%20issue) in case is not working for you.
-
 ### Manual Installation
 
-1. Ensure your target machine has installed node v6 or v7 (`nodejs -v`), mongodb and g++ will be installed automatically (to validate if mongodb server is running after install try `mongo --eval "print('OK')"`).
+1. Ensure your target machine has installed node v7 or v8 (see `node -v` or `nodejs -v`), g++ will be installed automatically.
 
 2. Run in any location that you wish (feel free to customize the suggested folder name `K`):
 ```
@@ -58,9 +58,11 @@ See [configuration](https://github.com/ctubio/Krypto-trading-bot/tree/master/etc
 
 Troubleshooting:
 
+ * Do not install or execute the application as root; if you really want to install as root use `npm install --unsafe-perm`.
+
  * Create a temporary [swap file](https://stackoverflow.com/questions/17173972/how-do-you-add-swap-to-an-ec2-instance) (after install you can swapoff) if the installation fails with error: `virtual memory exhausted: Cannot allocate memory`.
 
- * Use `smallfiles=true` in your `/etc/mongodb.conf` if your `/var/lib/mongodb/journal/*` files are too big (see [more info](https://stackoverflow.com/questions/19533019/is-it-safe-to-delete-the-journal-file-of-mongodb)).
+ * Run `rm -rf node_modules && npm install` if the application stops working after `npm run latest` (sometimes outdated dependencies are not deleted).
 
  Optional:
 
@@ -94,9 +96,7 @@ To run multiple instances using a collection of config files:
 
     1. Edit the value of `WebClientListenPort` in the new config file to set a new port, so all applications have a unique port to display the UI.
 
-    2. Edit the value of `MongoDbUrl` in the new config file to set a new database name, so all applications have a unique database to save the data. You dont need to modify the host:port because a single database host can have multiple databases inside.
-
-    3. Edit the values of `BotIdentifier`, `EXCHANGE` and `TradedPair` in the new config file as you alternatively desire.
+    2. Edit the values of `BotIdentifier`, `EXCHANGE` and `TradedPair` in the new config file as you alternatively desire.
 
 2. Run the new instance with `npm start --K.js:config=X.json`, also the commands `npm stop` and `npm restart` allow the parameter `--K.js:config=`, the value is simply the filename of the config file under `etc` folder that you want to run; this value will also be used as the `uid` of the process executed by `forever`.
 
@@ -119,6 +119,18 @@ Once `K.js` is up and running, visit HTTPS port `3000` (or value of `WebClientLi
 If you want to generate your own certificate see [SSL for internal usage](http://www.akadia.com/services/ssh_test_certificate.html).
 
 In case you really want to use plain HTTP, remove the files `server.crt` and `server.key` inside `dist/sslcert` folder.
+
+### Databases
+
+Each currency pair of each exchange will use a different sqlite database file.
+
+All database files are located at `/data/db/K.*.db`, where `*` is the identifier with format `exchange.base_currency.quote_currency`; it is located outside the application path to survive reinstalls and wild `rm -rf path/to/K`.
+
+You can copy any `.db` file to another machine when migrating or as a backup.
+
+If a database file do not exists, the application will create it on boot; otherwise, it will load it and reuse it.
+
+To see the data of each database file you can use https://github.com/sqlitebrowser/sqlitebrowser or similars.
 
 ### Charts
 
@@ -144,7 +156,7 @@ To rebuild the application with your modifications, please run `npm install` or 
 
 To rebuild the C++ shared objects with your modifications, please run `node-gyp rebuild`.
 
-To pipe the output to stdout, execute the application in the foreground with `nodejs K.js`.
+To pipe the output to stdout, execute the application in the foreground with `nodejs K.js` or `node K.js`.
 
 To ignore the output, execute the application in the background with `forever start K.js` or with the alias `npm start`.
 
@@ -153,7 +165,12 @@ To debug the server code with chrome-devtools, attach the node debugger with `no
 Passing a config filename as a parameter after `K.js` is also allowed, like `nodejs K.js X.json`.
 
 ### Unreleased Changelog:
-none
+
+Added built-in C++ WWW Server to replace expressjs and socketio.
+
+Added built-in SQLite C++ interface to replace external mongodb server.
+
+Added Poloniex API.
 
 ### Release 3.0 Changelog:
 

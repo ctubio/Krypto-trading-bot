@@ -2,11 +2,17 @@ sudo: required
 
 dist: trusty
 
+osx_image: xcode7.3
+
+os:
+  - linux
+  - osx
+
 language: node_js
 
 node_js:
-  - 6
   - 7
+  - node
 
 branches:
   only: master

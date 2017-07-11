@@ -42,8 +42,10 @@ class FormViewModel<T> {
 }
 
 class QuotingButtonViewModel extends FormViewModel<boolean> {
-  constructor(sub: Subscribe.ISubscribe<boolean>,
-    fire: Subscribe.IFire<boolean>) {
+  constructor(
+    sub: Subscribe.ISubscribe<boolean>,
+    fire: Subscribe.IFire<boolean>
+  ) {
     super(false, sub, fire, d => !d);
   }
 
@@ -119,9 +121,9 @@ export class DisplayPair {
 
     this.active = new QuotingButtonViewModel(
       subscriberFactory
-        .getSubscriber(zone, Models.Topics.ActiveChange),
+        .getSubscriber(zone, Models.Topics.ActiveState),
       fireFactory
-        .getFire(Models.Topics.ActiveChange)
+        .getFire(Models.Topics.ActiveState)
     );
 
     this.quotingParameters = new DisplayQuotingParameters(
@@ -141,9 +143,9 @@ export class DisplayPair {
       }
       this.connectionMessage = '';
       if (!this.connectedToExchange)
-          this.connectionMessage = "Disconnected from exchange";
+          this.connectionMessage = 'Connecting to exchange..';
       if (!this.connectedToServer)
-          this.connectionMessage = (this.connectionMessage ? '/' : "Disconnected from ")+'server';
+          this.connectionMessage = 'Disconnected from server';
   }
 
   private setExchangeStatus = (cs: Models.ConnectivityStatus) => {

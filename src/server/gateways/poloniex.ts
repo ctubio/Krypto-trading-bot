@@ -5,28 +5,21 @@ import url = require("url");
 import Config = require("../config");
 import NullGateway = require("./nullgw");
 import Models = require("../../share/models");
-import Utils = require("../utils");
 import util = require("util");
 import Interfaces = require("../interfaces");
-import * as Promises from '../promises';
-
-interface OrderAck {
-    result: boolean;
-    order_id: number;
-}
 
 interface SignedMessage {
     command?: string;
     nonce?: number;
     currencyPair?: string;
     orderNumber?: string;
-}
-
-interface Order extends SignedMessage {
-    symbol: string;
-    type: string;
-    price: string;
-    amount: string;
+    rate?: number;
+    amount?: number;
+    fillOrKill?: number;
+    immediateOrCancel?: number;
+    postOnly?: number;
+    start?: number;
+    end?: number;
 }
 
 class PoloniexWebsocket {
@@ -53,22 +46,37 @@ class PoloniexWebsocket {
   };
 
   public connectWS = () => {
-      const ws = new autobahn.Connection({ url: this.config.GetString("PoloniexWebsocketUrl"), realm: "realm1" });
-      ws.onclose = (reason, details) => {
-        this.ConnectChanged.trigger(Models.ConnectivityStatus.Disconnected);
-        console.info(new Date().toISOString().slice(11, -1), 'poloniex', this.symbolProvider.symbol, reason);
-      };
-      ws.onopen = (session: any) => {
-        session.subscribe(this.symbolProvider.symbol, (args, kwargs) => {
-          if (args.length) args.forEach(x => this.onMessage(x));
-        });
-        this.ConnectChanged.trigger(Models.ConnectivityStatus.Connected);
-        console.info(new Date().toISOString().slice(11, -1), 'poloniex', 'Successfully connected to', this.symbolProvider.symbol);
-      };
-      ws.open();
+      // const ws = new autobahn.Connection({ url: this.config.GetString("PoloniexWebsocketUrl"), realm: "realm1" });
+
+      // ws.onclose = (reason, details) => {
+        // this.ConnectChanged.trigger(Models.ConnectivityStatus.Disconnected);
+        // console.info(new Date().toISOString().slice(11, -1), 'poloniex', this.symbolProvider.symbol, reason);
+      // };
+      // ws.onopen = (session: any) => {
+        // session.subscribe(this.symbolProvider.symbol, this.seqQueueMsg);
+        // this.ConnectChanged.trigger(Models.ConnectivityStatus.Connected);
+        // console.info(new Date().toISOString().slice(11, -1), 'poloniex', 'Successfully connected to', this.symbolProvider.symbol);
+      // };
+      // ws.open();
   };
 
-  ConnectChanged = new Utils.Evt<Models.ConnectivityStatus>();
+  public seq = 0;
+  public queue = {};
+  public seqQueueMsg = (args, kwargs) => {
+    if (!args.length) return;
+    if (kwargs.seq < this.seq) console.info(new Date().toISOString().slice(11, -1), 'poloniex', 'obsolete message received');
+    // while (typeof this.queue[this.seq+1] !== 'undefined') {
+      // this.queue[this.seq+1].forEach(x => this.onMessage(x));
+      // delete this.queue[this.seq+1];
+      // this.seq++;
+    // }
+    // if (this.seq && this.seq + 1 < kwargs.seq) this.queue[kwargs.seq] = args;
+    // else {
+      this.seq = kwargs.seq;
+      args.forEach(x => this.onMessage(x));
+    // }
+  };
+
   private _handler: any[] = [];
   constructor(
     private config: Config.ConfigProvider,
@@ -78,11 +86,8 @@ class PoloniexWebsocket {
 }
 
 class PoloniexMarketDataGateway implements Interfaces.IMarketDataGateway {
-  ConnectChanged = new Utils.Evt<Models.ConnectivityStatus>();
-
-  MarketTrade = new Utils.Evt<Models.GatewayMarketTrade>();
   private onTrade = (trade: Models.Timestamped<any>) => {
-    this.MarketTrade.trigger(new Models.GatewayMarketTrade(
+    this._evUp('MarketTradeGateway', new Models.GatewayMarketTrade(
       parseFloat(trade.data.rate),
       parseFloat(trade.data.amount),
       trade.time,
@@ -91,131 +96,141 @@ class PoloniexMarketDataGateway implements Interfaces.IMarketDataGateway {
     ));
   };
 
-  MarketData = new Utils.Evt<Models.Market>();
-
-  private mkt = new Models.Market([], [], null);
+  private mkt: Models.Market = new Models.Market([], [], null);
 
   private onDepth = (depth: Models.Timestamped<any>) => {
     const side = depth.data.type+'s';
     this.mkt[side] = this.mkt[side].filter(a => a.price != parseFloat(depth.data.rate));
-    if (depth.data.amount) this.mkt[side].push(new Models.MarketSide(parseFloat(depth.data.rate), parseFloat(depth.data.amount)));
+    if (typeof depth.data.amount !== 'undefined')
+      this.mkt[side].push(new Models.MarketSide(parseFloat(depth.data.rate), parseFloat(depth.data.amount)));
     this.mkt.bids = this.mkt.bids.sort((a: Models.MarketSide, b: Models.MarketSide) => a.price < b.price ? 1 : (a.price > b.price ? -1 : 0)).slice(0, 27);
     this.mkt.asks = this.mkt.asks.sort((a: Models.MarketSide, b: Models.MarketSide) => a.price > b.price ? 1 : (a.price < b.price ? -1 : 0)).slice(0, 27);
     const _bids = this.mkt.bids.slice(0, 13);
     const _asks = this.mkt.asks.slice(0, 13);
     if (_bids.length && _asks.length)
-      this.MarketData.trigger(new Models.Market(_bids, _asks, depth.time));
+      this._evUp('MarketDataGateway', new Models.Market(_bids, _asks, depth.time));
+  };
+
+  private onDepthSnapshot = (mkt: Models.Timestamped<any>) => {
+    this.mkt = mkt.data;
+    const _bids = this.mkt.bids.slice(0, 13);
+    const _asks = this.mkt.asks.slice(0, 13);
+    if (_bids.length && _asks.length)
+      this._evUp('MarketDataGateway', new Models.Market(_bids, _asks, mkt.time));
   };
 
   constructor(
-    socket: PoloniexWebsocket
+    private _evUp,
+    socket: PoloniexWebsocket,
+    http: PoloniexHttp,
+    symbol: PoloniexSymbolProvider,
   ) {
-    socket.setHandler('newTrade', this.onTrade);
-    socket.setHandler('orderBookModify', this.onDepth);
-    socket.setHandler('orderBookRemove', this.onDepth);
-    socket.ConnectChanged.on(cs => this.ConnectChanged.trigger(cs));
+    // socket.setHandler('newTrade', this.onTrade);
+    // socket.setHandler('orderBookModify', this.onDepth);
+    // socket.setHandler('orderBookRemove', this.onDepth);
+    socket.setHandler('orderBookSnapshot', this.onDepthSnapshot);
+    // socket.ConnectChanged.on(cs => this.ConnectChanged.trigger(cs));
+    setTimeout(()=>this._evUp('GatewayMarketConnect', Models.ConnectivityStatus.Connected), 10);
+    setInterval(async ()=>{
+      await new Promise<number>((resolve, reject) => {
+        http.get('returnOrderBook&depth=13&currencyPair='+symbol.symbol).then(msg => {
+          if (!(<any>msg.data).seq) return reject(0);
+          var kwargs = parseFloat((<any>msg.data).seq);
+          const _mkt = new Models.Market([], [], msg.time);
+          (<any>msg.data).bids.forEach(x => _mkt.bids.push(new Models.MarketSide(parseFloat(x[0]), parseFloat(x[1]))));
+          (<any>msg.data).asks.forEach(x => _mkt.asks.push(new Models.MarketSide(parseFloat(x[0]), parseFloat(x[1]))));
+          _mkt.bids = _mkt.bids.sort((a: Models.MarketSide, b: Models.MarketSide) => a.price < b.price ? 1 : (a.price > b.price ? -1 : 0)).slice(0, 27);
+          _mkt.asks = _mkt.asks.sort((a: Models.MarketSide, b: Models.MarketSide) => a.price > b.price ? 1 : (a.price < b.price ? -1 : 0)).slice(0, 27);
+          var args = [{type:'orderBookSnapshot',data:_mkt}];
+          socket.seqQueueMsg(args, kwargs);
+          resolve(1);
+        });
+      });
+    }, 2222);
   }
 }
 
 class PoloniexOrderEntryGateway implements Interfaces.IOrderEntryGateway {
-  OrderUpdate = new Utils.Evt<Models.OrderStatusUpdate>();
-  ConnectChanged = new Utils.Evt<Models.ConnectivityStatus>();
-
   generateClientOrderId = (): string => new Date().valueOf().toString().substr(-11);
 
   supportsCancelAllOpenOrders = () : boolean => { return false; };
   cancelAllOpenOrders = () : Promise<number> => {
-    var d = Promises.defer<number>();
-    this._http.post("returnOpenOrders", {currencyPair: this._symbolProvider.symbol }).then(msg => {
-      if (!msg.data || !(<any>msg.data).length) { d.resolve(0); return; }
-      (<any>msg.data).forEach((o) => {
-        this._http.post("cancelOrder", {orderNumber: o.orderNumber }).then(msg => {
-          if (typeof (<any>msg.data).success == "undefined") return;
+    return new Promise<number>((resolve, reject) => {
+      this._http.post("returnOpenOrders", {currencyPair: this._symbolProvider.symbol }).then(msg => {
+        if (!msg.data || !(<any>msg.data).length) { resolve(0); return; }
+        (<any>msg.data).forEach(async (o) => {
+          await new Promise<number>(async (_resolve, _reject) => {
+            this._http.post("cancelOrder", {orderNumber: o.orderNumber }).then(msg => {
+              if (typeof (<any>msg.data).success == "undefined") return _reject(0);
+              if ((<any>msg.data).success=='1') {
+                this._evUp('OrderUpdateGateway', <Models.OrderStatusUpdate>{
+                  exchangeId: o.orderNumber,
+                  leavesQuantity: 0,
+                  time: msg.time,
+                  orderStatus: Models.OrderStatus.Cancelled
+                });
+              }
+              _resolve(1);
+            });
+          });
+        });
+        resolve((<any>msg.data).length);
+      });
+    });
+  };
+
+  public cancelsByClientOrderId = false;
+  sendOrder = (order: Models.OrderStatusReport) => {
+    (async ()=>{
+      await new Promise<number>((resolve, reject) => {
+        this._http.post(order.side === Models.Side.Bid ? 'buy' : 'sell', {
+          currencyPair: this._symbolProvider.symbol,
+          rate: order.price,
+          amount: order.quantity,
+          fillOrKill: order.timeInForce === Models.TimeInForce.FOK ? 1 : 0,
+          immediateOrCancel: order.timeInForce === Models.TimeInForce.IOC ? 1 : 0,
+          postOnly: order.preferPostOnly ? 1 : 0
+        }).then(msg => {
+          if (typeof (<any>msg.data).orderNumber !== 'undefined')
+            this._evUp('OrderUpdateGateway', <Models.OrderStatusUpdate>{
+              exchangeId: (<any>msg.data).orderNumber,
+              orderId: order.orderId,
+              leavesQuantity: order.quantity,
+              time: msg.time,
+              orderStatus: Models.OrderStatus.Working,
+              computationalLatency: new Date().valueOf() - order.time.valueOf()
+            });
+          else
+            this._evUp('OrderUpdateGateway', <Models.OrderStatusUpdate>{
+              orderId: order.orderId,
+              leavesQuantity: 0,
+              time: msg.time,
+              orderStatus: Models.OrderStatus.Cancelled
+            });
+          resolve(1);
+        });
+      });
+    })();
+  };
+
+  cancelOrder = (cancel: Models.OrderStatusReport) => {
+    (async ()=>{
+      await new Promise<number>((resolve, reject) => {
+        this._http.post("cancelOrder", {orderNumber: cancel.exchangeId }).then(msg => {
+          if (typeof (<any>msg.data).success == "undefined") return reject(0);
           if ((<any>msg.data).success=='1') {
-            this.OrderUpdate.trigger(<Models.OrderStatusUpdate>{
-              exchangeId: o.orderNumber,
+            this._evUp('OrderUpdateGateway', <Models.OrderStatusUpdate>{
+              exchangeId: cancel.exchangeId,
+              orderId: cancel.orderId,
               leavesQuantity: 0,
               time: msg.time,
               orderStatus: Models.OrderStatus.Cancelled
             });
           }
+          resolve(1);
         });
       });
-      d.resolve((<any>msg.data).length);
-    });
-    return d.promise;
-  };
-
-  public cancelsByClientOrderId = false;
-
-  private static GetOrderType(side: Models.Side, type: Models.OrderType) : string {
-      if (side === Models.Side.Bid) {
-          if (type === Models.OrderType.Limit) return "buy";
-          if (type === Models.OrderType.Market) return "buy_market";
-      }
-      if (side === Models.Side.Ask) {
-          if (type === Models.OrderType.Limit) return "sell";
-          if (type === Models.OrderType.Market) return "sell_market";
-      }
-      throw new Error("unable to convert " + Models.Side[side] + " and " + Models.OrderType[type]);
-  }
-
-  // let's really hope there's no race conditions on their end -- we're assuming here that orders sent first
-  // will be acked first, so we can match up orders and their acks
-  private _ordersWaitingForAckQueue = [];
-
-  sendOrder = (order : Models.OrderStatusReport) => {
-      // var o : Order = {
-          // symbol: this._symbolProvider.symbol,
-          // type: PoloniexOrderEntryGateway.GetOrderType(order.side, order.type),
-          // price: order.price.toString(),
-          // amount: order.quantity.toString()};
-
-      // this._ordersWaitingForAckQueue.push([order.orderId, order.quantity]);
-
-      // this._socket.send<OrderAck>("ok_spot" + this._symbolProvider.symbol + "_trade", this._signer.signMessage(o), () => {
-          // this.OrderUpdate.trigger(<Models.OrderStatusUpdate>{
-              // orderId: order.orderId,
-              // computationalLatency: new Date().valueOf() - order.time.valueOf()
-          // });
-      // });
-  };
-
-  private onOrderAck = (ts: Models.Timestamped<OrderAck>) => {
-      // var order = this._ordersWaitingForAckQueue.shift();
-
-      // var orderId = order[0];
-      // if (typeof orderId === "undefined") {
-          // console.error(new Date().toISOString().slice(11, -1), 'poloniex', 'got an order ack when there was no order queued!', util.format(ts.data));
-          // return;
-      // }
-
-      // var osr : Models.OrderStatusUpdate = { orderId: orderId, time: ts.time };
-
-      // if (typeof ts.data !== "undefined" && ts.data.result) {
-          // osr.exchangeId = ts.data.order_id.toString();
-          // osr.orderStatus = Models.OrderStatus.Working;
-          // osr.leavesQuantity = order[1];
-      // }
-      // else {
-          // osr.orderStatus = Models.OrderStatus.Rejected;
-      // }
-
-      // this.OrderUpdate.trigger(osr);
-  };
-
-  cancelOrder = (cancel : Models.OrderStatusReport) => {
-    this._http.post("cancelOrder", {orderNumber: cancel.exchangeId }).then(msg => {
-      if (typeof (<any>msg.data).success == "undefined") return;
-      if ((<any>msg.data).success=='1') {
-        this.OrderUpdate.trigger(<Models.OrderStatusUpdate>{
-          exchangeId: cancel.exchangeId,
-          leavesQuantity: 0,
-          time: msg.time,
-          orderStatus: Models.OrderStatus.Cancelled
-        });
-      }
-    });
+    })();
   };
 
   replaceOrder = (replace : Models.OrderStatusReport) => {
@@ -224,8 +239,8 @@ class PoloniexOrderEntryGateway implements Interfaces.IOrderEntryGateway {
   };
 
   private onTrade = (trade: Models.Timestamped<any>) => {
-    this.OrderUpdate.trigger(<Models.OrderStatusUpdate>{
-      exchangeId: trade.data.tardeID,
+    this._evUp('OrderUpdateGateway', <Models.OrderStatusUpdate>{
+      exchangeId: trade.data.orderNumber,
       orderStatus: Models.OrderStatus.Complete,
       time: trade.time,
       side: trade.data.type === "sell" ? Models.Side.Ask : Models.Side.Bid,
@@ -235,13 +250,31 @@ class PoloniexOrderEntryGateway implements Interfaces.IOrderEntryGateway {
     });
   };
 
+  private _startTrade: number = Math.floor(new Date().getTime() / 1000);
   constructor(
+    private _evUp,
     private _http: PoloniexHttp,
     private _symbolProvider: PoloniexSymbolProvider,
     socket: PoloniexWebsocket
   ) {
-    socket.setHandler('newTrade', this.onTrade);
-    socket.ConnectChanged.on(cs => this.ConnectChanged.trigger(cs));
+    // socket.setHandler('newTrade', this.onTrade);
+    // socket.ConnectChanged.on(cs => this.ConnectChanged.trigger(cs));
+    setTimeout(()=>this._evUp('GatewayOrderConnect', Models.ConnectivityStatus.Connected), 10);
+    setInterval(async ()=> {
+      var endTrade = Math.floor(new Date().getTime() / 1000);
+      var startTrade = this._startTrade;
+      this._startTrade = endTrade + 1;
+      await new Promise<number>((resolve, reject) => {
+        this._http.post('returnTradeHistory', {
+          currencyPair: this._symbolProvider.symbol,
+          start: startTrade,
+          end: endTrade
+        }).then(msg => {
+          if (!(<any>msg.data).length) return;
+          (<any>msg.data).forEach(x => this.onTrade(new Models.Timestamped(x, new Date())));
+        });
+      });
+    }, 3333);
   }
 }
 
@@ -288,54 +321,55 @@ class PoloniexMessageSigner {
 
 class PoloniexHttp {
   private _freq: number = 0;
-  post = <T>(actionUrl: string, msg : SignedMessage) : Promise<Models.Timestamped<T>> => {
+  post = <T>(actionUrl: string, msg: SignedMessage): Promise<Models.Timestamped<T>> => {
     while (this._freq+125>Date.now()) {}
     this._freq = Date.now();
-    var d = Promises.defer<Models.Timestamped<T>>();
-
-    request(this._signer.signMessage(this._baseUrl, actionUrl, msg), (err, resp, body) => {
-      if (err) d.reject(err);
-      else {
-        try {
-          var t = new Date();
-          var data = JSON.parse(body);
-          if (typeof data.error !== 'undefined')
-            console.error(new Date().toISOString().slice(11, -1), 'poloniex', 'Error', actionUrl, data.error);
-          else d.resolve(new Models.Timestamped(data, t));
+    return (async ()=> await new Promise<Models.Timestamped<T>>((resolve, reject) => {
+      request(this._signer.signMessage(this._baseUrl, actionUrl, msg), (err, resp, body) => {
+        if (err) reject(err);
+        else {
+          try {
+            var t = new Date();
+            var data = JSON.parse(body);
+            if (typeof data.error !== 'undefined') {
+              if (data.error.indexOf('Nonce must be greater than')>-1) {
+                resolve(this.post(actionUrl, msg));
+              } else console.error(new Date().toISOString().slice(11, -1), 'poloniex', 'Error', actionUrl, data.error);
+            }
+            else resolve(new Models.Timestamped(data, t));
+          }
+          catch (e) {
+            console.error(new Date().toISOString().slice(11, -1), 'poloniex', err, 'url:', actionUrl, 'err:', err, 'body:', body);
+            reject(e);
+          }
         }
-        catch (e) {
-          console.error(new Date().toISOString().slice(11, -1), 'poloniex', err, 'url:', actionUrl, 'err:', err, 'body:', body);
-          d.reject(e);
-        }
-      }
-    });
-
-    return d.promise;
+      });
+    }))();
   };
 
   get = <T>(actionUrl: string) : Promise<Models.Timestamped<T>> => {
-    var d = Promises.defer<Models.Timestamped<T>>();
-
-    request({
-      url: url.resolve(this._baseUrl, 'public?command=return'+actionUrl),
-      headers: {},
-      method: "GET"
-    }, (err, resp, body) => {
-      if (err) d.reject(err);
-      else {
-        try {
-          var t = new Date();
-          var data = JSON.parse(body);
-          d.resolve(new Models.Timestamped(data, t));
+    while (this._freq+125>Date.now()) {}
+    this._freq = Date.now();
+    return (async ()=> await new Promise<Models.Timestamped<T>>((resolve, reject) => {
+      request({
+        url: url.resolve(this._baseUrl, 'public?command='+actionUrl),
+        headers: {},
+        method: "GET"
+      }, (err, resp, body) => {
+        if (err) reject(err);
+        else {
+          try {
+            var t = new Date();
+            var data = JSON.parse(body);
+            resolve(new Models.Timestamped(data, t));
+          }
+          catch (e) {
+            console.error(new Date().toISOString().slice(11, -1), 'poloniex', err, 'url:', actionUrl, 'err:', err, 'body:', body);
+            reject(e);
+          }
         }
-        catch (e) {
-          console.error(new Date().toISOString().slice(11, -1), 'poloniex', err, 'url:', actionUrl, 'err:', err, 'body:', body);
-          d.reject(e);
-        }
-      }
-    });
-
-    return d.promise;
+      });
+    }))();
   };
 
   private _baseUrl : string;
@@ -345,20 +379,25 @@ class PoloniexHttp {
 }
 
 class PoloniexPositionGateway implements Interfaces.IPositionGateway {
-  PositionUpdate = new Utils.Evt<Models.CurrencyPosition>();
-
-  private trigger = () => {
-    this._http.post("returnCompleteBalances", {}).then(msg => {
-      const symbols: string[] = this._symbolProvider.symbol.split('_');
-      for (var i = symbols.length;i--;) {
-        if (!(<any>msg.data) || !(<any>msg.data)[symbols[i]])
-          console.error(new Date().toISOString().slice(11, -1), 'poloniex', 'Missing symbol', symbols[i]);
-        else this.PositionUpdate.trigger(new Models.CurrencyPosition(parseFloat((<any>msg.data)[symbols[i]].available), parseFloat((<any>msg.data)[symbols[i]].onOrders), Models.toCurrency(symbols[i])));
-      }
+  private trigger = async () => {
+    await new Promise<number>((resolve, reject) => {
+      this._http.post("returnCompleteBalances", {}).then(msg => {
+        const symbols: string[] = this._symbolProvider.symbol.split('_');
+        for (var i = symbols.length;i--;) {
+          if (!(<any>msg.data) || !(<any>msg.data)[symbols[i]])
+            console.error(new Date().toISOString().slice(11, -1), 'poloniex', 'Missing symbol', symbols[i]);
+          else this._evUp('PositionGateway', new Models.CurrencyPosition(parseFloat((<any>msg.data)[symbols[i]].available), parseFloat((<any>msg.data)[symbols[i]].onOrders), Models.toCurrency(symbols[i])));
+          resolve(1);
+        }
+      });
     });
   };
 
-  constructor(private _http : PoloniexHttp, private _symbolProvider: PoloniexSymbolProvider) {
+  constructor(
+    private _evUp,
+    private _http: PoloniexHttp,
+    private _symbolProvider: PoloniexSymbolProvider
+  ) {
     setInterval(this.trigger, 15000);
     setTimeout(this.trigger, 10);
   }
@@ -401,28 +440,29 @@ class Poloniex extends Interfaces.CombinedGateway {
     config: Config.ConfigProvider,
     symbol: PoloniexSymbolProvider,
     http: PoloniexHttp,
-    minTick: number
+    minTick: number,
+    _evUp
   ) {
     const socket = new PoloniexWebsocket(config, symbol);
     super(
-      new PoloniexMarketDataGateway(socket),
+      new PoloniexMarketDataGateway(_evUp, socket, http, symbol),
       config.GetString("PoloniexOrderDestination") == "Poloniex"
-        ? <Interfaces.IOrderEntryGateway>new PoloniexOrderEntryGateway(http, symbol, socket)
-        : new NullGateway.NullOrderGateway(),
-      new PoloniexPositionGateway(http, symbol),
+        ? <Interfaces.IOrderEntryGateway>new PoloniexOrderEntryGateway(_evUp, http, symbol, socket)
+        : new NullGateway.NullOrderGateway(_evUp),
+      new PoloniexPositionGateway(_evUp, http, symbol),
       new PoloniexBaseGateway(minTick, 0.01)
     );
     socket.connectWS();
   }
 }
 
-export async function createPoloniex(config: Config.ConfigProvider, pair: Models.CurrencyPair): Promise<Interfaces.CombinedGateway> {
-  var symbol = new PoloniexSymbolProvider(pair);
-  var signer = new PoloniexMessageSigner(config);
-  var http = new PoloniexHttp(config, signer);
+export async function createPoloniex(config: Config.ConfigProvider, pair: Models.CurrencyPair, _evOn, _evUp): Promise<Interfaces.CombinedGateway> {
+  const symbol = new PoloniexSymbolProvider(pair);
+  const signer = new PoloniexMessageSigner(config);
+  const http = new PoloniexHttp(config, signer);
 
   const minTick = await new Promise<number>((resolve, reject) => {
-    http.get('Ticker').then(msg => {
+    http.get('returnTicker').then(msg => {
       if (!(<any>msg.data)[symbol.symbol]) return reject('Unable to get Poloniex Ticker for symbol '+symbol.symbol);
       console.warn(new Date().toISOString().slice(11, -1), 'poloniex', 'client IP allowed');
       const precisePrice = parseFloat((<any>msg.data)[symbol.symbol].last).toPrecision(6).toString();
@@ -430,5 +470,5 @@ export async function createPoloniex(config: Config.ConfigProvider, pair: Models
     });
   });
 
-  return new Poloniex(config, symbol, http, minTick);
+  return new Poloniex(config, symbol, http, minTick, _evUp,);
 }

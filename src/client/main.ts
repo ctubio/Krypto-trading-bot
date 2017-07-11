@@ -65,8 +65,7 @@ class DisplayOrder {
 
   public submit = () => {
     if (!this.side || !this.price || !this.quantity || !this.timeInForce || !this.orderType) return;
-    var msg = new Models.OrderRequestFromUI(this.side, this.price, this.quantity, this.timeInForce, this.orderType);
-    this._fire.fire(msg);
+    this._fire.fire(new Models.OrderRequestFromUI(this.side, this.price, this.quantity, this.timeInForce, this.orderType));
   };
 }
 
@@ -299,6 +298,7 @@ class DisplayOrder {
                                             <th>stdev</th>
                                             <th *ngIf="pair.quotingParameters.display.quotingStdevProtection">periodsˢᵗᵈᶜᵛ</th>
                                             <th *ngIf="pair.quotingParameters.display.quotingStdevProtection">factor</th>
+                                            <th *ngIf="pair.quotingParameters.display.quotingStdevProtection">BB?</th>
                                             <th>cxl?</th>
                                             <th>profit</th>
                                             <th>Kmemory</th>
@@ -365,6 +365,10 @@ class DisplayOrder {
                                                    type="number" step="0.1" min="0.1"
                                                    onClick="this.select()"
                                                    [(ngModel)]="pair.quotingParameters.display.quotingStdevProtectionFactor">
+                                            </td>
+                                            <td style="border-bottom: 3px solid #AF451E;" *ngIf="pair.quotingParameters.display.quotingStdevProtection">
+                                                <input type="checkbox"
+                                                   [(ngModel)]="pair.quotingParameters.display.quotingStdevBollingerBands">
                                             </td>
                                             <td style="border-bottom: 3px solid #A0A0A0;">
                                                 <input type="checkbox"
@@ -530,7 +534,7 @@ class DisplayOrder {
     </div>
     <address class="text-center">
       <small>
-        <a href="/view/README.md" target="_blank">README</a> - <a href="/view/MANUAL.md" target="_blank">MANUAL</a> - <a href="{{ homepage }}" target="_blank">SOURCE</a> - <a href="#" (click)="changeTheme()">changeTheme(<span [hidden]="!system_theme">LIGHT</span><span [hidden]="system_theme">DARK</span>)</a> - <span title="Server used RAM" style="margin-top: 6px;display: inline-block;">{{ server_memory }}</span> - <span title="Client used RAM" style="margin-top: 6px;display: inline-block;">{{ client_memory }}</span> - <span title="Database Size" style="margin-top: 6px;display: inline-block;">{{ db_size }}</span> - <span title="Pings in memory" style="margin-top: 6px;display: inline-block;">{{ tradesLength }}</span> - <a href="#" (click)="openMatryoshka()">MATRYOSHKA</a> - <a href="{{ homepage }}/issues/new?title=%5Btopic%5D%20short%20and%20sweet%20description&body=description%0Aplease,%20consider%20to%20add%20all%20possible%20details%20%28if%20any%29%20about%20your%20new%20feature%20request%20or%20bug%20report%0A%0A%2D%2D%2D%0A%60%60%60%0Aapp%20exchange%3A%20{{ exchange_name }}/{{ pair_name.join('/') }}%0Aapp%20version%3A%20undisclosed%0A%60%60%60%0A![300px-spock_vulcan-salute3](https://cloud.githubusercontent.com/assets/1634027/22077151/4110e73e-ddb3-11e6-9d84-358e9f133d34.png)" target="_blank">CREATE ISSUE</a> - <a title="irc://irc.domirc.net:6667/##tradingBot" href="irc://irc.domirc.net:6667/##tradingBot">IRC</a>
+        <a href="{{ homepage }}/blob/master/README.md" target="_blank">README</a> - <a href="{{ homepage }}/blob/master/MANUAL.md" target="_blank">MANUAL</a> - <a href="{{ homepage }}" target="_blank">SOURCE</a> - <a href="#" (click)="changeTheme()">changeTheme(<span [hidden]="!system_theme">LIGHT</span><span [hidden]="system_theme">DARK</span>)</a> - <span title="Server used RAM" style="margin-top: 6px;display: inline-block;">{{ server_memory }}</span> - <span title="Client used RAM" style="margin-top: 6px;display: inline-block;">{{ client_memory }}</span> - <span title="Database Size" style="margin-top: 6px;display: inline-block;">{{ db_size }}</span> - <span title="Pings in memory" style="margin-top: 6px;display: inline-block;">{{ tradesLength }}</span> - <a href="#" (click)="openMatryoshka()">MATRYOSHKA</a> - <a href="{{ homepage }}/issues/new?title=%5Btopic%5D%20short%20and%20sweet%20description&body=description%0Aplease,%20consider%20to%20add%20all%20possible%20details%20%28if%20any%29%20about%20your%20new%20feature%20request%20or%20bug%20report%0A%0A%2D%2D%2D%0A%60%60%60%0Aapp%20exchange%3A%20{{ exchange_name }}/{{ pair_name.join('/') }}%0Aapp%20version%3A%20undisclosed%0A%60%60%60%0A![300px-spock_vulcan-salute3](https://cloud.githubusercontent.com/assets/1634027/22077151/4110e73e-ddb3-11e6-9d84-358e9f133d34.png)" target="_blank">CREATE ISSUE</a> - <a title="irc://irc.domirc.net:6667/##tradingBot" href="irc://irc.domirc.net:6667/##tradingBot">IRC</a>
       </small>
     </address>
     <iframe id="matryoshka" style="margin:0px;padding:0px;border:0px;width:100%;height:0px;" src="about:blank"></iframe>

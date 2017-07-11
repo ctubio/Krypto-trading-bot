@@ -1,12 +1,41 @@
-#include <nan.h>
-#include "round.h"
-#include "stdev.h"
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <cstring>
+#include <chrono>
+#include <math.h>
+#include <algorithm>
+#include <vector>
+#include <map>
+
+#include <node.h>
+#include <node_buffer.h>
+#include <node_object_wrap.h>
+
+#include <sqlite3.h>
+
+#include <openssl/ssl.h>
+#include <openssl/bio.h>
+#include <uv.h>
+#include <uWS.h>
+
+using namespace std;
+using namespace v8;
+
+#include "_b64.h"
+
+#include "ev.h"
+#include "sd.h"
+#include "db.h"
+#include "ui.h"
 
 namespace K {
-  NAN_MODULE_INIT(InitAll) {
-    Round::Init(target);
-    Stdev::Init(target);
+  void main(Local<Object> exports) {
+    EV::main(exports);
+    SD::main(exports);
+    DB::main(exports);
+    UI::main(exports);
   }
-
-  NODE_MODULE(K, InitAll)
 }
+
+NODE_MODULE(K, K::main)

@@ -4,8 +4,8 @@ import Broker = require("./broker");
 import Publish = require("./publish");
 import moment = require('moment');
 import FairValue = require("./fair-value");
-import Persister = require("./persister");
 import QuotingParameters = require("./quoting-parameters");
+import PositionManagement = require("./position-management");
 
 interface ITrade {
     price: number;
@@ -14,8 +14,6 @@ interface ITrade {
 }
 
 export class SafetyCalculator {
-    NewValue = new Utils.Evt();
-
     private _latest: Models.TradeSafety = null;
     public get latest() { return this._latest; }
     public set latest(val: Models.TradeSafety) {
@@ -23,31 +21,35 @@ export class SafetyCalculator {
           || Math.abs(val.buyPing - this._latest.buyPing) >= 1e-2
           || Math.abs(val.sellPong - this._latest.sellPong) >= 1e-2) {
             this._latest = val;
-            this.NewValue.trigger(this.latest);
-            this._publisher.publish(this.latest);
+            this._evUp('Safety');
+            this._publisher.publish(Models.Topics.TradeSafetyValue, this.latest, true);
         }
     }
 
     private _buys: ITrade[] = [];
     private _sells: ITrade[] = [];
-    public latestTargetPosition: Models.TargetBasePositionValue = null;
+
+    public targetPosition: PositionManagement.TargetBasePositionManager;
 
     constructor(
-        private _timeProvider: Utils.ITimeProvider,
-        private _fvEngine: FairValue.FairValueEngine,
-        private _qlParams: QuotingParameters.QuotingParametersRepository,
-        private _positionBroker: Broker.PositionBroker,
-        private _broker: Broker.OrderBroker,
-        private _publisher: Publish.IPublish<Models.TradeSafety>) {
-        _publisher.registerSnapshot(() => [this.latest]);
-        _qlParams.NewParameters.on(this.computeQtyLimit);
-        _broker.Trade.on(this.onTrade);
+      private _timeProvider: Utils.ITimeProvider,
+      private _fvEngine: FairValue.FairValueEngine,
+      private _qpRepo: QuotingParameters.QuotingParametersRepository,
+      private _positionBroker: Broker.PositionBroker,
+      private _orderBroker: Broker.OrderBroker,
+      private _publisher: Publish.Publisher,
+      private _evOn,
+      private _evUp
+    ) {
+      _publisher.registerSnapshot(Models.Topics.TradeSafetyValue, () => [this.latest]);
+      this._evOn('OrderTradeBroker', this.onTrade);
 
-        _timeProvider.setInterval(this.computeQtyLimit, moment.duration(1, "seconds"));
+      this._evOn('QuotingParameters', this.computeQtyLimit);
+      _timeProvider.setInterval(this.computeQtyLimit, moment.duration(1, "seconds"));
     }
 
     private onTrade = (ut: Models.Trade) => {
-        if (this.isOlderThan(ut.time, this._qlParams.latest)) return;
+        if (this.isOlderThan(ut.time)) return;
 
         this[ut.side === Models.Side.Ask ? '_sells' : '_buys'].push(<ITrade>{
           price: ut.price,
@@ -58,14 +60,14 @@ export class SafetyCalculator {
         this.computeQtyLimit();
     };
 
-    private isOlderThan(time: Date, settings: Models.QuotingParameters) {
-        return Math.abs(this._timeProvider.utcNow().valueOf() - time.valueOf()) > settings.tradeRateSeconds * 1000;
+    private isOlderThan(time: Date) {
+        return Math.abs(this._timeProvider.utcNow().valueOf() - time.valueOf()) > this._qpRepo.latest.tradeRateSeconds * 1000;
     }
 
     private computeQtyLimit = () => {
         var fv = this._fvEngine.latestFairValue;
-        if (!fv) return;
-        const settings = this._qlParams.latest;
+        if (!fv || !this.targetPosition.latestTargetPosition || !this._positionBroker.latestReport) return;
+        const settings = this._qpRepo.latest;
         const latestPosition = this._positionBroker.latestReport;
         let buySize: number  = (settings.percentageValues && latestPosition != null)
             ? settings.buySizePercentage * latestPosition.value / 100
@@ -73,20 +75,18 @@ export class SafetyCalculator {
         let sellSize: number = (settings.percentageValues && latestPosition != null)
               ? settings.sellSizePercentage * latestPosition.value / 100
               : settings.sellSize;
-        const tbp = this.latestTargetPosition;
-        if (tbp !== null) {
-          const targetBasePosition = tbp.data;
-          const totalBasePosition = latestPosition.baseAmount + latestPosition.baseHeldAmount;
-          if (settings.aggressivePositionRebalancing != Models.APR.Off && settings.buySizeMax) buySize = Math.max(buySize, targetBasePosition - totalBasePosition);
-          if (settings.aggressivePositionRebalancing != Models.APR.Off && settings.sellSizeMax) sellSize = Math.max(sellSize, totalBasePosition - targetBasePosition);
-        }
+        const targetBasePosition = this.targetPosition.latestTargetPosition.data;
+        const totalBasePosition = latestPosition.baseAmount + latestPosition.baseHeldAmount;
+        if (settings.aggressivePositionRebalancing != Models.APR.Off && settings.buySizeMax) buySize = Math.max(buySize, targetBasePosition - totalBasePosition);
+        if (settings.aggressivePositionRebalancing != Models.APR.Off && settings.sellSizeMax) sellSize = Math.max(sellSize, totalBasePosition - targetBasePosition);
+
         var buyPing = 0;
         var sellPong = 0;
         var buyPq = 0;
         var sellPq = 0;
         var _buyPq = 0;
         var _sellPq = 0;
-        var trades = this._broker._trades;
+        var trades = this._orderBroker.tradesMemory;
         var widthPong = (settings.widthPercentage)
             ? settings.widthPongPercentage * fv.price / 100
             : settings.widthPong;
@@ -136,9 +136,9 @@ export class SafetyCalculator {
         if (buyPq) buyPing /= buyPq;
         if (sellPq) sellPong /= sellPq;
 
-        this._buys = this._buys.filter(o => !this.isOlderThan(o.time, settings))
+        this._buys = this._buys.filter(o => !this.isOlderThan(o.time))
           .sort(function(a,b){return a.price>b.price?-1:(a.price<b.price?1:0)});
-        this._sells = this._sells.filter(o => !this.isOlderThan(o.time, settings))
+        this._sells = this._sells.filter(o => !this.isOlderThan(o.time))
           .sort(function(a,b){return a.price>b.price?1:(a.price<b.price?-1:0)});
 
         // don't count good trades against safety
@@ -161,14 +161,10 @@ export class SafetyCalculator {
             }
         }
 
-        var computeSafety = (t: ITrade[]) => t.reduce((sum, t) => sum + t.quantity, 0) / (buySize + sellSize / 2);
-        var computeSafetyBuy = (t: ITrade[]) => t.reduce((sum, t) => sum + t.quantity, 0) / buySize;
-        var computeSafetySell = (t: ITrade[]) => t.reduce((sum, t) => sum + t.quantity, 0) / sellSize;
-
         this.latest = new Models.TradeSafety(
-          computeSafetyBuy(this._buys),
-          computeSafetySell(this._sells),
-          computeSafety(this._buys.concat(this._sells)),
+          ((t: ITrade[]) => t.reduce((sum, t) => sum + t.quantity, 0) / buySize)(this._buys),
+          ((t: ITrade[]) => t.reduce((sum, t) => sum + t.quantity, 0) / sellSize)(this._sells),
+          ((t: ITrade[]) => t.reduce((sum, t) => sum + t.quantity, 0) / (buySize + sellSize / 2))(this._buys.concat(this._sells)),
           buyPing,
           sellPong,
           this._timeProvider.utcNow()

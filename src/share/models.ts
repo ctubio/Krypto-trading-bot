@@ -13,17 +13,15 @@ export class Timestamped<T> implements ITimestamped {
 }
 
 export var Prefixes = {
-  SUBSCRIBE: '_',
   SNAPSHOT: '=',
-  MESSAGE: '-',
-  DELAYED: '.'
+  MESSAGE: '-'
 }
 
 export var Topics = {
   FairValue: 'a',
   Quote: 'b',
   ActiveSubscription: 'c',
-  ActiveChange: 'd',
+  ActiveState: 'd',
   MarketData: 'e',
   QuotingParametersChange: 'f',
   SafetySettings: 'g',
@@ -110,7 +108,8 @@ export enum Currency {
     BTU, MAID, AMP, XRP, KRW, IOT, BCY, BELA, BLK, BTCD, BTM, BTS, BURST, CLAM,
     DCR, DGB, EMC2, EXP, FCT, FLDC, FLO, GAME, GNO, GNT, GRC, HUC, LBC, NAUT,
     NAV, NEOS, NMC, NOTE, NXC, OMNI, PASC, PINK, POT, PPC, RADS, REP, RIC, SBD,
-    SC, SJCX, STR, STRAT, SYS, VIA, VRC, VTC, XBC, XCP, XPM, XVC, USD, USDT
+    SC, SJCX, STR, STRAT, SYS, VIA, VRC, VTC, XBC, XCP, XPM, XVC, USD, USDT,
+    EOS
 }
 
 export function toCurrency(c: string) : Currency|undefined {
@@ -129,7 +128,7 @@ export enum Exchange { Null, HitBtc, OkCoin, Coinbase, Bitfinex, Korbit, Polonie
 export enum Side { Bid, Ask, Unknown }
 export enum OrderType { Limit, Market }
 export enum TimeInForce { IOC, FOK, GTC }
-export enum OrderStatus { New, Working, Complete, Cancelled, Rejected, Other }
+export enum OrderStatus { New, Working, Complete, Cancelled }
 export enum Liquidity { Make, Take }
 
 export interface ProductState {
@@ -149,6 +148,7 @@ export class SubmitNewOrder {
                 public type: OrderType,
                 public price: number,
                 public timeInForce: TimeInForce,
+                public isPong: boolean,
                 public exchange: Exchange,
                 public generatedTime: Date,
                 public preferPostOnly: boolean,
@@ -172,10 +172,6 @@ export class OrderCancel {
                 public generatedTime: Date) {}
 }
 
-export class SentOrder {
-    constructor(public sentOrderClientId: string) {}
-}
-
 export interface OrderStatusReport {
     pair : CurrencyPair;
     side : Side;
@@ -196,22 +192,22 @@ export interface OrderStatusReport {
     liquidity : Liquidity;
     exchange : Exchange;
     computationalLatency : number;
-    version : number;
+    isPong : boolean;
     preferPostOnly: boolean;
     source: OrderSource;
-    partiallyFilled : boolean;
-    pendingCancel : boolean;
-    pendingReplace : boolean;
-    cancelRejected : boolean;
 }
 
 export interface OrderStatusUpdate extends Partial<OrderStatusReport> { }
 
 export interface IStdev {
     fv: number;
+    fvMean: number;
     tops: number;
+    topsMean: number;
     bid: number;
+    bidMean: number;
     ask: number;
+    askMean: number;
 }
 
 export class EWMAChart implements ITimestamped {
@@ -229,7 +225,7 @@ export class TradeChart implements ITimestamped {
                 public side: Side,
                 public quantity: number,
                 public value: number,
-                public type: string,
+                public pong: boolean,
                 public time: Date) {}
 }
 
@@ -288,22 +284,20 @@ export class FairValue implements ITimestamped {
     constructor(public price: number, public time: Date) {}
 }
 
-export enum QuoteAction { New, Cancel }
-export enum QuoteSent { First, Modify, UnsentDuplicate, Delete, UnsentDelete, UnableToSend }
-
 export class Quote {
     constructor(public price: number,
-                public size: number) {}
+                public size: number,
+                public isPong: boolean) {}
 }
 
 export class TwoSidedQuote implements ITimestamped {
     constructor(public bid: Quote, public ask: Quote, public time: Date) {}
 }
 
-export enum QuoteStatus { Live, Held }
+export enum QuoteStatus { Live, Disconnected, DisabledQuotes, MissingData, UnknownHeld, TBPHeld, MaxTradesSeconds, WaitingPing, DepletedFunds, Crossed }
 
 export class TwoSidedQuoteStatus {
-    constructor(public bidStatus: QuoteStatus, public askStatus: QuoteStatus) {}
+    constructor(public bidStatus: QuoteStatus, public askStatus: QuoteStatus, public quotesInMemoryNew: number, public quotesInMemoryWorking: number, public quotesInMemoryDone: number) {}
 }
 
 export class CurrencyPair {
@@ -356,6 +350,7 @@ export interface QuotingParameters {
     tradeRateSeconds?: number;
     quotingEwmaProtection?: boolean;
     quotingStdevProtection?: STDEV;
+    quotingStdevBollingerBands?: boolean;
     audio?: boolean;
     bullets?: number;
     range?: number;
@@ -373,6 +368,9 @@ export interface QuotingParameters {
     stepOverSize?: number;
     profitHourInterval?: number;
     delayUI?: number;
+    time?: Date;
+    pair?: CurrencyPair;
+    exchange?: Exchange;
 }
 
 export class ExchangePairMessage<T> {
@@ -403,7 +401,7 @@ export class TradeSafety {
 export class TargetBasePositionValue {
     constructor(
       public data: number,
-      public sideAPR: string[],
+      public sideAPR: string,
       public time: Date
     ) {}
 }

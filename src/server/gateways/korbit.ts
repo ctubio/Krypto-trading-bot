@@ -5,10 +5,8 @@ import querystring = require("querystring");
 import Config = require("../config");
 import NullGateway = require("./nullgw");
 import Models = require("../../share/models");
-import Utils = require("../utils");
 import util = require("util");
 import Interfaces = require("../interfaces");
-import * as Promises from '../promises';
 
 function getJSON<T>(url: string, qs?: any) : Promise<T> {
     return new Promise((resolve, reject) => {
@@ -84,9 +82,6 @@ interface Cancel extends SignedMessage {
 interface SubscriptionRequest extends SignedMessage { }
 
 class KorbitMarketDataGateway implements Interfaces.IMarketDataGateway {
-    ConnectChanged = new Utils.Evt<Models.ConnectivityStatus>();
-
-    MarketTrade = new Utils.Evt<Models.GatewayMarketTrade>();
     private triggerMarketTrades = () => {
         this._http.get("transactions", {currency_pair: this._symbolProvider.symbol, time: 'minute'}, true).then(msg => {
             if (!(<any>msg.data).length) return;
@@ -95,12 +90,10 @@ class KorbitMarketDataGateway implements Interfaces.IMarketDataGateway {
               var amt = parseFloat((<any>msg.data)[i].amount);
               var side = Models.Side.Ask;
               var mt = new Models.GatewayMarketTrade(px, amt, msg.time, false, side);
-              this.MarketTrade.trigger(mt);
+              this._evUp('MarketTradeGateway', mt);
             }
         });
     };
-
-    MarketData = new Utils.Evt<Models.Market>();
 
     private static GetLevel = (n: [any, any]) : Models.MarketSide =>
         new Models.MarketSide(parseFloat(n[0]), parseFloat(n[1]));
@@ -108,7 +101,7 @@ class KorbitMarketDataGateway implements Interfaces.IMarketDataGateway {
     private triggerOrderBook = () => {
         this._http.get("orderbook", {currency_pair: this._symbolProvider.symbol, category: 'all'}, true).then(msg => {
             if (!(<any>msg.data).timestamp) return;
-            this.MarketData.trigger(new Models.Market(
+            this._evUp('MarketDataGateway', new Models.Market(
               (<any>msg.data).bids.slice(0,13).map(KorbitMarketDataGateway.GetLevel),
               (<any>msg.data).asks.slice(0,13).map(KorbitMarketDataGateway.GetLevel),
               msg.time
@@ -116,28 +109,25 @@ class KorbitMarketDataGateway implements Interfaces.IMarketDataGateway {
         });
     };
 
-    constructor(private _http : KorbitHttp, private _symbolProvider: KorbitSymbolProvider) {
+    constructor(private _evUp, private _http : KorbitHttp, private _symbolProvider: KorbitSymbolProvider) {
         setInterval(this.triggerMarketTrades, 60000);
         setInterval(this.triggerOrderBook, 1000);
-        setTimeout(()=>this.ConnectChanged.trigger(Models.ConnectivityStatus.Connected), 10);
+        setTimeout(()=>this._evUp('GatewayMarketConnect', Models.ConnectivityStatus.Connected), 10);
     }
 }
 
 class KorbitOrderEntryGateway implements Interfaces.IOrderEntryGateway {
-    OrderUpdate = new Utils.Evt<Models.OrderStatusUpdate>();
-    ConnectChanged = new Utils.Evt<Models.ConnectivityStatus>();
-
     generateClientOrderId = (): string => new Date().valueOf().toString().substr(-9);
 
     supportsCancelAllOpenOrders = () : boolean => { return false; };
     cancelAllOpenOrders = () : Promise<number> => {
-        var d = Promises.defer<number>();
+      return new Promise<number>((resolve, reject) => {
         this._http.get("user/orders/open", <Cancel>{currency_pair: this._symbolProvider.symbol }).then(msg => {
-          if (!(<any>msg.data).length) { d.resolve(0); return; }
+          if (!(<any>msg.data).length) { resolve(0); return; }
           (<any>msg.data).forEach((o) => {
               this._http.post("user/orders/cancel", <Cancel>{id: o.id, currency_pair: this._symbolProvider.symbol, nonce: new Date().getTime() }).then(msg => {
                   if (!(<any>msg.data).length) return;
-                  this.OrderUpdate.trigger(<Models.OrderStatusUpdate>{
+                  this._evUp('OrderUpdateGateway', <Models.OrderStatusUpdate>{
                     exchangeId: (<any>msg.data).order_id.toString(),
                     leavesQuantity: 0,
                     time: msg.time,
@@ -145,9 +135,9 @@ class KorbitOrderEntryGateway implements Interfaces.IOrderEntryGateway {
                   });
               });
           });
-          d.resolve((<any>msg.data).orders.length);
+          resolve((<any>msg.data).orders.length);
         });
-        return d.promise;
+      });
     };
 
     public cancelsByClientOrderId = false;
@@ -161,7 +151,7 @@ class KorbitOrderEntryGateway implements Interfaces.IOrderEntryGateway {
             nonce: new Date().getTime()
         }).then(msg => {
           if (!(<any>msg.data).orderId || ((<any>msg.data).status && (<any>msg.data).status != 'success')) {
-            this.OrderUpdate.trigger(<Models.OrderStatusUpdate>{
+            this._evUp('OrderUpdateGateway', <Models.OrderStatusUpdate>{
               orderId: order.orderId,
               leavesQuantity: 0,
               time: (<any>msg.data).time,
@@ -171,7 +161,7 @@ class KorbitOrderEntryGateway implements Interfaces.IOrderEntryGateway {
               console.info(new Date().toISOString().slice(11, -1), 'korbit', 'order error:', (<any>msg.data).status);
           }
           else
-            this.OrderUpdate.trigger(<Models.OrderStatusUpdate>{
+            this._evUp('OrderUpdateGateway', <Models.OrderStatusUpdate>{
               orderId: order.orderId,
               computationalLatency: new Date().valueOf() - (<any>msg.time).valueOf(),
               time: (<any>msg.data).time,
@@ -185,7 +175,7 @@ class KorbitOrderEntryGateway implements Interfaces.IOrderEntryGateway {
     cancelOrder = (cancel : Models.OrderStatusReport) => {
         this._http.post('user/orders/cancel', <Cancel>{id: cancel.exchangeId, currency_pair: this._symbolProvider.symbol, nonce: new Date().getTime() }).then(msg => {
             if (!(<any>msg.data).length!) return;
-            this.OrderUpdate.trigger(<Models.OrderStatusUpdate>{
+            this._evUp('OrderUpdateGateway', <Models.OrderStatusUpdate>{
               orderId: cancel.orderId,
               leavesQuantity: 0,
               time: cancel.time,
@@ -205,8 +195,9 @@ class KorbitOrderEntryGateway implements Interfaces.IOrderEntryGateway {
             for (let i = (<any>msg.data).length;i--;) {
               var px = parseFloat((<any>msg.data)[i].price);
               var trade : any = (<any>msg.data)[i];
+              if (['buy','sell'].indexOf(trade.type)===-1) continue;
               var status : Models.OrderStatusUpdate = {
-                  exchangeId: trade.orderId.toString(),
+                  exchangeId: trade.fillsDetail.orderId,
                   orderStatus: Models.OrderStatus.Complete,
                   time: new Date(trade.timestamp),
                   side: trade.type.indexOf('buy')>-1 ? Models.Side.Bid : Models.Side.Ask,
@@ -214,16 +205,18 @@ class KorbitOrderEntryGateway implements Interfaces.IOrderEntryGateway {
                   lastPrice: trade.fillsDetail.price.value,
                   averagePrice: trade.fillsDetail.price.value
               };
-              this.OrderUpdate.trigger(status);
+              this._evUp('OrderUpdateGateway', status);
             }
         });
     };
 
     constructor(
-            private _http: KorbitHttp,
-            private _symbolProvider: KorbitSymbolProvider) {
+      private _evUp,
+      private _http: KorbitHttp,
+      private _symbolProvider: KorbitSymbolProvider
+    ) {
         setInterval(this.triggerUserTades, 10000);
-        setTimeout(()=>this.ConnectChanged.trigger(Models.ConnectivityStatus.Connected), 10);
+        setTimeout(()=>this._evUp('GatewayOrderConnect', Models.ConnectivityStatus.Connected), 10);
     }
 }
 
@@ -236,7 +229,7 @@ class KorbitMessageSigner {
     private _token_refresh : string;
     private _token_time : number = 0;
 
-    public signMessage = async (_http: KorbitHttp, m : SignedMessage) : Promise<SignedMessage> => {
+    public signMessage = async (_http: KorbitHttp, m: SignedMessage): Promise<SignedMessage> => {
         if (!this._token_time) {
           var d = new Promise((resolve, reject) => {
             _http.post('oauth2/access_token', {
@@ -272,7 +265,7 @@ class KorbitMessageSigner {
           console.info(new Date().toISOString().slice(11, -1), 'korbit', 'Authentication refresh successful, new token expires at '+(new Date(this._token_time).toISOString().slice(11, -1))+'.');
         }
 
-        return m;
+        return Promise.resolve(m);
     };
 
     public toQueryString = (msg: SignedMessage) : string => {
@@ -305,28 +298,27 @@ class KorbitHttp {
       publicApi?: boolean,
       forceUnsigned?: boolean
     ) : Promise<Models.Timestamped<T>> => {
-        var d = Promises.defer<Models.Timestamped<T>>();
+      return new Promise<Models.Timestamped<T>>(async (resolve, reject) => {
         request({
             url: url.resolve(this._baseUrl+'/', actionUrl),
             body: this._signer.toQueryString((publicApi || forceUnsigned) ? msg : await this._signer.signMessage(this, msg)),
             headers: Object.assign(publicApi?{}:{"Content-Type": "application/x-www-form-urlencoded"}, (publicApi || !this._signer.token)?{}:{'Authorization': 'Bearer '+this._signer.token}),
             method: 'POST'
         }, (err, resp, body) => {
-            if (err) d.reject(err);
+            if (err) reject(err);
             else {
                 try {
                     var t = new Date();
                     var data = body ? JSON.parse(body) : {};
-                    d.resolve(new Models.Timestamped(data, t));
+                    resolve(new Models.Timestamped(data, t));
                 }
                 catch (e) {
                     console.error(new Date().toISOString().slice(11, -1), 'korbit', err, 'url:', actionUrl, 'err:', err, 'body:', body);
-                    d.reject(e);
+                    reject(e);
                 }
             }
         });
-
-        return d.promise;
+      });
     };
 
     get = async <T>(
@@ -334,27 +326,26 @@ class KorbitHttp {
       msg : SignedMessage,
       publicApi?: boolean
     ) : Promise<Models.Timestamped<T>> => {
-        var d = Promises.defer<Models.Timestamped<T>>();
+      return new Promise<Models.Timestamped<T>>(async (resolve, reject) => {
         request({
             url: url.resolve(this._baseUrl+'/', actionUrl+'?'+ this._signer.toQueryString(publicApi ? msg : await this._signer.signMessage(this, msg))),
             headers: (publicApi || !this._signer.token)?{}:{'Authorization': 'Bearer '+this._signer.token},
             method: 'GET'
         }, (err, resp, body) => {
-            if (err) d.reject(err);
+            if (err) reject(err);
             else {
                 try {
                     var t = new Date();
                     var data = body ? JSON.parse(body) : {};
-                    d.resolve(new Models.Timestamped(data, t));
+                    resolve(new Models.Timestamped(data, t));
                 }
                 catch (e) {
                     console.error(new Date().toISOString().slice(11, -1), 'korbit', err, 'url:', actionUrl, 'err:', err, 'body:', body);
-                    d.reject(e);
+                    reject(e);
                 }
             }
         });
-
-        return d.promise;
+      });
     };
 
     private _baseUrl : string;
@@ -364,8 +355,6 @@ class KorbitHttp {
 }
 
 class KorbitPositionGateway implements Interfaces.IPositionGateway {
-    PositionUpdate = new Utils.Evt<Models.CurrencyPosition>();
-
     private trigger = () => {
         this._http.get("user/wallet", {currency_pair: this._symbolProvider.symbol}).then(msg => {
             if (!(<any>msg.data).balance) return;
@@ -380,13 +369,14 @@ class KorbitPositionGateway implements Interfaces.IPositionGateway {
                 var held = parseFloat(wallet[x][2]);
 
                 var pos = new Models.CurrencyPosition(amount, held, Models.toCurrency(wallet[x][0]));
-                this.PositionUpdate.trigger(pos);
+                this._evUp('PositionGateway', pos);
             }
         });
     };
 
     constructor(
-      private _http : KorbitHttp,
+      private _evUp,
+      private _http: KorbitHttp,
       private _symbolProvider: KorbitSymbolProvider
     ) {
         setInterval(this.trigger, 15000);
@@ -432,24 +422,31 @@ class KorbitSymbolProvider {
 }
 
 class Korbit extends Interfaces.CombinedGateway {
-    constructor(config : Config.ConfigProvider, pair: Models.CurrencyPair, minTick: number, minSize: number) {
+    constructor(
+      config: Config.ConfigProvider,
+      pair: Models.CurrencyPair,
+      minTick: number,
+      minSize: number,
+      _evOn,
+      _evUp
+    ) {
         var symbol = new KorbitSymbolProvider(pair);
         var http = new KorbitHttp(config, new KorbitMessageSigner(config));
 
         var orderGateway = config.GetString("KorbitOrderDestination") == "Korbit"
-            ? <Interfaces.IOrderEntryGateway>new KorbitOrderEntryGateway(http, symbol)
-            : new NullGateway.NullOrderGateway();
+            ? <Interfaces.IOrderEntryGateway>new KorbitOrderEntryGateway(_evUp, http, symbol)
+            : new NullGateway.NullOrderGateway(_evUp);
 
         super(
-            new KorbitMarketDataGateway(http, symbol),
+            new KorbitMarketDataGateway(_evUp, http, symbol),
             orderGateway,
-            new KorbitPositionGateway(http, symbol),
+            new KorbitPositionGateway(_evUp, http, symbol),
             new KorbitBaseGateway(minTick, minSize)
         );
     }
 }
 
-export async function createKorbit(config : Config.ConfigProvider, pair: Models.CurrencyPair) : Promise<Interfaces.CombinedGateway> {
+export async function createKorbit(config : Config.ConfigProvider, pair: Models.CurrencyPair, _evOn, _evUp) : Promise<Interfaces.CombinedGateway> {
     const constants = await getJSON<any[]>(config.GetString("KorbitHttpUrl")+"/constants");
     let minTick = 500;
     let minSize = 0.015;
@@ -459,5 +456,5 @@ export async function createKorbit(config : Config.ConfigProvider, pair: Models.
       // else if (constant.toUpperCase()=='MIN'+Models.fromCurrency(pair.base)+'ORDER')
           // minSize = parseFloat(constants[constant]);
 
-    return new Korbit(config, pair, minTick, minSize);
+    return new Korbit(config, pair, minTick, minSize, _evOn, _evUp);
 }

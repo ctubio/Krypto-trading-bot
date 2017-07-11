@@ -8,7 +8,7 @@ import {SubscriberFactory, FireFactory, BaseCurrencyCellComponent, QuoteCurrency
 
 @Component({
   selector: 'order-list',
-  template: `<ag-grid-angular #orderList class="ag-fresh ag-dark" style="height: 150px;width: 99.99%;" rowHeight="21" [gridOptions]="gridOptions" (cellClicked)="onCellClicked($event)"></ag-grid-angular>`
+  template: `<ag-grid-angular #orderList class="ag-fresh ag-dark" style="height: 135px;width: 99.99%;" rowHeight="21" [gridOptions]="gridOptions" (cellClicked)="onCellClicked($event)"></ag-grid-angular>`
 })
 export class OrdersComponent implements OnInit {
 
@@ -22,7 +22,7 @@ export class OrdersComponent implements OnInit {
     if (connected) return;
     if (!this.gridOptions.api) return;
     this.gridOptions.api.setRowData([]);
-    this.gridOptions.api.refreshView();
+    setTimeout(()=>this.gridOptions.api.refreshView(),0);
   }
 
   constructor(
@@ -62,7 +62,9 @@ export class OrdersComponent implements OnInit {
         },
         cellClass: 'fs11px', comparator: (a: moment.Moment, b: moment.Moment) => a.diff(b)
       },
-      { width: 40, field: 'side', headerName: 'side' , cellClass: (params) => {
+      { width: 40, field: 'side', headerName: 'side' , cellRenderer:(params) => {
+          return (params.data.pong ? '¯' : '_') + params.value;
+      }, cellClass: (params) => {
         if (params.value === 'Bid') return 'buy';
         else if (params.value === 'Ask') return "sell";
       }},
@@ -78,7 +80,7 @@ export class OrdersComponent implements OnInit {
       }, cellRendererFramework: QuoteCurrencyCellComponent},
       { width: 45, field: 'type', headerName: 'type' },
       { width: 40, field: 'tif', headerName: 'tif' },
-      { width: 35, field: 'lat', headerName: 'lat'},
+      { width: 45, field: 'lat', headerName: 'lat'},
       { width: 90, field: 'orderId', headerName: 'openOrderId', cellRenderer:(params) => {
           return (params.value) ? params.value.toString().split('-')[0] : '';
         }}
@@ -102,8 +104,7 @@ export class OrdersComponent implements OnInit {
     }
     let exists: boolean = false;
     let isClosed: boolean = (o.data[1] == Models.OrderStatus.Cancelled
-      || o.data[1] == Models.OrderStatus.Complete
-      || o.data[1] == Models.OrderStatus.Rejected);
+      || o.data[1] == Models.OrderStatus.Complete);
     this.gridOptions.api.forEachNode((node: RowNode) => {
       if (!exists && node.data.orderId==o.data[0]) {
         exists = true;
@@ -111,8 +112,8 @@ export class OrdersComponent implements OnInit {
         else {
           node.setData(Object.assign(node.data, {
             time: (moment.isMoment(o.time) ? o.time : moment(o.time)),
-            price: o.data[3],
-            value: Math.round(o.data[3] * o.data[4] * 100) / 100,
+            price: o.data[4],
+            value: Math.round(o.data[4] * o.data[5] * 100) / 100,
             tif: Models.TimeInForce[o.data[7]],
             lat: o.data[8]+'ms',
             lvQty: o.data[9]
@@ -120,20 +121,21 @@ export class OrdersComponent implements OnInit {
         }
       }
     });
-    this.gridOptions.api.refreshView();
+    setTimeout(()=>this.gridOptions.api.refreshView(),0);
     if (!exists && !isClosed)
       this.gridOptions.api.updateRowData({add:[{
         orderId: o.data[0],
-        exchange: o.data[2],
+        side: Models.Side[o.data[2]],
+        exchange: o.data[3],
         time: (moment.isMoment(o.time) ? o.time : moment(o.time)),
-        price: o.data[3],
-        value: Math.round(o.data[3] * o.data[4] * 100) / 100,
-        side: Models.Side[o.data[5]],
+        price: o.data[4],
+        value: Math.round(o.data[4] * o.data[5] * 100) / 100,
         type: Models.OrderType[o.data[6]],
         tif: Models.TimeInForce[o.data[7]],
         lat: o.data[8]+'ms',
         lvQty: o.data[9],
-        quoteSymbol: Models.Currency[o.data[10]],
+        pong: o.data[10],
+        quoteSymbol: Models.Currency[o.data[11]],
         productFixed: this.product.fixed
       }]});
   }

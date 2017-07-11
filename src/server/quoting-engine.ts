@@ -1,9 +1,7 @@
 import Models = require("../share/models");
 import Utils = require("./utils");
 import Safety = require("./safety");
-import _ = require("lodash");
 import FairValue = require("./fair-value");
-import MarketFiltration = require("./market-filtration");
 import QuotingParameters = require("./quoting-parameters");
 import PositionManagement = require("./position-management");
 import Broker = require("./broker");
@@ -36,58 +34,56 @@ const quotesChanged = (o: Models.TwoSidedQuote, n: Models.TwoSidedQuote, tick: n
 }
 
 export class QuotingEngine {
-    public QuoteChanged = new Utils.Evt<Models.TwoSidedQuote>();
-
     private _latest: Models.TwoSidedQuote = null;
+    public latestQuoteAskStatus: Models.QuoteStatus;
+    public latestQuoteBidStatus: Models.QuoteStatus;
     public get latestQuote() { return this._latest; }
     public set latestQuote(val: Models.TwoSidedQuote) {
-        if (!quotesChanged(this._latest, val, this._details.minTickIncrement))
+        if (!quotesChanged(this._latest, val, this._minTick))
             return;
 
         this._latest = val;
-        this.QuoteChanged.trigger();
+        this._evUp('Quote');
     }
 
     private _registry: QuotingStyleRegistry.QuotingStyleRegistry = null;
 
     constructor(
-        private _timeProvider: Utils.ITimeProvider,
-        private _filteredMarkets: MarketFiltration.MarketFiltration,
-        private _fvEngine: FairValue.FairValueEngine,
-        private _qlParamRepo: QuotingParameters.QuotingParametersRepository,
-        private _orderBroker: Broker.OrderBroker,
-        private _positionBroker: Broker.PositionBroker,
-        private _details: Broker.ExchangeBroker,
-        private _ewma: Statistics.ObservableEWMACalculator,
-        private _stdev: Statistics.ObservableSTDEVCalculator,
-        private _targetPosition: PositionManagement.TargetBasePositionManager,
-        private _safeties: Safety.SafetyCalculator) {
-        this._registry = new QuotingStyleRegistry.QuotingStyleRegistry();
+      private _timeProvider: Utils.ITimeProvider,
+      private _fvEngine: FairValue.FairValueEngine,
+      private _qlParamRepo: QuotingParameters.QuotingParametersRepository,
+      private _positionBroker: Broker.PositionBroker,
+      private _minTick: number,
+      private _minSize: number,
+      private _ewma: Statistics.EWMAProtectionCalculator,
+      private _stdev: Statistics.STDEVProtectionCalculator,
+      private _targetPosition: PositionManagement.TargetBasePositionManager,
+      private _safeties: Safety.SafetyCalculator,
+      private _evOn,
+      private _evUp
+    ) {
+      this._safeties.targetPosition = this._targetPosition;
+      this._registry = new QuotingStyleRegistry.QuotingStyleRegistry();
 
-        _filteredMarkets.FilteredMarketChanged.on(this.recalcQuote);
-        _qlParamRepo.NewParameters.on(this.recalcQuote);
-        _orderBroker.Trade.on(this.recalcQuote);
-        _ewma.Updated.on(() => {
-          this.recalcQuote();
-          _targetPosition.quoteEWMA = _ewma.latest;
-          _targetPosition.widthSTDEV = _stdev.latest;
-        });
-        _targetPosition.NewTargetPosition.on(() => {
-          this._safeties.latestTargetPosition = this._targetPosition.latestTargetPosition;
-          this.recalcQuote();
-        });
-        _safeties.NewValue.on(this.recalcQuote);
+      this._evOn('EWMAProtectionCalculator', () => {
+        this.recalcQuote();
+        _targetPosition.quoteEwma = _ewma.latest;
+        _targetPosition.widthStdev = _stdev.latest;
+      });
+      this._evOn('FilteredMarket', this.recalcQuote);
+      this._evOn('QuotingParameters', this.recalcQuote);
+      this._evOn('OrderTradeBroker', this.recalcQuote);
+      this._evOn('TargetPosition', this.recalcQuote);
+      this._evOn('Safety', this.recalcQuote);
 
-        _timeProvider.setInterval(this.recalcQuote, moment.duration(1, "seconds"));
+      _timeProvider.setInterval(this.recalcQuote, moment.duration(1, "seconds"));
     }
 
     private computeQuote(filteredMkt: Models.Market, fv: Models.FairValue) {
-        if (this._targetPosition.latestTargetPosition === null) return null;
+        if (this._targetPosition.latestTargetPosition === null || this._positionBroker.latestReport === null) return null;
         const targetBasePosition = this._targetPosition.latestTargetPosition.data;
 
         const params = this._qlParamRepo.latest;
-        const minTick = this._details.minTickIncrement;
-        const minSize = this._details.minSize;
         const widthPing = (params.widthPercentage)
           ? params.widthPingPercentage * fv.price / 100
           : params.widthPing;
@@ -108,13 +104,21 @@ export class QuotingEngine {
         if (params.aggressivePositionRebalancing != Models.APR.Off && params.sellSizeMax)
           sellSize = Math.max(sellSize, totalBasePosition - targetBasePosition);
 
-        const unrounded = this._registry.GenerateQuote(new QuoteInput(filteredMkt, fv.price, widthPing, buySize, sellSize, params.mode, minTick));
+        const unrounded = this._registry.GenerateQuote(new QuoteInput(filteredMkt, fv.price, widthPing, buySize, sellSize, params.mode, this._minTick));
 
         if (unrounded === null) return null;
         const _unroundedBidSz = unrounded.bidSz;
         const _unroundedAskSz = unrounded.askSz;
 
-        let sideAPR: string[] = [];
+        const safety = this._safeties.latest;
+        if (safety === null) {
+            return null;
+        }
+
+        this.latestQuoteAskStatus = Models.QuoteStatus.UnknownHeld;
+        this.latestQuoteBidStatus = Models.QuoteStatus.UnknownHeld;
+
+        let sideAPR: string;
         let superTradesMultipliers = (params.superTrades &&
           widthPing * params.sopWidthMultiplier < filteredMkt.asks[0].price - filteredMkt.bids[0].price
         ) ? [
@@ -141,31 +145,41 @@ export class QuotingEngine {
         }
 
         if (totalBasePosition < targetBasePosition - pDiv) {
+            this.latestQuoteAskStatus = Models.QuoteStatus.TBPHeld;
             unrounded.askPx = null;
             unrounded.askSz = null;
             if (params.aggressivePositionRebalancing !== Models.APR.Off) {
-              sideAPR.push('Bid');
+              sideAPR = 'Bid';
               if (!params.buySizeMax) unrounded.bidSz = Math.min(params.aprMultiplier*buySize, targetBasePosition - totalBasePosition, (latestPosition.quoteAmount / fv.price) / 2);
             }
         }
-        if (totalBasePosition > targetBasePosition + pDiv) {
+        else if (totalBasePosition > targetBasePosition + pDiv) {
+            this.latestQuoteBidStatus = Models.QuoteStatus.TBPHeld;
             unrounded.bidPx = null;
             unrounded.bidSz = null;
             if (params.aggressivePositionRebalancing !== Models.APR.Off) {
-              sideAPR.push('Sell');
+              sideAPR = 'Sell';
               if (!params.sellSizeMax) unrounded.askSz = Math.min(params.aprMultiplier*sellSize, totalBasePosition - targetBasePosition, latestPosition.baseAmount / 2);
             }
         }
 
         if (params.quotingStdevProtection !== Models.STDEV.Off && this._stdev.latest !== null) {
-            if (unrounded.askPx && (params.quotingStdevProtection === Models.STDEV.OnFV || params.quotingStdevProtection === Models.STDEV.OnTops || params.quotingStdevProtection === Models.STDEV.OnTop || sideAPR.indexOf('Sell')===-1))
-              unrounded.askPx = Math.max(fv.price + this._stdev.latest[
+            if (unrounded.askPx && (params.quotingStdevProtection === Models.STDEV.OnFV || params.quotingStdevProtection === Models.STDEV.OnTops || params.quotingStdevProtection === Models.STDEV.OnTop || sideAPR !== 'Sell'))
+              unrounded.askPx = Math.max((params.quotingStdevBollingerBands ? this._stdev.latest[
+                (params.quotingStdevProtection === Models.STDEV.OnFV || params.quotingStdevProtection === Models.STDEV.OnFVAPROff)
+                  ? 'fvMean' : ((params.quotingStdevProtection === Models.STDEV.OnTops || params.quotingStdevProtection === Models.STDEV.OnTopsAPROff)
+                    ? 'topsMean' : 'askMean' )
+              ]: fv.price) + this._stdev.latest[
                 (params.quotingStdevProtection === Models.STDEV.OnFV || params.quotingStdevProtection === Models.STDEV.OnFVAPROff)
                   ? 'fv' : ((params.quotingStdevProtection === Models.STDEV.OnTops || params.quotingStdevProtection === Models.STDEV.OnTopsAPROff)
                     ? 'tops' : 'ask' )
               ], unrounded.askPx);
-            if (unrounded.bidPx && (params.quotingStdevProtection === Models.STDEV.OnFV || params.quotingStdevProtection === Models.STDEV.OnTops || params.quotingStdevProtection === Models.STDEV.OnTop || sideAPR.indexOf('Bid')===-1))
-              unrounded.bidPx = Math.min(fv.price - this._stdev.latest[
+            if (unrounded.bidPx && (params.quotingStdevProtection === Models.STDEV.OnFV || params.quotingStdevProtection === Models.STDEV.OnTops || params.quotingStdevProtection === Models.STDEV.OnTop || sideAPR !== 'Bid'))
+              unrounded.bidPx = Math.min((params.quotingStdevBollingerBands ? this._stdev.latest[
+                (params.quotingStdevProtection === Models.STDEV.OnFV || params.quotingStdevProtection === Models.STDEV.OnFVAPROff)
+                  ? 'fvMean' : ((params.quotingStdevProtection === Models.STDEV.OnTops || params.quotingStdevProtection === Models.STDEV.OnTopsAPROff)
+                    ? 'topsMean' : 'bidMean' )
+              ]  : fv.price) - this._stdev.latest[
                 (params.quotingStdevProtection === Models.STDEV.OnFV || params.quotingStdevProtection === Models.STDEV.OnFVAPROff)
                   ? 'fv' : ((params.quotingStdevProtection === Models.STDEV.OnTops || params.quotingStdevProtection === Models.STDEV.OnTopsAPROff)
                     ? 'tops' : 'bid' )
@@ -174,20 +188,15 @@ export class QuotingEngine {
 
         this._targetPosition.sideAPR = sideAPR;
 
-        const safety = this._safeties.latest;
-        if (safety === null) {
-            return null;
-        }
-
         if (params.mode === Models.QuotingMode.PingPong || params.mode === Models.QuotingMode.HamelinRat || params.mode === Models.QuotingMode.Boomerang || params.mode === Models.QuotingMode.AK47) {
           if (unrounded.askSz && safety.buyPing && (
-            (params.aggressivePositionRebalancing === Models.APR.SizeWidth && sideAPR.indexOf('Sell')>-1)
+            (params.aggressivePositionRebalancing === Models.APR.SizeWidth && sideAPR === 'Sell')
             || params.pongAt == Models.PongAt.ShortPingAggressive
             || params.pongAt == Models.PongAt.LongPingAggressive
             || unrounded.askPx < safety.buyPing + widthPong
           )) unrounded.askPx = safety.buyPing + widthPong;
           if (unrounded.bidSz && safety.sellPong && (
-            (params.aggressivePositionRebalancing === Models.APR.SizeWidth && sideAPR.indexOf('Buy')>-1)
+            (params.aggressivePositionRebalancing === Models.APR.SizeWidth && sideAPR === 'Buy')
             || params.pongAt == Models.PongAt.ShortPingAggressive
             || params.pongAt == Models.PongAt.LongPingAggressive
             || unrounded.bidPx > safety.sellPong - widthPong
@@ -198,7 +207,7 @@ export class QuotingEngine {
           if (unrounded.askPx !== null)
             for (var fai = 0; fai < filteredMkt.asks.length; fai++)
               if (filteredMkt.asks[fai].price > unrounded.askPx) {
-                let bestAsk: number = filteredMkt.asks[fai].price - minTick;
+                let bestAsk: number = filteredMkt.asks[fai].price - this._minTick;
                 if (bestAsk > fv.price) {
                   unrounded.askPx = bestAsk;
                   break;
@@ -207,7 +216,7 @@ export class QuotingEngine {
           if (unrounded.bidPx !== null)
             for (var fbi = 0; fbi < filteredMkt.bids.length; fbi++)
               if (filteredMkt.bids[fbi].price < unrounded.bidPx) {
-                let bestBid: number = filteredMkt.bids[fbi].price + minTick;
+                let bestBid: number = filteredMkt.bids[fbi].price + this._minTick;
                 if (bestBid < fv.price) {
                   unrounded.bidPx = bestBid;
                   break;
@@ -215,58 +224,78 @@ export class QuotingEngine {
               }
         }
 
-        if (safety.sell > (params.tradesPerMinute * superTradesMultipliers[0]) || (
-            (params.mode === Models.QuotingMode.PingPong || params.mode === Models.QuotingMode.HamelinRat || params.mode === Models.QuotingMode.Boomerang || params.mode === Models.QuotingMode.AK47)
-            && !safety.buyPing && (params.pingAt === Models.PingAt.StopPings || params.pingAt === Models.PingAt.BidSide || params.pingAt === Models.PingAt.DepletedAskSide
-              || (totalQuotePosition>buySize && (params.pingAt === Models.PingAt.DepletedSide || params.pingAt === Models.PingAt.DepletedBidSide))
-        ))) {
+        if (safety.sell > (params.tradesPerMinute * superTradesMultipliers[0])) {
+            this.latestQuoteAskStatus = Models.QuoteStatus.MaxTradesSeconds;
             unrounded.askPx = null;
             unrounded.askSz = null;
         }
-        if (safety.buy > (params.tradesPerMinute * superTradesMultipliers[0]) || (
-          (params.mode === Models.QuotingMode.PingPong || params.mode === Models.QuotingMode.HamelinRat || params.mode === Models.QuotingMode.Boomerang || params.mode === Models.QuotingMode.AK47)
+        if ((params.mode === Models.QuotingMode.PingPong || params.mode === Models.QuotingMode.HamelinRat || params.mode === Models.QuotingMode.Boomerang || params.mode === Models.QuotingMode.AK47)
+            && !safety.buyPing && (params.pingAt === Models.PingAt.StopPings || params.pingAt === Models.PingAt.BidSide || params.pingAt === Models.PingAt.DepletedAskSide
+              || (totalQuotePosition>buySize && (params.pingAt === Models.PingAt.DepletedSide || params.pingAt === Models.PingAt.DepletedBidSide))
+        )) {
+            this.latestQuoteAskStatus = !safety.buyPing
+              ? Models.QuoteStatus.WaitingPing
+              : Models.QuoteStatus.DepletedFunds;
+            unrounded.askPx = null;
+            unrounded.askSz = null;
+        }
+
+        if (safety.buy > (params.tradesPerMinute * superTradesMultipliers[0])) {
+            this.latestQuoteBidStatus = Models.QuoteStatus.MaxTradesSeconds;
+            unrounded.bidPx = null;
+            unrounded.bidSz = null;
+        }
+        if ((params.mode === Models.QuotingMode.PingPong || params.mode === Models.QuotingMode.HamelinRat || params.mode === Models.QuotingMode.Boomerang || params.mode === Models.QuotingMode.AK47)
             && !safety.sellPong && (params.pingAt === Models.PingAt.StopPings || params.pingAt === Models.PingAt.AskSide || params.pingAt === Models.PingAt.DepletedBidSide
               || (totalBasePosition>sellSize && (params.pingAt === Models.PingAt.DepletedSide || params.pingAt === Models.PingAt.DepletedAskSide))
-        ))) {
+        )) {
+            this.latestQuoteBidStatus = !safety.sellPong
+              ? Models.QuoteStatus.WaitingPing
+              : Models.QuoteStatus.DepletedFunds;
             unrounded.bidPx = null;
             unrounded.bidSz = null;
         }
 
         if (unrounded.bidPx !== null) {
-            unrounded.bidPx = Utils.roundSide(unrounded.bidPx, minTick, Models.Side.Bid);
+            unrounded.bidPx = Utils.roundSide(unrounded.bidPx, this._minTick, Models.Side.Bid);
             unrounded.bidPx = Math.max(0, unrounded.bidPx);
         }
 
         if (unrounded.askPx !== null) {
-            unrounded.askPx = Utils.roundSide(unrounded.askPx, minTick, Models.Side.Ask);
-            unrounded.askPx = Math.max(unrounded.bidPx + minTick, unrounded.askPx);
+            unrounded.askPx = Utils.roundSide(unrounded.askPx, this._minTick, Models.Side.Ask);
+            unrounded.askPx = Math.max(unrounded.bidPx + this._minTick, unrounded.askPx);
         }
 
         if (unrounded.askSz !== null) {
             if (unrounded.askSz > totalBasePosition)
               unrounded.askSz = (!_unroundedBidSz || _unroundedBidSz > totalBasePosition)
                 ? totalBasePosition : _unroundedBidSz;
-            unrounded.askSz = Utils.roundDown(Math.max(minSize, unrounded.askSz), 1e-8);
+            unrounded.askSz = Utils.roundDown(Math.max(this._minSize, unrounded.askSz), 1e-8);
+            unrounded.isAskPong = (safety.buyPing && unrounded.askPx && unrounded.askPx >= safety.buyPing + widthPong);
         }
 
         if (unrounded.bidSz !== null) {
             if (unrounded.bidSz > totalQuotePosition)
               unrounded.bidSz = (!_unroundedAskSz || _unroundedAskSz > totalQuotePosition)
                 ? totalQuotePosition : _unroundedAskSz;
-            unrounded.bidSz = Utils.roundDown(Math.max(minSize, unrounded.bidSz), 1e-8);
+            unrounded.bidSz = Utils.roundDown(Math.max(this._minSize, unrounded.bidSz), 1e-8);
+            unrounded.isBidPong = (safety.sellPong && unrounded.bidPx && unrounded.bidPx <= safety.sellPong - widthPong);
         }
 
         return unrounded;
     }
 
     private recalcQuote = () => {
+        this.latestQuoteAskStatus = Models.QuoteStatus.MissingData;
+        this.latestQuoteBidStatus = Models.QuoteStatus.MissingData;
+
         const fv = this._fvEngine.latestFairValue;
         if (fv == null) {
             this.latestQuote = null;
             return;
         }
 
-        const filteredMkt = this._filteredMarkets.latestFilteredMarket;
+        const filteredMkt = this._fvEngine.filtration.latestFilteredMarket;
         if (filteredMkt == null || !filteredMkt.bids.length || !filteredMkt.asks.length) {
             this.latestQuote = null;
             return;
@@ -280,8 +309,8 @@ export class QuotingEngine {
         }
 
         this.latestQuote = new Models.TwoSidedQuote(
-            this.quotesAreSame(new Models.Quote(genQt.bidPx, genQt.bidSz), this.latestQuote, Models.Side.Bid),
-            this.quotesAreSame(new Models.Quote(genQt.askPx, genQt.askSz), this.latestQuote, Models.Side.Ask),
+            this.quotesAreSame(new Models.Quote(genQt.bidPx, genQt.bidSz, genQt.isBidPong), this.latestQuote, Models.Side.Bid),
+            this.quotesAreSame(new Models.Quote(genQt.askPx, genQt.askSz, genQt.isAskPong), this.latestQuote, Models.Side.Ask),
             this._timeProvider.utcNow()
         );
     };
@@ -298,7 +327,7 @@ export class QuotingEngine {
         if (previousQ == null && newQ != null) return newQ;
         if (Math.abs(newQ.size - previousQ.size) > 5e-3) return newQ;
 
-        if (Math.abs(newQ.price - previousQ.price) < this._details.minTickIncrement) {
+        if (Math.abs(newQ.price - previousQ.price) < this._minTick) {
             return previousQ;
         }
 

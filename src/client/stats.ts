@@ -8,10 +8,10 @@ import {SubscriberFactory} from './shared_directives';
   selector: 'market-stats',
   template: `<div class="col-md-6 col-xs-6">
   <table><tr><td>
-    <chart style="position:relative;top:5px;height:350px;width:700px;" type="StockChart" [options]="fvChartOptions" (load)="saveInstance($event.context, 'fv')"></chart>
+    <chart style="position:relative;top:5px;height:339px;width:700px;" type="StockChart" [options]="fvChartOptions" (load)="saveInstance($event.context, 'fv')"></chart>
   </td><td>
-    <chart style="position:relative;top:10px;height:175px;width:700px;" [options]="baseChartOptions" (load)="saveInstance($event.context, 'base')"></chart>
-    <chart style="position:relative;top:11px;height:175px;width:700px;" [options]="quoteChartOptions" (load)="saveInstance($event.context, 'quote')"></chart>
+    <chart style="position:relative;top:10px;height:167px;width:700px;" [options]="baseChartOptions" (load)="saveInstance($event.context, 'base')"></chart>
+    <chart style="position:relative;top:11px;height:167px;width:700px;" [options]="quoteChartOptions" (load)="saveInstance($event.context, 'quote')"></chart>
   </td></tr></table>
     </div>`
 })
@@ -34,9 +34,9 @@ export class StatsComponent implements OnInit {
     Highcharts.charts.push(chartInstance);
   }
   private pointFormatterBase = function () {
-    return (this.series.name=='Width')
-      ? '<tr><td><span style="color:'+this.series.color+'">●</span> High Value:</td><td style="text-align:right;"> <b>'+this.high.toFixed((<any>Highcharts).customProductFixed)+' ' + ((<any>Highcharts).customQuoteCurrency) + '</b></td></tr>'
-        + '<tr><td><span style="color:'+this.series.color+'">●</span> Low Value:</td><td style="text-align:right;"> <b>'+this.low.toFixed((<any>Highcharts).customProductFixed)+' ' + ((<any>Highcharts).customQuoteCurrency) + '</b></td></tr>'
+    return (this.series.type=='arearange')
+      ? '<tr><td><span style="color:'+this.series.color+'">●</span>'+this.series.name+' High:</td><td style="text-align:right;"> <b>'+this.high.toFixed((<any>Highcharts).customProductFixed)+' ' + ((<any>Highcharts).customQuoteCurrency) + '</b></td></tr>'
+        + '<tr><td><span style="color:'+this.series.color+'">●</span>'+this.series.name+' Low:</td><td style="text-align:right;"> <b>'+this.low.toFixed((<any>Highcharts).customProductFixed)+' ' + ((<any>Highcharts).customQuoteCurrency) + '</b></td></tr>'
       : '<tr><td><span style="color:'+this.series.color+'">' + (<any>Highcharts).customSymbols[this.series.symbol] + '</span> '+this.series.name+':</td><td style="text-align:right;"> <b>'+this.y.toFixed((<any>Highcharts).customProductFixed)+' ' + ((<any>Highcharts).customQuoteCurrency) + '</b></td></tr>';
   }
   private pointFormatterQuote = function () {
@@ -55,16 +55,18 @@ export class StatsComponent implements OnInit {
     title: 'fair value',
     chart: {
         width: 700,
-        height: 350,
-        zoomType: 'x',
+        height: 339,
+        zoomType: false,
         backgroundColor:'rgba(255, 255, 255, 0)',
     },
+    navigator: {enabled: false},
+    rangeSelector:{enabled: false,height:0},
     scrollbar: {enabled: false},
     credits: {enabled: false},
     xAxis: {
       type: 'datetime',
       crosshair: true,
-      events: {setExtremes: this.syncExtremes},
+      // events: {setExtremes: this.syncExtremes},
       labels: {enabled: false},
       gridLineWidth: 0,
       dateTimeLabelFormats: {millisecond: '%H:%M:%S',second: '%H:%M:%S',minute: '%H:%M',hour: '%H:%M',day: '%m-%d',week: '%m-%d',month: '%m',year: '%Y'}
@@ -79,7 +81,18 @@ export class StatsComponent implements OnInit {
       opposite: true,
       gridLineWidth: 0
     }],
-    legend: {enabled: false},
+    legend: {
+      enabled:true,
+      itemStyle: {
+        color: 'lightgray'
+      },
+      itemHoverStyle: {
+        color: 'gray'
+      },
+      itemHiddenStyle: {
+        color: 'black'
+      }
+    },
     tooltip: {
         shared: true,
         useHTML: true,
@@ -193,14 +206,41 @@ export class StatsComponent implements OnInit {
       tooltip: {pointFormatter: this.pointFormatterBase},
       yAxis: 1,
       data: []
+    },{
+      name: 'STDEV BBFair',
+      type: 'arearange',
+      tooltip: {pointFormatter: this.pointFormatterBase},
+      lineWidth: 0,
+      color:'#af451e',
+      fillOpacity: 0.2,
+      zIndex: -1,
+      data: []
+    },{
+      name: 'STDEV BBTops',
+      type: 'arearange',
+      tooltip: {pointFormatter: this.pointFormatterBase},
+      lineWidth: 0,
+      color:'#af451e',
+      fillOpacity: 0.2,
+      zIndex: -1,
+      data: []
+    },{
+      name: 'STDEV BBTop',
+      type: 'arearange',
+      tooltip: {pointFormatter: this.pointFormatterBase},
+      lineWidth: 0,
+      color:'#af451e',
+      fillOpacity: 0.2,
+      zIndex: -1,
+      data: []
     }]
   };
   public quoteChartOptions = {
     title: 'quote wallet',
     chart: {
         width: 700,
-        height: 175,
-        zoomType: 'x',
+        height: 167,
+        zoomType: false,
         resetZoomButton: {theme: {display: 'none'}},
         backgroundColor:'rgba(255, 255, 255, 0)'
     },
@@ -219,7 +259,7 @@ export class StatsComponent implements OnInit {
     xAxis: {
       type: 'datetime',
       crosshair: true,
-      events: {setExtremes: this.syncExtremes},
+      // events: {setExtremes: this.syncExtremes},
       labels: {enabled: true},
       dateTimeLabelFormats: {millisecond: '%H:%M:%S',second: '%H:%M:%S',minute: '%H:%M',hour: '%H:%M',day: '%m-%d',week: '%m-%d',month: '%m',year: '%Y'}
     },
@@ -269,8 +309,8 @@ export class StatsComponent implements OnInit {
     title: 'base wallet',
     chart: {
         width: 700,
-        height: 175,
-        zoomType: 'x',
+        height: 167,
+        zoomType: false,
         resetZoomButton: {theme: {display: 'none'}},
         backgroundColor:'rgba(255, 255, 255, 0)'
     },
@@ -289,7 +329,7 @@ export class StatsComponent implements OnInit {
     xAxis: {
       type: 'datetime',
       crosshair: true,
-      events: {setExtremes: this.syncExtremes},
+      // events: {setExtremes: this.syncExtremes},
       labels: {enabled: false},
       dateTimeLabelFormats: {millisecond: '%H:%M:%S',second: '%H:%M:%S',minute: '%H:%M',hour: '%H:%M',day: '%m-%d',week: '%m-%d',month: '%m',year: '%Y'}
     },
@@ -433,6 +473,9 @@ export class StatsComponent implements OnInit {
         if (this.stdevWidth.tops) Highcharts.charts[this.fvChart].series[11].addPoint([time, this.stdevWidth.tops], false);
         if (this.stdevWidth.ask) Highcharts.charts[this.fvChart].series[12].addPoint([time, this.stdevWidth.ask], false);
         if (this.stdevWidth.bid) Highcharts.charts[this.fvChart].series[13].addPoint([time, this.stdevWidth.bid], false);
+        if (this.stdevWidth.fv && this.stdevWidth.fvMean) Highcharts.charts[this.fvChart].series[14].addPoint([time, this.stdevWidth.fvMean-this.stdevWidth.fv, this.stdevWidth.fvMean+this.stdevWidth.fv], this.showStats, false, false);
+        if (this.stdevWidth.tops && this.stdevWidth.topsMean) Highcharts.charts[this.fvChart].series[15].addPoint([time, this.stdevWidth.topsMean-this.stdevWidth.tops, this.stdevWidth.topsMean+this.stdevWidth.tops], this.showStats, false, false);
+        if (this.stdevWidth.ask && this.stdevWidth.bid && this.stdevWidth.askMean && this.stdevWidth.bidMean) Highcharts.charts[this.fvChart].series[16].addPoint([time, this.stdevWidth.bidMean-this.stdevWidth.bid, this.stdevWidth.askMean+this.stdevWidth.ask], this.showStats, false, false);
       }
       if (this.ewmaQuote) Highcharts.charts[this.fvChart].series[6].addPoint([time, this.ewmaQuote], false);
       if (this.ewmaLong) Highcharts.charts[this.fvChart].series[7].addPoint([time, this.ewmaLong], false);
@@ -482,9 +525,9 @@ export class StatsComponent implements OnInit {
     Highcharts.charts[this.fvChart].series[Models.Side[t.side] == 'Bid' ? 4 : 2].addPoint([time, t.price], false);
     (<any>Highcharts).charts[this.fvChart].series[Models.Side[t.side] == 'Bid' ? 5 : 3].addPoint({
       x: time,
-      title: (t.type == 'Ping' ? '_' : '¯')+(Models.Side[t.side] == 'Bid' ? 'B' : 'S'),
+      title: (t.pong ? '¯' : '_')+(Models.Side[t.side] == 'Bid' ? 'B' : 'S'),
       useHTML:true,
-      text: '<tr><td colspan="2"><b><span style="color:'+(Models.Side[t.side] == 'Bid' ? '#0000FF':'#FF0000')+';">'+(Models.Side[t.side] == 'Bid' ? '▼':'▲')+'</span> '+(Models.Side[t.side] == 'Bid' ? 'Buy':'Sell')+'</b> ('+t.type+')</td></tr>'
+      text: '<tr><td colspan="2"><b><span style="color:'+(Models.Side[t.side] == 'Bid' ? '#0000FF':'#FF0000')+';">'+(Models.Side[t.side] == 'Bid' ? '▼':'▲')+'</span> '+(Models.Side[t.side] == 'Bid' ? 'Buy':'Sell')+'</b> (P'+(t.pong?'o':'i')+'ng)</td></tr>'
         + '<tr><td>' + 'Price:</td><td style="text-align:right;"> <b>' + t.price.toFixed((<any>Highcharts).customProductFixed) + ' ' + ((<any>Highcharts).customQuoteCurrency) + '</b></td></tr>'
         + '<tr><td>' + 'Qty:</td><td style="text-align:right;"> <b>' + t.quantity.toFixed(8) + ' ' + ((<any>Highcharts).customBaseCurrency) + '</b></td></tr>'
         + '<tr><td>' + 'Value:</td><td style="text-align:right;"> <b>' + t.value.toFixed((<any>Highcharts).customProductFixed) + ' ' + ((<any>Highcharts).customQuoteCurrency) + '</b></td></tr>'

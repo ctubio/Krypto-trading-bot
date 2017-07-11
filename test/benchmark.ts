@@ -1,8 +1,18 @@
+const packageConfig = require("./../package.json");
+
 import assert = require("assert");
 import Utils = require("../src/server/utils");
 import Statistics = require("../src/server/statistics");
-var bindings = require('bindings')('K.node');
-var Benchmark = require('benchmark');
+import Benchmark = require('benchmark');
+
+const bindings = ((K) => { try {
+  console.log(K.join('.'));
+  return require('./../app/server/lib/'+K.join('.'));
+} catch (e) {
+  if (process.version.substring(1).split('.').map((n) => parseInt(n))[0] < 7)
+    throw new Error('K requires Node.js v7.0.0 or greater.');
+  else throw new Error(e);
+}})([packageConfig.name[0], process.platform, process.versions.modules]);
 
 // function computeStdev(sequence: number[], factor: number, minTick: number): number {
   // const n = sequence.length;
@@ -61,10 +71,10 @@ describe("Benchmark C shared objects", () => {
       // var mul = 1;
       // return (new Benchmark.Suite())
         // .add('JS Stdev', function() {
-          // Statistics.computeStdev(seqA, mul, min);
-          // Statistics.computeStdev(seqB, mul, min);
-          // Statistics.computeStdev(seqC, mul, min);
-          // Statistics.computeStdev(seqD, mul, min);
+          // computeStdev(seqA, mul, min);
+          // computeStdev(seqB, mul, min);
+          // computeStdev(seqC, mul, min);
+          // computeStdev(seqD, mul, min);
         // })
         // .add('C Stdev', function() {
           // bindings.computeStdevs(
