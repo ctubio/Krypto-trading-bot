@@ -49,7 +49,7 @@ namespace K {
     double            profitHourInterval            = decimal_cast<1>("0.5").getAsDouble();
     bool              audio                         = false;
     int               delayUI                       = 7;
-    mMovei            moveit                        = mMovei::unknown;
+    mMoveit            moveit                        = mMoveit::unknown;
     mMovemomentum     movemomentum                  = mMovemomentum::unknown;
   } qp;
   class QP {
@@ -104,6 +104,8 @@ namespace K {
         qpRepo_->Set(FN::v8S("profitHourInterval"), Number::New(isolate, qp->profitHourInterval));
         qpRepo_->Set(FN::v8S("audio"), Boolean::New(isolate, qp->audio));
         qpRepo_->Set(FN::v8S("delayUI"), Number::New(isolate, qp->delayUI));
+        qpRepo_->Set(FN::v8S("moveit"), Number::New(isolate, (int)qp->moveit));
+        qpRepo_->Set(FN::v8S("movemomentum"), Number::New(isolate, (int)qp->delayUI));
         MaybeLocal<Array> maybe_props;
         Local<Array> props;
         maybe_props = qpRepo_->GetOwnPropertyNames(Context::New(isolate));

@@ -118,7 +118,7 @@ export enum OrderType { Limit, Market }
 export enum TimeInForce { IOC, FOK, GTC }
 export enum OrderStatus { New, Working, Complete, Cancelled }
 export enum Liquidity { Make, Take }
-enum  mMovei { up, down, unknown }
+enum  mMoveit { up, down, unknown }
 enum  mMovemomentum {normal, mid, fast, unknown }
 
 export interface ProductState {
