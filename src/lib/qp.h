@@ -129,7 +129,7 @@ namespace K {
         qpRepo_->Set(FN::v8S("dnnormalhigh"), Number::New(isolate, qp->dnnormalhigh));
         qpRepo_->Set(FN::v8S("dnmidlow"), Number::New(isolate, qp->dnmidlow));
         qpRepo_->Set(FN::v8S("dnmidhigh"), Number::New(isolate, qp->dnmidhigh));
-        qpRepo_->Set(FN::v8S("difastlow"), Number::New(isolate, qp->dnfastlow));
+        qpRepo_->Set(FN::v8S("dnfastlow"), Number::New(isolate, qp->dnfastlow));
         qpRepo_->Set(FN::v8S("asp_low"), Number::New(isolate, qp->asp_low));
         qpRepo_->Set(FN::v8S("asp_high"), Number::New(isolate, qp->asp_high));
         qpRepo_->Set(FN::v8S("aspactive"), Boolean::New(isolate, qp->aspactive));

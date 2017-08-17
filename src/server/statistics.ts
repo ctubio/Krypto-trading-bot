@@ -43,7 +43,6 @@ export class EWMATargetPositionCalculator {
           newTargetPosition = ((newTrend + newEwmacrossing) / 2) * (1 / params.ewmaSensiblityPercentage);
         } else if (params.autoPositionMode === Models.AutoPositionMode.EWMA_LS) {
           newTargetPosition = ((newShort * 100/ newLong) - 100) * (1 / params.ewmaSensiblityPercentage);
-
         }
         if (newTargetPosition > 1) newTargetPosition = 1;
         else if (newTargetPosition < -1) newTargetPosition = -1;

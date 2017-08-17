@@ -82,6 +82,86 @@ class DisplayOrder {
                     <div class="row" [hidden]="!showConfigs">
                         <div class="col-md-12 col-xs-12">
                             <div class="row">
+                            <table class="table table-responsive table-bordered" style="margin-bottom:0px;">
+                                <thead>
+                                    <tr class="active">
+                                        <th>UP Normal Low</th>
+                                        <th>UP Normal High</th>
+                                        <th>UP Mid Low</th>
+                                        <th>Up Mid High</th>
+                                        <th>UP Fast Low</th>
+                                        <th>DN Normal Low</th>
+                                        <th>DN Normal High</th>
+                                        <th>DN Mid Low</th>
+                                        <th>DN Mid High</th>
+                                        <th>DN Fast Low</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                <td style="width:78px;border-bottom: 3px solid #DDE28B;">
+                                    <input class="form-control input-sm"
+                                       type="number" step="1" min="1"
+                                       onClick="this.select()"
+                                       [(ngModel)]="pair.quotingParameters.display.upnormallow">
+                                </td>
+                                <td style="width:78px;border-bottom: 3px solid #DDE28B;">
+                                    <input class="form-control input-sm"
+                                       type="number" step="1" min="1"
+                                       onClick="this.select()"
+                                       [(ngModel)]="pair.quotingParameters.display.upnormalhigh">
+                                </td>
+                                <td style="width:78px;border-bottom: 3px solid #DDE28B;">
+                                    <input class="form-control input-sm"
+                                       type="number" step="1" min="1"
+                                       onClick="this.select()"
+                                       [(ngModel)]="pair.quotingParameters.display.upmidlow">
+                                </td>
+                                <td style="width:78px;border-bottom: 3px solid #DDE28B;">
+                                    <input class="form-control input-sm"
+                                       type="number" step="1" min="1"
+                                       onClick="this.select()"
+                                       [(ngModel)]="pair.quotingParameters.display.upmidhigh">
+                                </td>
+                                <td style="width:78px;border-bottom: 3px solid #DDE28B;">
+                                    <input class="form-control input-sm"
+                                       type="number" step="1" min="1"
+                                       onClick="this.select()"
+                                       [(ngModel)]="pair.quotingParameters.display.upfastlow">
+                                </td>
+                                <td style="width:78px;border-bottom: 3px solid #DDE28B;">
+                                    <input class="form-control input-sm"
+                                       type="number" step="1" min="1"
+                                       onClick="this.select()"
+                                       [(ngModel)]="pair.quotingParameters.display.dnnormallow">
+                                </td>
+                                <td style="width:78px;border-bottom: 3px solid #DDE28B;">
+                                    <input class="form-control input-sm"
+                                       type="number" step="1" min="1"
+                                       onClick="this.select()"
+                                       [(ngModel)]="pair.quotingParameters.display.dnnormalhigh">
+                                </td>
+                                <td style="width:78px;border-bottom: 3px solid #DDE28B;">
+                                    <input class="form-control input-sm"
+                                       type="number" step="1" min="1"
+                                       onClick="this.select()"
+                                       [(ngModel)]="pair.quotingParameters.display.dnmidlow">
+                                </td>
+                                <td style="width:78px;border-bottom: 3px solid #DDE28B;">
+                                    <input class="form-control input-sm"
+                                       type="number" step="1" min="1"
+                                       onClick="this.select()"
+                                       [(ngModel)]="pair.quotingParameters.display.dnmidhigh">
+                                </td>
+                                <td style="width:78px;border-bottom: 3px solid #DDE28B;">
+                                    <input class="form-control input-sm"
+                                       type="number" step="1" min="1"
+                                       onClick="this.select()"
+                                       [(ngModel)]="pair.quotingParameters.display.dnfastlow">
+                                </td>
+                                </tr>
+                            </tbody>
+                        </table>
                                 <table class="table table-responsive table-bordered" style="margin-bottom:0px;">
                                     <thead>
                                         <tr class="active">
