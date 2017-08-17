@@ -28,7 +28,7 @@ namespace K {
   enum class mAutoPositionMode: unsigned int { Manual, EWMA_LS, EWMA_LMS };
   enum class mAPR: unsigned int { Off, Size, SizeWidth };
   enum class mMovei: unsigned int { up, down, unknown };
-  enum class mMovemomentum unsigned int {normal, mid, fast, unknown };
+  enum class mMovemomentum: unsigned int {normal, mid, fast, unknown };
   enum class mSOP: unsigned int { Off, x2trades, x3trades, x2Size, x3Size, x2tradesSize, x3tradesSize };
   enum class mSTDEV: unsigned int{ Off, OnFV, OnFVAPROff, OnTops, OnTopsAPROff, OnTop, OnTopAPROff };
   enum class uiBIT: unsigned char { MSG = '-', SNAP = '=' };
