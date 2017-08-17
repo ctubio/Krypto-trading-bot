@@ -129,9 +129,15 @@ export class QuotingEngine {
               ? 3 : 1))
         ] : [1, 1];
 
-        let pDiv: number  = (params.percentageValues)
+        var pDiv: number  = (params.percentageValues)
           ? params.positionDivergencePercentage * latestPosition.value / 100
           : params.positionDivergence;
+
+          if (params.aspvalue >= params.asp_high && params.aspvalue <= params.asp_low) {
+            pDiv = 0;
+            console.warn(new Date().toISOString().slice(11, -1), 'pDiv', 'pDiv Value Changed to: 0');
+
+          }
 
         if (superTradesMultipliers[1] > 1) {
           if (!params.buySizeMax) unrounded.bidSz = Math.min(superTradesMultipliers[1]*buySize, (latestPosition.quoteAmount / fv.price) / 2);

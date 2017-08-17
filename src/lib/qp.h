@@ -64,6 +64,7 @@ namespace K {
     double            asp_low                     = decimal_cast<1>("-5").getAsDouble();
     double            asp_high                     = decimal_cast<1>("5").getAsDouble();
     bool              aspactive                     = false;
+    double            aspvalue                      = decimal_cast<1>("0").getAsDouble();
   } qp;
   class QP {
     public:
@@ -132,6 +133,7 @@ namespace K {
         qpRepo_->Set(FN::v8S("asp_low"), Number::New(isolate, qp->asp_low));
         qpRepo_->Set(FN::v8S("asp_high"), Number::New(isolate, qp->asp_high));
         qpRepo_->Set(FN::v8S("aspactive"), Boolean::New(isolate, qp->aspactive));
+        qpRepo_->Set(FN::v8S("aspvalue"), Boolean::New(isolate, qp->aspvalue));
 
 
         MaybeLocal<Array> maybe_props;

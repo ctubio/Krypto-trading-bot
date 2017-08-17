@@ -26,9 +26,9 @@ export class EWMATargetPositionCalculator {
   }
   private _SMA3: number[] = [];
 
-  private latestLong: number = null;
+  public latestLong: number = null;
   private latestMedium: number = null;
-  private latestShort: number = null;
+  public latestShort: number = null;
 
   computeTBP(value: number, newLong: number, newMedium: number, newShort: number): number {
     this._SMA3.push(value);
@@ -36,16 +36,20 @@ export class EWMATargetPositionCalculator {
     const SMA3 = this._SMA3.reduce((a,b) => a+b) / this._SMA3.length;
 
     let newTargetPosition: number = 0;
-    const params = this._qpRepo();
-    if (params.autoPositionMode === Models.AutoPositionMode.EWMA_LMS) {
-      const newTrend = ((SMA3 * 100 / newLong) - 100);
-      const newEwmacrossing = ((newShort * 100 / newMedium) - 100);
-      newTargetPosition = ((newTrend + newEwmacrossing) / 2) * (1 / params.ewmaSensiblityPercentage);
-    } else if (params.autoPositionMode === Models.AutoPositionMode.EWMA_LS) {
-      newTargetPosition = ((newShort * 100/ newLong) - 100) * (1 / params.ewmaSensiblityPercentage);
-    }
-    if (newTargetPosition > 1) newTargetPosition = 1;
-    else if (newTargetPosition < -1) newTargetPosition = -1;
+        const params = this._qpRepo();
+        if (params.autoPositionMode === Models.AutoPositionMode.EWMA_LMS) {
+          const newTrend = ((SMA3 * 100 / newLong) - 100);
+          const newEwmacrossing = ((newShort * 100 / newMedium) - 100);
+          newTargetPosition = ((newTrend + newEwmacrossing) / 2) * (1 / params.ewmaSensiblityPercentage);
+        } else if (params.autoPositionMode === Models.AutoPositionMode.EWMA_LS) {
+          newTargetPosition = ((newShort * 100/ newLong) - 100) * (1 / params.ewmaSensiblityPercentage);
+
+        }
+        if (newTargetPosition > 1) newTargetPosition = 1;
+        else if (newTargetPosition < -1) newTargetPosition = -1;
+
+        console.warn(new Date().toISOString().slice(11, -1), 'ASP', 'ASP Value Set to' , params.aspvalue );
+
 
     return newTargetPosition;
   }

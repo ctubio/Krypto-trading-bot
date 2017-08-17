@@ -79,6 +79,15 @@ export class TargetBasePositionManager {
       this._uiSend(Models.Topics.TargetBasePosition, this._latest, true);
       this._dbInsert(Models.Topics.TargetBasePosition, this._latest);
       console.info(new Date().toISOString().slice(11, -1), 'tbp', 'recalculated', this._latest.tbp);
+
+      this.fairValue = this._fvAgent.latestFairValue.price;
+
+      params.aspvalue = (this._ewma.latestShort * 100 / this._ewma.latestLong) - 100 ;
+      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Fair Value:', this.fairValue  )
+      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Short Value:', (this._ewma.latestShort * 100) )
+      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Long Value:', (this._ewma.latestLong ) )
+      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'recalculated', params.aspvalue )
+
     }
   };
 
