@@ -86,6 +86,10 @@ class DisplayOrder {
                                     <thead>
                                         <tr class="active">
                                             <th>%</th>
+                                            <th>Enable ASP</th>
+                                            <th>ASP High</th>
+                                            <th>ASP Low</th>
+
                                             <th>mode</th>
                                             <th *ngIf="pair.quotingParameters.display.mode==7">bullets</th>
                                             <th *ngIf="pair.quotingParameters.display.mode==7">range</th>
@@ -101,6 +105,22 @@ class DisplayOrder {
                                             <td style="width:25px;border-bottom: 3px solid #8BE296;">
                                                 <input type="checkbox"
                                                    [(ngModel)]="pair.quotingParameters.display.percentageValues">
+                                            </td>
+                                            <td style="width:78px;border-bottom: 3px solid #DDE28B;">
+                                                <input class="form-control input-sm"
+                                                   type="number" step="1" min="1"
+                                                   onClick="this.select()"
+                                                   [(ngModel)]="pair.quotingParameters.display.asp_high">
+                                            </td>
+                                            <td style="width:78px;border-bottom: 3px solid #DDE28B;">
+                                                <input class="form-control input-sm"
+                                                   type="number" step="1" min="1"
+                                                   onClick="this.select()"
+                                                   [(ngModel)]="pair.quotingParameters.display.asp_low">
+                                            </td>
+                                            <td style="width:25px;border-bottom: 3px solid #8BE296;">
+                                                <input type="checkbox"
+                                                   [(ngModel)]="pair.quotingParameters.display.aspactive">
                                             </td>
                                             <td style="min-width:121px;border-bottom: 3px solid #DDE28B;">
                                                 <select class="form-control input-sm"
