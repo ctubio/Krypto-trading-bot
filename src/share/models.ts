@@ -316,6 +316,7 @@ export interface QuotingParameters {
     positionDivergence?: number;
     positionDivergencePercentage?: number;
     percentageValues?: boolean;
+    aspactive?: boolean;
     autoPositionMode?: AutoPositionMode;
     aggressivePositionRebalancing?: APR;
     superTrades?: SOP;
@@ -342,6 +343,8 @@ export interface QuotingParameters {
     stepOverSize?: number;
     profitHourInterval?: number;
     delayUI?: number;
+    asp_low?: number;
+    asp_high?: number;
 }
 
 export class ProductAdvertisement {
