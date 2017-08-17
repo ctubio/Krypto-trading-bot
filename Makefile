@@ -172,7 +172,7 @@ stop:
 
 start:
 	@test -d app || $(MAKE) install
-	./node_modules/.bin/forever start --minUptime 1 --spinSleepTime 21000 --uid $(KCONFIG) -a -l /dev/null K.js
+	./node_modules/.bin/forever start --minUptime 1 --spinSleepTime 21000 --uid $(KCONFIG) -a -l /home/Krypto-trading-bot/K.log K.js
 	@$(MAKE) stunnel -s
 
 stunnel: dist/K-stunnel.conf

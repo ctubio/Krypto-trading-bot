@@ -49,6 +49,8 @@ namespace K {
     double            profitHourInterval            = decimal_cast<1>("0.5").getAsDouble();
     bool              audio                         = false;
     int               delayUI                       = 7;
+    mMovei            moveit                        = mMovei::unknown;
+    mMovemomentum     movemomentum                  = mMovemomentum::unknown;
   } qp;
   class QP {
     public:
