@@ -51,6 +51,16 @@ namespace K {
     int               delayUI                       = 7;
     mMoveit            moveit                        = mMoveit::unknown;
     mMovemomentum     movemomentum                  = mMovemomentum::unknown;
+    double            upnormallow                   = decimal_cast<1>("-0.5").getAsDouble();
+    double            upnormalhigh                   = decimal_cast<1>("0.5").getAsDouble();
+    double            upmidlow                      = decimal_cast<1>("0.5").getAsDouble();
+    double            upmidhigh                     = decimal_cast<1>("1").getAsDouble();
+    double            upfastlow                     = decimal_cast<1>("1").getAsDouble();
+    double            dnnormallow                   = decimal_cast<1>("-0.5").getAsDouble();
+    double            dnnormalhigh                   = decimal_cast<1>("0.5").getAsDouble();
+    double            dnmidlow                      = decimal_cast<1>("-0.5").getAsDouble();
+    double            dnmidhigh                     = decimal_cast<1>("-1").getAsDouble();
+    double            dnfastlow                     = decimal_cast<1>("-1").getAsDouble();
   } qp;
   class QP {
     public:
@@ -105,7 +115,18 @@ namespace K {
         qpRepo_->Set(FN::v8S("audio"), Boolean::New(isolate, qp->audio));
         qpRepo_->Set(FN::v8S("delayUI"), Number::New(isolate, qp->delayUI));
         qpRepo_->Set(FN::v8S("moveit"), Number::New(isolate, (int)qp->moveit));
-        qpRepo_->Set(FN::v8S("movemomentum"), Number::New(isolate, (int)qp->delayUI));
+        qpRepo_->Set(FN::v8S("movemomentum"), Number::New(isolate, (int)qp->movemomentum));
+        qpRepo_->Set(FN::v8S("upnormallow"), Number::New(isolate, qp->upnormallow));
+        qpRepo_->Set(FN::v8S("upnormalhigh"), Number::New(isolate, qp->upnormalhigh));
+        qpRepo_->Set(FN::v8S("upmidlow"), Number::New(isolate, qp->upmidlow));
+        qpRepo_->Set(FN::v8S("upmidhigh"), Number::New(isolate, qp->upmidhigh));
+        qpRepo_->Set(FN::v8S("upfastlow"), Number::New(isolate, qp->upfastlow));
+        qpRepo_->Set(FN::v8S("dnnormallow"), Number::New(isolate, qp->dnnormallow));
+        qpRepo_->Set(FN::v8S("dnnormalhigh"), Number::New(isolate, qp->dnnormalhigh));
+        qpRepo_->Set(FN::v8S("dnmidlow"), Number::New(isolate, qp->dnmidlow));
+        qpRepo_->Set(FN::v8S("dnmidhigh"), Number::New(isolate, qp->dnmidhigh));
+        qpRepo_->Set(FN::v8S("difastlow"), Number::New(isolate, qp->dnfastlow));
+
         MaybeLocal<Array> maybe_props;
         Local<Array> props;
         maybe_props = qpRepo_->GetOwnPropertyNames(Context::New(isolate));
