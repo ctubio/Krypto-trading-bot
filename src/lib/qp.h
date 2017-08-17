@@ -61,6 +61,8 @@ namespace K {
     double            dnmidlow                      = decimal_cast<1>("-0.5").getAsDouble();
     double            dnmidhigh                     = decimal_cast<1>("-1").getAsDouble();
     double            dnfastlow                     = decimal_cast<1>("-1").getAsDouble();
+    double            asp_low                     = decimal_cast<1>("-5").getAsDouble();
+    double            asp_high                     = decimal_cast<1>("5").getAsDouble();
   } qp;
   class QP {
     public:
@@ -126,6 +128,8 @@ namespace K {
         qpRepo_->Set(FN::v8S("dnmidlow"), Number::New(isolate, qp->dnmidlow));
         qpRepo_->Set(FN::v8S("dnmidhigh"), Number::New(isolate, qp->dnmidhigh));
         qpRepo_->Set(FN::v8S("difastlow"), Number::New(isolate, qp->dnfastlow));
+        qpRepo_->Set(FN::v8S("asp_low"), Number::New(isolate, qp->asp_low));
+        qpRepo_->Set(FN::v8S("asp_high"), Number::New(isolate, qp->asp_high));
 
         MaybeLocal<Array> maybe_props;
         Local<Array> props;
