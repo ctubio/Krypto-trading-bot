@@ -131,6 +131,7 @@ const quotingEngine = new QuotingEngine.QuotingEngine(
     bindings.uiSend,
     bindings.evOn,
     bindings.evUp,
+    bindings.evUp,
     bindings.dbLoad(Models.Topics.TargetBasePosition)
   ),
   new Safety.SafetyCalculator(

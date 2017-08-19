@@ -14,6 +14,10 @@ export class TargetBasePositionManager {
   private newMedium: number = null;
   private newLong: number = null;
   private fairValue: number = null;
+  public latestLong: number = null;
+  private latestMedium: number = null;
+  public latestShort: number = null;
+
   public set quoteEwma(quoteEwma: number) {
     this.newQuote = quoteEwma;
   }
@@ -40,12 +44,22 @@ export class TargetBasePositionManager {
     private _uiSend,
     private _evOn,
     private _evUp,
+    initRfv: Models.RegularFairValue[],
     initTBP: Models.TargetBasePositionValue[]
   ) {
     if (initTBP.length && typeof initTBP[0].tbp != "undefined") {
       this._latest = initTBP[0];
       console.info(new Date().toISOString().slice(11, -1), 'tbp', 'Loaded from DB:', this._latest.tbp);
     }
+    if (initRfv !== null && initRfv.length) {
+      this.latestLong = initRfv[0].ewmaLong;
+      this.latestMedium = initRfv[0].ewmaMedium;
+      this.latestShort = initRfv[0].ewmaShort;
+    }
+
+
+
+
 
     _uiSnap(Models.Topics.TargetBasePosition, () => [this._latest]);
     _uiSnap(Models.Topics.EWMAChart, () => [this.fairValue?new Models.EWMAChart(
@@ -57,11 +71,11 @@ export class TargetBasePositionManager {
       this.fairValue?Utils.roundNearest(this.fairValue, this._minTick):null
     ):null]);
     this._evOn('PositionBroker', this.recomputeTargetPosition);
-    this._evOn('QuotingParameters', () => setTimeout(() => this.recomputeTargetPosition(this.newShort, this.newLong, this.fairValue), moment.duration(121)));
+    this._evOn('QuotingParameters', () => setTimeout(() => this.recomputeTargetPosition(), moment.duration(121)));
     setInterval(this.updateEwmaValues, moment.duration(10, 'seconds'));
   }
 
-  private recomputeTargetPosition = (newShort, newLong, fairValue) => {
+  private recomputeTargetPosition = () => {
     const params = this._qpRepo();
     if (params === null || this._positionBroker.latestReport === null) {
       console.info(new Date().toISOString().slice(11, -1), 'tbp', 'Unable to compute tbp [ qp | pos ] = [', !!params, '|', !!this._positionBroker.latestReport, ']');
@@ -85,20 +99,27 @@ export class TargetBasePositionManager {
     //  this._uiSend(Models.Topics.FairValue,   fairValue , true);
     //  this._dbInsert(Models.Topics.FairValue,   fairValue );
 
+    if (this._fvAgent.latestFairValue === null) {
+      console.info(new Date().toISOString().slice(11, -1), 'tbp', 'Unable to update ewma');
+      return;
+    }
+
+
 
       params.aspvalue = (this.newShort * 100 / this.newLong) - 100 ;
-      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Fair Value recalculated:', fairFV )
-      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Short Value:', (newShort ) )
-      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Long Value:', (newLong) )
+    //  console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Find the bug:', mrdebug )
+      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Fair Value recalculated:', this._fvAgent.latestFairValue.price )
+      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Short Value:', (this.newShort ) )
+      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Long Value:', (this.newLong) )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'recalculated', params.aspvalue )
 
 
-      if(newShort > newLong) {
+      if(this.newShort > this.newLong) {
         // Going up!
         params.moveit = Models.mMoveit.up;
         console.info(new Date().toISOString().slice(11, -1), 'MoveMent: ',   Models.mMoveit[params.moveit] )
 
-      } else if(newShort  < newLong) {
+      } else if(this.newShort  < this.newLong) {
         // Going down
         params.moveit = Models.mMoveit.down;
         console.info(new Date().toISOString().slice(11, -1), 'MoveMent: ',   Models.mMoveit[params.moveit] )
@@ -120,7 +141,7 @@ export class TargetBasePositionManager {
     this.newLong = this._ewma.addNewLongValue(this.fairValue);
     this._newTargetPosition = this._ewma.computeTBP(this.fairValue, this.newLong, this.newMedium, this.newShort);
     // console.info(new Date().toISOString().slice(11, -1), 'tbp', 'recalculated ewma [ FV | L | M | S ] = [',this.fairValue,'|',this.newLong,'|',this.newMedium,'|',this.newShort,']');
-    this.recomputeTargetPosition(this.newShort, this.newLong, this.fairValue);
+    this.recomputeTargetPosition();
 
     this._uiSend(Models.Topics.EWMAChart, new Models.EWMAChart(
       this.newWidth,
