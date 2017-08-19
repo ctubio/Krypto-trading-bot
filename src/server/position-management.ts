@@ -104,7 +104,7 @@ export class TargetBasePositionManager {
       return;
     }
 
-
+    let movement: number = ((this.newShort - this.newLong) / ((this.newShort + this.newLong) / 2)) * 100 ;
 
       params.aspvalue = (this.newShort * 100 / this.newLong) - 100 ;
     //  console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Find the bug:', mrdebug )
@@ -112,12 +112,16 @@ export class TargetBasePositionManager {
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Short Value:', (this.newShort ) )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Long Value:', (this.newLong) )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'recalculated', params.aspvalue )
+      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Movement', movement )
+
 
 
       if(this.newShort > this.newLong) {
         // Going up!
         params.moveit = Models.mMoveit.up;
         console.info(new Date().toISOString().slice(11, -1), 'MoveMent: ',   Models.mMoveit[params.moveit] )
+
+
 
       } else if(this.newShort  < this.newLong) {
         // Going down
