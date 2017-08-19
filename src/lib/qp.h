@@ -50,7 +50,7 @@ namespace K {
     bool              audio                         = false;
     int               delayUI                       = 7;
     mMoveit            moveit                        = mMoveit::unknown;
-    mMovemomentum     movemomentum                  = mMovemomentum::unknown;
+    mMovemomentum     movement                  = mMovemomentum::unknown;
     double            upnormallow                   = decimal_cast<1>("-0.5").getAsDouble();
     double            upnormalhigh                   = decimal_cast<1>("0.5").getAsDouble();
     double            upmidlow                      = decimal_cast<1>("0.5").getAsDouble();
@@ -119,7 +119,7 @@ namespace K {
         qpRepo_->Set(FN::v8S("audio"), Boolean::New(isolate, qp->audio));
         qpRepo_->Set(FN::v8S("delayUI"), Number::New(isolate, qp->delayUI));
         qpRepo_->Set(FN::v8S("moveit"), Number::New(isolate, (int)qp->moveit));
-        qpRepo_->Set(FN::v8S("movemomentum"), Number::New(isolate, (int)qp->movemomentum));
+        qpRepo_->Set(FN::v8S("movement"), Number::New(isolate, (int)qp->movement));
         qpRepo_->Set(FN::v8S("upnormallow"), Number::New(isolate, qp->upnormallow));
         qpRepo_->Set(FN::v8S("upnormalhigh"), Number::New(isolate, qp->upnormalhigh));
         qpRepo_->Set(FN::v8S("upmidlow"), Number::New(isolate, qp->upmidlow));

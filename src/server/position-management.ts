@@ -120,14 +120,36 @@ export class TargetBasePositionManager {
         // Going up!
         params.moveit = Models.mMoveit.up;
         console.info(new Date().toISOString().slice(11, -1), 'MoveMent: ',   Models.mMoveit[params.moveit] )
-
+        if (params.upnormallow > movement && params.upnormalhigh < movement) {
+          params.movement = Models.mMovemomentum.normal;
+        } else if ( movement > params.upmidlow && movement < params.upmidhigh )
+        {
+          params.movement = Models.mMovemomentum.mid;
+        } else if (movement > params.upfastlow )
+        {
+          params.movement = Models.mMovemomentum.fast;
+        }
 
 
       } else if(this.newShort  < this.newLong) {
         // Going down
         params.moveit = Models.mMoveit.down;
         console.info(new Date().toISOString().slice(11, -1), 'MoveMent: ',   Models.mMoveit[params.moveit] )
+        if (params.dnnormallow < movement && params.dnnormalhigh > movement) {
+          params.movement = Models.mMovemomentum.normal;
+        } else if (params.dnmidlow < movement && params.dnmidhigh > movement )
+        {
+          params.movement = Models.mMovemomentum.mid;
+        } else if (movement < params.dnfastlow )
+        {
+          params.movement = Models.mMovemomentum.fast;
+        }
+      } else {
+        console.info(new Date().toISOString().slice(11, -1), 'Movement', 'I Suck at math: ' )
+
       }
+      console.info(new Date().toISOString().slice(11, -1), 'Movement', 'Speed: ', Models.mMovemomentum[params.movement] )
+
 
 
     }
