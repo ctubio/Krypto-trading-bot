@@ -57,11 +57,11 @@ export class TargetBasePositionManager {
       this.fairValue?Utils.roundNearest(this.fairValue, this._minTick):null
     ):null]);
     this._evOn('PositionBroker', this.recomputeTargetPosition);
-    this._evOn('QuotingParameters', () => setTimeout(() => this.recomputeTargetPosition(), moment.duration(121)));
-    setInterval(this.updateEwmaValues, moment.duration(1, 'minutes'));
+    this._evOn('QuotingParameters', () => setTimeout(() => this.recomputeTargetPosition(this.newShort, this.newLong, this.fairValue), moment.duration(121)));
+    setInterval(this.updateEwmaValues, moment.duration(10, 'seconds'));
   }
 
-  private recomputeTargetPosition = () => {
+  private recomputeTargetPosition = (newShort, newLong, fairValue) => {
     const params = this._qpRepo();
     if (params === null || this._positionBroker.latestReport === null) {
       console.info(new Date().toISOString().slice(11, -1), 'tbp', 'Unable to compute tbp [ qp | pos ] = [', !!params, '|', !!this._positionBroker.latestReport, ']');
@@ -80,22 +80,25 @@ export class TargetBasePositionManager {
       this._dbInsert(Models.Topics.TargetBasePosition, this._latest);
       console.info(new Date().toISOString().slice(11, -1), 'tbp', 'recalculated', this._latest.tbp);
 
-      this.fairValue = this._fvAgent.latestFairValue.price;
+      let fairFV: number = this._fvAgent.latestFairValue.price;
+
+    //  this._uiSend(Models.Topics.FairValue,   fairValue , true);
+    //  this._dbInsert(Models.Topics.FairValue,   fairValue );
 
 
-
-      params.aspvalue = (this._ewma.latestShort * 100 / this._ewma.latestLong) - 100 ;
-      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Fair Value:', this.fairValue  )
-      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Short Value:', (this._ewma.latestShort * 100) )
-      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Long Value:', (this._ewma.latestLong ) )
+      params.aspvalue = (this.newShort * 100 / this.newLong) - 100 ;
+      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Fair Value recalculated:', fairFV )
+      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Short Value:', (newShort ) )
+      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Long Value:', (newLong) )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'recalculated', params.aspvalue )
 
-      if(this._ewma.latestShort  > this._ewma.latestLong) {
+
+      if(newShort > newLong) {
         // Going up!
         params.moveit = Models.mMoveit.up;
         console.info(new Date().toISOString().slice(11, -1), 'MoveMent: ',   Models.mMoveit[params.moveit] )
 
-      } else if(this._ewma.latestShort  < this._ewma.latestLong) {
+      } else if(newShort  < newLong) {
         // Going down
         params.moveit = Models.mMoveit.down;
         console.info(new Date().toISOString().slice(11, -1), 'MoveMent: ',   Models.mMoveit[params.moveit] )
@@ -117,7 +120,7 @@ export class TargetBasePositionManager {
     this.newLong = this._ewma.addNewLongValue(this.fairValue);
     this._newTargetPosition = this._ewma.computeTBP(this.fairValue, this.newLong, this.newMedium, this.newShort);
     // console.info(new Date().toISOString().slice(11, -1), 'tbp', 'recalculated ewma [ FV | L | M | S ] = [',this.fairValue,'|',this.newLong,'|',this.newMedium,'|',this.newShort,']');
-    this.recomputeTargetPosition();
+    this.recomputeTargetPosition(this.newShort, this.newLong, this.fairValue);
 
     this._uiSend(Models.Topics.EWMAChart, new Models.EWMAChart(
       this.newWidth,

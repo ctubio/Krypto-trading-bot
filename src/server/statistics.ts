@@ -48,7 +48,7 @@ export class EWMATargetPositionCalculator {
         else if (newTargetPosition < -1) newTargetPosition = -1;
 
         console.warn(new Date().toISOString().slice(11, -1), 'ASP', 'ASP Value Set to' , params.aspvalue );
-
+        
 
     return newTargetPosition;
   }
