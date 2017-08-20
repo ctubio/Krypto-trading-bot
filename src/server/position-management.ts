@@ -115,8 +115,7 @@ export class TargetBasePositionManager {
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'recalculated', params.aspvalue )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Movement', movement )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'EMA SHORT: ', this.newShort);
-    //  params.shortEMAArray.push(this.newShort);
-           console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'EMA SHORT: ', this.newShort);
+    
 
       //this.EMASHORT.push(this.newShort);
       //this._EMASHORT = this._EMASHORT.slice(-(params.shortEwmaPeridos));

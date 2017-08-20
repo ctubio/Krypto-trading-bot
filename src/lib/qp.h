@@ -3,7 +3,6 @@
 
 namespace K {
   struct Qp {
-    int               shortEMAArray[];
     int               widthPing                     = 2;
     double            widthPingPercentage           = decimal_cast<2>("0.25").getAsDouble();
     int               widthPong                     = 2;
@@ -135,7 +134,6 @@ namespace K {
         qpRepo_->Set(FN::v8S("asp_high"), Number::New(isolate, qp->asp_high));
         qpRepo_->Set(FN::v8S("aspactive"), Boolean::New(isolate, qp->aspactive));
         qpRepo_->Set(FN::v8S("aspvalue"), Boolean::New(isolate, qp->aspvalue));
-
 
         MaybeLocal<Array> maybe_props;
         Local<Array> props;
