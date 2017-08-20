@@ -3,7 +3,7 @@ import Utils = require("./utils");
 import MarketFiltration = require("./market-filtration");
 import FairValue = require("./fair-value");
 import moment = require("moment");
-import technicalindicators = require ("../../node_modules/technicalindicators");
+
 
 function computeEwma(newValue: number, previous: number, periods: number): number {
   if (previous !== null) {
@@ -150,6 +150,7 @@ export class STDEVProtectionCalculator {
       );
     };
 
+ 
     private onTick = () => {
         const filteredMkt = this._fv.filtration.latestFilteredMarket;
         if (this._fv.latestFairValue === null || filteredMkt == null || !filteredMkt.bids.length || !filteredMkt.asks.length) {
