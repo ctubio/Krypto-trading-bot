@@ -72,7 +72,7 @@ export class TargetBasePositionManager {
     ):null]);
     this._evOn('PositionBroker', this.recomputeTargetPosition);
     this._evOn('QuotingParameters', () => setTimeout(() => this.recomputeTargetPosition(), moment.duration(121)));
-    setInterval(this.updateEwmaValues, moment.duration(10, 'seconds'));
+    setInterval(this.updateEwmaValues, moment.duration(1, 'minutes'));
   }
 
   private recomputeTargetPosition = () => {
@@ -135,9 +135,9 @@ export class TargetBasePositionManager {
         // Going down
         params.moveit = Models.mMoveit.down;
         console.info(new Date().toISOString().slice(11, -1), 'MoveMent: ',   Models.mMoveit[params.moveit] )
-        if (params.dnnormallow < movement && params.dnnormalhigh > movement) {
+        if (movement > params.dnnormallow  &&  movement < params.dnnormalhigh ) {
           params.movement = Models.mMovemomentum.normal;
-        } else if (params.dnmidlow < movement && params.dnmidhigh > movement )
+        } else if ( movement > params.dnmidlow  &&  movement > params.dnmidhigh )
         {
           params.movement = Models.mMovemomentum.mid;
         } else if (movement < params.dnfastlow )
