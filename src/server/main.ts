@@ -1,5 +1,4 @@
 const packageConfig = require("./../../package.json");
-
 const noop = () => {};
 const bindings = ((K) => { try {
   console.log(K.join('.'));

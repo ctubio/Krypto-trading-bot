@@ -3,6 +3,7 @@ import Utils = require("./utils");
 import MarketFiltration = require("./market-filtration");
 import FairValue = require("./fair-value");
 import moment = require("moment");
+import technicalindicators = require ("../../node_modules/technicalindicators");
 
 function computeEwma(newValue: number, previous: number, periods: number): number {
   if (previous !== null) {
@@ -25,18 +26,22 @@ export class EWMATargetPositionCalculator {
     }
   }
   private _SMA3: number[] = [];
+  //private _EMASHORT: number[] = [];
+//  private _EMALONG: number[] = [];
 
   public latestLong: number = null;
   private latestMedium: number = null;
   public latestShort: number = null;
 
   computeTBP(value: number, newLong: number, newMedium: number, newShort: number): number {
+    const params = this._qpRepo();
     this._SMA3.push(value);
     this._SMA3 = this._SMA3.slice(-3);
     const SMA3 = this._SMA3.reduce((a,b) => a+b) / this._SMA3.length;
 
+
     let newTargetPosition: number = 0;
-        const params = this._qpRepo();
+
         if (params.autoPositionMode === Models.AutoPositionMode.EWMA_LMS) {
           const newTrend = ((SMA3 * 100 / newLong) - 100);
           const newEwmacrossing = ((newShort * 100 / newMedium) - 100);
@@ -48,7 +53,7 @@ export class EWMATargetPositionCalculator {
         else if (newTargetPosition < -1) newTargetPosition = -1;
 
         console.warn(new Date().toISOString().slice(11, -1), 'ASP', 'ASP Value Set to' , params.aspvalue );
-        
+
 
     return newTargetPosition;
   }

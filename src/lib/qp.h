@@ -3,6 +3,7 @@
 
 namespace K {
   struct Qp {
+    int               shortEMAArray[];
     int               widthPing                     = 2;
     double            widthPingPercentage           = decimal_cast<2>("0.25").getAsDouble();
     int               widthPong                     = 2;
