@@ -137,7 +137,7 @@ export class TargetBasePositionManager {
         console.info(new Date().toISOString().slice(11, -1), 'MoveMent: ',   Models.mMoveit[params.moveit] )
         if (movement > params.dnnormallow  &&  movement < params.dnnormalhigh ) {
           params.movement = Models.mMovemomentum.normal;
-        } else if ( movement > params.dnmidlow  &&  movement > params.dnmidhigh )
+        } else if ( movement < params.dnmidlow  &&  movement > params.dnmidhigh )
         {
           params.movement = Models.mMovemomentum.mid;
         } else if (movement < params.dnfastlow )
