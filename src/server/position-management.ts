@@ -4,7 +4,6 @@ import Statistics = require("./statistics");
 import FairValue = require("./fair-value");
 import moment = require("moment");
 import Broker = require("./broker");
-//const EMA = require('technicalindicators').EMA
 export class TargetBasePositionManager {
   public sideAPR: string;
 
@@ -115,8 +114,9 @@ export class TargetBasePositionManager {
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Long Value:', (this.newLong) )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'recalculated', params.aspvalue )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Movement', movement )
-
-
+      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'EMA SHORT: ', this.newShort);
+    //  params.shortEMAArray.push(this.newShort);
+           console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'EMA SHORT: ', this.newShort);
 
       //this.EMASHORT.push(this.newShort);
       //this._EMASHORT = this._EMASHORT.slice(-(params.shortEwmaPeridos));
@@ -186,7 +186,7 @@ export class TargetBasePositionManager {
     // console.info(new Date().toISOString().slice(11, -1), 'tbp', 'recalculated ewma [ FV | L | M | S ] = [',this.fairValue,'|',this.newLong,'|',this.newMedium,'|',this.newShort,']');
     this.recomputeTargetPosition();
 //params.shortEMAArray.push(this.newShort);
-    console.info(new Date().toISOString().slice(11, -1), 'EMA', this.newShort);
+
 
     this._uiSend(Models.Topics.EWMAChart, new Models.EWMAChart(
       this.newWidth,
