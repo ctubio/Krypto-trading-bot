@@ -17,7 +17,7 @@ export class TargetBasePositionManager {
   private latestMedium: number = null;
   public latestShort: number = null;
 
-  public EMASHORT: number[] = [];
+
 
   public set quoteEwma(quoteEwma: number) {
     this.newQuote = quoteEwma;
@@ -115,21 +115,9 @@ export class TargetBasePositionManager {
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'recalculated', params.aspvalue )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Movement', movement )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'EMA SHORT: ', this.newShort);
-    
-
-      //this.EMASHORT.push(this.newShort);
-      //this._EMASHORT = this._EMASHORT.slice(-(params.shortEwmaPeridos));
-  //    this._EMALONG.push(newLong);
-    //  this._EMALONG = this._EMALONG.slice(-(params.longEwmaPeridos));
 
 
 
-
-
-//   EMA.calculate({period : params.shortEwmaPeridos, values : this.EMASHORT});
-   //sma.getResult()
-//  console.info(new Date().toISOString().slice(11, -1), 'EMZZ: ',   EMA.getResult() )
-//  console.info(new Date().toISOString().slice(11, -1), 'EMZZ: ',   this.EMASHORT )
       if(this.newShort > this.newLong) {
         // Going up!
         params.moveit = Models.mMoveit.up;
@@ -184,7 +172,6 @@ export class TargetBasePositionManager {
     this._newTargetPosition = this._ewma.computeTBP(this.fairValue, this.newLong, this.newMedium, this.newShort);
     // console.info(new Date().toISOString().slice(11, -1), 'tbp', 'recalculated ewma [ FV | L | M | S ] = [',this.fairValue,'|',this.newLong,'|',this.newMedium,'|',this.newShort,']');
     this.recomputeTargetPosition();
-//params.shortEMAArray.push(this.newShort);
 
 
     this._uiSend(Models.Topics.EWMAChart, new Models.EWMAChart(

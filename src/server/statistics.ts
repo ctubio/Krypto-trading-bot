@@ -26,8 +26,7 @@ export class EWMATargetPositionCalculator {
     }
   }
   private _SMA3: number[] = [];
-  //private _EMASHORT: number[] = [];
-//  private _EMALONG: number[] = [];
+
 
   public latestLong: number = null;
   private latestMedium: number = null;
@@ -150,7 +149,7 @@ export class STDEVProtectionCalculator {
       );
     };
 
- 
+
     private onTick = () => {
         const filteredMkt = this._fv.filtration.latestFilteredMarket;
         if (this._fv.latestFairValue === null || filteredMkt == null || !filteredMkt.bids.length || !filteredMkt.asks.length) {
