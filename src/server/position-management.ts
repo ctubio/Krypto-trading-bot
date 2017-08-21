@@ -157,7 +157,7 @@ export class TargetBasePositionManager {
     //  const params = this._qpRepo();
 
   //  this.fairValue = this._fvAgent.latestFairValue.price;
-  // see above how to get fv 
+  // see above how to get fv
     this.fairValue = fv;
 
 
