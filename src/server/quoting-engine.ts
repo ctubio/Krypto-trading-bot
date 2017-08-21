@@ -8,7 +8,7 @@ import Statistics = require("./statistics");
 import moment = require('moment');
 import QuotingStyleRegistry = require("./quoting-styles/style-registry");
 import {QuoteInput} from "./quoting-styles/helpers";
-
+// test
 const quoteChanged = (o: Models.Quote, n: Models.Quote, tick: number) : boolean => {
    if ((!o && n) || (o && !n)) return true;
    if (!o && !n) return false;

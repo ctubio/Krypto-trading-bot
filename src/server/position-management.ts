@@ -52,16 +52,6 @@ export class TargetBasePositionManager {
       this._latest = initTBP[0];
       console.info(new Date().toISOString().slice(11, -1), 'tbp', 'Loaded from DB:', this._latest.tbp);
     }
-    if (initRfv !== null && initRfv.length) {
-      this.latestLong = initRfv[0].ewmaLong;
-      this.latestMedium = initRfv[0].ewmaMedium;
-      this.latestShort = initRfv[0].ewmaShort;
-    }
-
-
-
-
-
     _uiSnap(Models.Topics.TargetBasePosition, () => [this._latest]);
     _uiSnap(Models.Topics.EWMAChart, () => [this.fairValue?new Models.EWMAChart(
       this.newWidth,
@@ -114,10 +104,9 @@ export class TargetBasePositionManager {
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Long Value:', (this.newLong) )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'recalculated', params.aspvalue )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Movement', movement )
-      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'EMA SHORT: ', this.newShort);
 
 
-
+/*
       if(this.newShort > this.newLong) {
         // Going up!
         params.moveit = Models.mMoveit.up;
@@ -152,9 +141,10 @@ export class TargetBasePositionManager {
       }
       console.info(new Date().toISOString().slice(11, -1), 'Movement', 'Speed: ', Models.mMovemomentum[params.movement] )
 
-
+*/
 
     }
+
   };
 
   private updateEwmaValues = () => {
