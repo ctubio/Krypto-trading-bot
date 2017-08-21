@@ -10,16 +10,11 @@ const bindings = ((K) => { try {
 }})([packageConfig.name[0], process.platform, process.versions.modules]);
 bindings.uiLoop(noop);
 
-require('events').EventEmitter.prototype._maxListeners = 30;
 import request = require('request');
 
-import Broker = require("./broker");
 import QuoteSender = require("./quote-sender");
 import Models = require("../share/models");
-import Interfaces = require("./interfaces");
 import Safety = require("./safety");
-import FairValue = require("./fair-value");
-import MarketFiltration = require("./market-filtration");
 import PositionManagement = require("./position-management");
 import Statistics = require("./statistics");
 import QuotingEngine = require("./quoting-engine");
@@ -54,66 +49,21 @@ process.on("exit", (code) => {
   console.info(new Date().toISOString().slice(11, -1), 'main', 'Exit code', code);
 });
 
-const orderBroker = new Broker.OrderBroker(
-  bindings.qpRepo,
-  bindings.cfmCurrencyPair(),
-  bindings.gwMakeFee(),
-  bindings.gwTakeFee(),
-  bindings.gwMinTick(),
-  bindings.gwExchange(),
-  {sendOrder:bindings.gwSend,cancelOrder:bindings.gwCancel,cancelsByClientOrderId:bindings.gwCancelByClientId(),generateClientOrderId:bindings.gwClientId,supportsCancelAllOpenOrders:bindings.gwSupportCancelAll,cancelAllOpenOrders:bindings.gwCancelAll},
-  bindings.dbInsert,
-  bindings.uiSnap,
-  bindings.uiHand,
-  bindings.uiSend,
-  bindings.evOn,
-  bindings.evUp,
-  bindings.dbLoad(Models.Topics.Trades)
-);
-
-const initRfv = bindings.dbLoad(Models.Topics.EWMAChart);
-
-const fvEngine = new FairValue.FairValueEngine(
-  new MarketFiltration.MarketFiltration(
-    bindings.gwMinTick(),
-    orderBroker.orderCache.allOrders,
-    bindings.evOn,
-    bindings.evUp
-  ),
-  bindings.gwMinTick(),
-  bindings.qpRepo,
-  bindings.uiSnap,
-  bindings.uiSend,
-  bindings.evOn,
-  bindings.evUp,
-  initRfv
-);
-
-const positionBroker = new Broker.PositionBroker(
-  bindings.qpRepo,
-  bindings.cfmCurrencyPair(),
-  bindings.gwExchange(),
-  orderBroker.orderCache.allOrders,
-  fvEngine,
-  bindings.uiSnap,
-  bindings.uiSend,
-  bindings.evOn,
-  bindings.evUp
-);
-
 const quotingEngine = new QuotingEngine.QuotingEngine(
-  fvEngine,
+  bindings.mgFairV,
+  bindings.mgFilter,
   bindings.qpRepo,
-  positionBroker,
+  bindings.pgRepo,
   bindings.gwMinTick(),
   bindings.gwMinSize(),
   new Statistics.EWMAProtectionCalculator(
-    fvEngine,
+    bindings.mgFairV,
     bindings.qpRepo,
     bindings.evUp
   ),
   new Statistics.STDEVProtectionCalculator(
-    fvEngine,
+    bindings.mgFairV,
+    bindings.mgFilter,
     bindings.qpRepo,
     bindings.dbInsert,
     bindings.computeStdevs,
@@ -122,10 +72,13 @@ const quotingEngine = new QuotingEngine.QuotingEngine(
   new PositionManagement.TargetBasePositionManager(
     bindings.gwMinTick(),
     bindings.dbInsert,
-    fvEngine,
-    new Statistics.EWMATargetPositionCalculator(bindings.qpRepo, initRfv),
+    bindings.mgFairV,
+    new Statistics.EWMATargetPositionCalculator(
+      bindings.qpRepo,
+      bindings.dbLoad(Models.Topics.EWMAChart)
+    ),
     bindings.qpRepo,
-    positionBroker,
+    bindings.pgRepo,
     bindings.uiSnap,
     bindings.uiSend,
     bindings.evOn,
@@ -134,10 +87,10 @@ const quotingEngine = new QuotingEngine.QuotingEngine(
     bindings.dbLoad(Models.Topics.TargetBasePosition)
   ),
   new Safety.SafetyCalculator(
-    fvEngine,
+    bindings.mgFairV,
     bindings.qpRepo,
-    positionBroker,
-    orderBroker.tradesMemory,
+    bindings.pgRepo,
+    bindings.tradesMemory,
     bindings.uiSnap,
     bindings.uiSend,
     bindings.evOn,
@@ -149,9 +102,10 @@ const quotingEngine = new QuotingEngine.QuotingEngine(
 
 new QuoteSender.QuoteSender(
   quotingEngine,
-  orderBroker.orderCache.allOrders,
-  orderBroker.cancelOrder,
-  orderBroker.sendOrder,
+  bindings.allOrders,
+  bindings.allOrdersDelete,
+  bindings.cancelOrder,
+  bindings.sendOrder,
   bindings.gwMinTick(),
   bindings.qpRepo,
   bindings.uiSnap,
@@ -160,7 +114,7 @@ new QuoteSender.QuoteSender(
 );
 
 happyEnding = () => {
-  orderBroker.cancelOpenOrders();
+  bindings.cancelOpenOrders();
   console.info(new Date().toISOString().slice(11, -1), 'main', 'Attempting to cancel all open orders, please wait..');
 };
 

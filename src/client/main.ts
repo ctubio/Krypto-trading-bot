@@ -72,10 +72,10 @@ class DisplayOrder {
 @Component({
   selector: 'ui',
   template: `<div>
-    <div *ngIf="!connected">
+    <div *ngIf="!online">
         <h4 class="text-danger text-center">{{ product.advert.environment ? product.advert.environment+' is d' : 'D' }}isconnected.</h4>
     </div>
-    <div *ngIf="connected">
+    <div *ngIf="online">
         <div class="container-fluid">
             <div>
                 <div style="padding: 5px;padding-top:10px;margin-top:7px;" [ngClass]="pair.connected ? 'bg-success img-rounded' : 'bg-danger img-rounded'">
@@ -548,7 +548,7 @@ class DisplayOrder {
                           </div>
                           <div class="row" style="padding-top:0px;">
                             <div class="col-md-4 col-xs-12" style="padding-left:0px;padding-top:0px;padding-right:0px;">
-                                <market-quoting [connected]="!!pair.active.display" [product]="product"></market-quoting>
+                                <market-quoting [online]="!!pair.active.display.state" [product]="product"></market-quoting>
                             </div>
                             <div class="col-md-8 col-xs-12" style="padding-left:0px;padding-right:0px;padding-top:0px;">
                               <div class="row">
@@ -619,7 +619,7 @@ class DisplayOrder {
                                   </div>
                                 </div>
                                 <div class="col-md-10 col-xs-12" style="padding-right:0px;padding-top:4px;">
-                                  <order-list [connected]="!!pair.active.display" [product]="product"></order-list>
+                                  <order-list [online]="!!pair.active.display.state" [product]="product"></order-list>
                                 </div>
                               </div>
                               <div class="row">
@@ -653,7 +653,7 @@ class ClientComponent implements OnInit {
   public client_memory: string;
   public db_size: string;
   public notepad: string;
-  public connected: boolean;
+  public online: boolean;
   public showConfigs: boolean = false;
   public showStats: number = 0;
   public order: DisplayOrder;
@@ -735,7 +735,7 @@ class ClientComponent implements OnInit {
 
     this.changeNotepad = (content:string) => this.fireFactory
       .getFire(Models.Topics.Notepad)
-      .fire(content);
+      .fire([content]);
 
     this.toggleConfigs = (showConfigs:boolean) => {
       this.fireFactory
@@ -789,8 +789,8 @@ class ClientComponent implements OnInit {
     this.tradesLength = tradesLength;
   }
 
-  private reset = (connected: boolean) => {
-    this.connected = connected;
+  private reset = (online: boolean) => {
+    this.online = online;
     this.pair_name = [null, null];
     this.exchange_name = null;
     this.exchange_market = null;
@@ -830,7 +830,7 @@ class ClientComponent implements OnInit {
   }
 
   private onAdvert = (pa : Models.ProductAdvertisement) => {
-    this.connected = true;
+    this.online = true;
     window.document.title = '['+pa.environment+']';
     this.matryoshka = pa.matryoshka;
     this.system_theme = this.getTheme(moment.utc().hours());

@@ -1,9 +1,9 @@
 import Models = require("../share/models");
 import Utils = require("./utils");
 import Statistics = require("./statistics");
-import FairValue = require("./fair-value");
 import moment = require("moment");
-import Broker = require("./broker");
+
+//import Broker = require("./broker");
 export class TargetBasePositionManager {
   public sideAPR: string;
 
@@ -37,10 +37,10 @@ export class TargetBasePositionManager {
   constructor(
     private _minTick: number,
     private _dbInsert,
-    private _fvAgent: FairValue.FairValueEngine,
+    private _fvEngine,
     private _ewma: Statistics.EWMATargetPositionCalculator,
     private _qpRepo,
-    private _positionBroker: Broker.PositionBroker,
+    private _positionBroker,
     private _uiSnap,
     private _uiSend,
     private _evOn,
@@ -68,15 +68,16 @@ export class TargetBasePositionManager {
 
   private recomputeTargetPosition = () => {
     const params = this._qpRepo();
-    if (params === null || this._positionBroker.latestReport === null) {
+    const latestReport = this._positionBroker();
+    if (params === null || latestReport === null) {
       console.info(new Date().toISOString().slice(11, -1), 'tbp', 'Unable to compute tbp [ qp | pos ] = [', !!params, '|', !!this._positionBroker.latestReport, ']');
       return;
     }
     const targetBasePosition: number = (params.autoPositionMode === Models.AutoPositionMode.Manual)
       ? (params.percentageValues
-        ? params.targetBasePositionPercentage * this._positionBroker.latestReport.value / 100
+        ? params.targetBasePositionPercentage * latestReport.value / 100
         : params.targetBasePosition)
-      : ((1 + this._newTargetPosition) / 2) * this._positionBroker.latestReport.value;
+      : ((1 + this._newTargetPosition) / 2) * latestReport.value;
 
     if (this._latest === null || Math.abs(this._latest.tbp - targetBasePosition) > 1e-4 || this.sideAPR !== this._latest.sideAPR) {
       this._latest = new Models.TargetBasePositionValue(targetBasePosition, this.sideAPR);
@@ -85,21 +86,21 @@ export class TargetBasePositionManager {
       this._dbInsert(Models.Topics.TargetBasePosition, this._latest);
       console.info(new Date().toISOString().slice(11, -1), 'tbp', 'recalculated', this._latest.tbp);
 
-      let fairFV: number = this._fvAgent.latestFairValue.price;
+    //  let fairFV: number = this._fvAgent.latestFairValue.price;
 
     //  this._uiSend(Models.Topics.FairValue,   fairValue , true);
     //  this._dbInsert(Models.Topics.FairValue,   fairValue );
-
+/*
     if (this._fvAgent.latestFairValue === null) {
       console.info(new Date().toISOString().slice(11, -1), 'tbp', 'Unable to update ewma');
       return;
     }
-
+*/
     let movement: number = ((this.newShort - this.newLong) / ((this.newShort + this.newLong) / 2)) * 100 ;
 
       params.aspvalue = (this.newShort * 100 / this.newLong) - 100 ;
     //  console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Find the bug:', mrdebug )
-      console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Fair Value recalculated:', this._fvAgent.latestFairValue.price )
+    //  console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Fair Value recalculated:', this._fvAgent.latestFairValue.price )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Short Value:', (this.newShort ) )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'New Long Value:', (this.newLong) )
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'recalculated', params.aspvalue )
@@ -147,13 +148,18 @@ export class TargetBasePositionManager {
   };
 
   private updateEwmaValues = () => {
-    if (this._fvAgent.latestFairValue === null) {
+    const fv = this._fvEngine();
+    if (!fv) {
       console.info(new Date().toISOString().slice(11, -1), 'tbp', 'Unable to update ewma');
       return;
     }
+
     //  const params = this._qpRepo();
 
-    this.fairValue = this._fvAgent.latestFairValue.price;
+  //  this.fairValue = this._fvAgent.latestFairValue.price;
+  // see above how to get fv
+    this.fairValue = fv;
+
 
     this.newShort = this._ewma.addNewShortValue(this.fairValue);
     this.newMedium = this._ewma.addNewMediumValue(this.fairValue);

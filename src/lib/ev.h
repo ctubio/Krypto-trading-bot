@@ -2,8 +2,8 @@
 #define K_EV_H_
 
 namespace K {
-  typedef void (*evCb)(Local<Object>);
-  struct Ev { map<string, vector<CopyablePersistentTraits<Function>::CopyablePersistent>> _cb; map<string, vector<evCb>> cb; } ev;
+  typedef void (*evCb)(json);
+  struct Ev { map<string, vector<CopyablePersistentTraits<Function>::CopyablePersistent>> _cb; map<string, vector<evCb>> cb; } static ev;
   class EV {
     public:
       static void main(Local<Object> exports) {
@@ -15,29 +15,29 @@ namespace K {
         ev.cb[k].push_back(cb);
       };
       static void evUp(string k) {
-        Isolate* isolate = Isolate::GetCurrent();
-        Local<Object> o = Object::New(isolate);
         if (ev.cb.find(k) != ev.cb.end()) {
           for (vector<evCb>::iterator cb = ev.cb[k].begin(); cb != ev.cb[k].end(); ++cb)
-            (*cb)(o);
+            (*cb)({});
         }
         if (ev._cb.find(k) != ev._cb.end()) {
+          Isolate* isolate = Isolate::GetCurrent();
+          HandleScope scope(isolate);
+          Local<Object> o = Object::New(isolate);
           Local<Value> argv[] = {o};
           for (vector<CopyablePersistentTraits<Function>::CopyablePersistent>::iterator _cb = ev._cb[k].begin(); _cb != ev._cb[k].end(); ++_cb)
             Local<Function>::New(isolate, *_cb)->Call(isolate->GetCurrentContext()->Global(), 1, argv);
         }
       };
-      static void evUp(string k, Local<Number> o) {
-        EV::evUp(k, o->ToObject());
-      }
-      static void evUp(string k, Local<Object> o) {
+      static void evUp(string k, json o) {
+        Isolate* isolate = Isolate::GetCurrent();
+        HandleScope scope(isolate);
         if (ev.cb.find(k) != ev.cb.end()) {
           for (vector<evCb>::iterator cb = ev.cb[k].begin(); cb != ev.cb[k].end(); ++cb)
             (*cb)(o);
         }
         if (ev._cb.find(k) != ev._cb.end()) {
-          Isolate* isolate = Isolate::GetCurrent();
-          Local<Value> argv[] = {o};
+          JSON Json;
+          Local<Value> argv[] = {(Local<Value>)Json.Parse(isolate->GetCurrentContext(), FN::v8S(isolate, o.dump())).ToLocalChecked()};
           for (vector<CopyablePersistentTraits<Function>::CopyablePersistent>::iterator _cb = ev._cb[k].begin(); _cb != ev._cb[k].end(); ++_cb)
             Local<Function>::New(isolate, *_cb)->Call(isolate->GetCurrentContext()->Global(), 1, argv);
         }
@@ -45,7 +45,7 @@ namespace K {
       static void _evOn(const FunctionCallbackInfo<Value> &args) {
         Isolate* isolate = args.GetIsolate();
         HandleScope scope(isolate);
-        string k = string(*String::Utf8Value(args[0]->ToString()));
+        string k = FN::S8v(args[0]->ToString());
         Persistent<Function> _cb;
         _cb.Reset(isolate, Local<Function>::Cast(args[1]));
         ev._cb[k].push_back(_cb);
@@ -53,15 +53,17 @@ namespace K {
       static void _evUp(const FunctionCallbackInfo<Value> &args) {
         Isolate* isolate = args.GetIsolate();
         HandleScope scope(isolate);
-        string k = string(*String::Utf8Value(args[0]->ToString()));
+        string k = FN::S8v(args[0]->ToString());
         if (ev._cb.find(k) != ev._cb.end()) {
           Local<Value> argv[] = {args[1]};
           for (vector<CopyablePersistentTraits<Function>::CopyablePersistent>::iterator _cb = ev._cb[k].begin(); _cb != ev._cb[k].end(); ++_cb)
             Local<Function>::New(isolate, *_cb)->Call(isolate->GetCurrentContext()->Global(), 1, argv);
         }
         if (ev.cb.find(k) != ev.cb.end()) {
+          JSON Json;
+          json o = args[1]->IsUndefined() ? json{} : json::parse(FN::S8v(Json.Stringify(isolate->GetCurrentContext(), args[1]->ToObject()).ToLocalChecked()));
           for (vector<evCb>::iterator cb = ev.cb[k].begin(); cb != ev.cb[k].end(); ++cb)
-            (*cb)(args[1]->IsUndefined() ? Object::New(isolate) : args[1]->ToObject());
+            (*cb)(o);
         }
       };
   };

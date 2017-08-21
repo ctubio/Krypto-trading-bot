@@ -51,13 +51,13 @@ using namespace dec;
 #include "ev.h"
 #include "km.h"
 #include "sd.h"
-#include "kv.h"
 #include "cf.h"
 #include "db.h"
 #include "ui.h"
 #include "qp.h"
-#include "mg.h"
 #include "og.h"
+#include "mg.h"
+#include "pg.h"
 #include "gw.h"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -68,10 +68,11 @@ using namespace dec;
 ;;;;;;UI::main(exports);;    ;;    ;;;;;
 ;;;;;;DB::main(exports);;        ;;;;;;;
 ;;;;;;QP::main(exports);;        ;;;;;;;
-;;;;;;MG::main(exports);;    ;;    ;;;;;
-;;;;;;OG::main(exports);;    ;;;;    ;;;
-;;;;;;GW::main(exports);;    ;;;;    ;;;
-;;;;};;;;;;;;;;;;;;;;;;;;;;;;;;;;    ;;;
+;;;;;;OG::main(exports);;    ;;    ;;;;;
+;;;;;;MG::main(exports);;    ;;;;    ;;;
+;;;;;;PG::main(exports);;    ;;;;    ;;;
+;;;;;;GW::main(exports);;;;;;;;;;    ;;;
+;;;;};;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;};;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

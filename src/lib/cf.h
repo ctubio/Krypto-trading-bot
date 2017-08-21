@@ -2,6 +2,14 @@
 #define K_CF_H_
 
 namespace K {
+  static Gw* gw;
+  static Gw* gW;
+  static string dbFpath;
+  static bool gwAutoStart = false;
+  static json qpRepo;
+  static json pkRepo;
+  static json cfRepo;
+  static string cFname;
   class CF {
     public:
       static void internal(Local<Object> exports) {
@@ -22,14 +30,14 @@ namespace K {
           png_infop info_ptr;
           unsigned char sig[8];
           FILE *fp;
-          if(!(fp = fopen(cFname.data(), "rb"))) { cout << FN::uiT() << "Errrror: Could not find and open file " << k << "." << endl; }
+          if (!(fp = fopen(cFname.data(), "rb"))) { cout << FN::uiT() << "Errrror: Could not find and open file " << k << "." << endl; }
           else {
             fread(sig, 1, 8, fp);
-            if(!png_check_sig(sig, 8)) { cout << FN::uiT() << "Errrror: Not a PNG file." << endl; }
+            if (!png_check_sig(sig, 8)) { cout << FN::uiT() << "Errrror: Not a PNG file." << endl; }
             else {
               png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
               info_ptr = png_create_info_struct(png_ptr);
-              if(!png_ptr) { cout << FN::uiT() << "Errrror: Could not allocate memory." << endl; }
+              if (!png_ptr) { cout << FN::uiT() << "Errrror: Could not allocate memory." << endl; }
               else if (setjmp(png_jmpbuf(png_ptr))) { cout << FN::uiT() << "Errrror: PNG error." << endl; }
               else {
                 png_init_io(png_ptr, fp);
@@ -39,8 +47,8 @@ namespace K {
                 int num_text;
                 png_get_text(png_ptr, info_ptr, &text_ptr, &num_text);
                 string conf = "";
-                for(int i = 0; i < num_text; i++)
-                  if(strcmp("K.conf", text_ptr[i].key) == 0)
+                for (int i = 0; i < num_text; i++)
+                  if (strcmp("K.conf", text_ptr[i].key) == 0)
                     conf = text_ptr[i].text;
                 if (conf.length()) {
                   cfRepo = json::parse(conf);
@@ -68,7 +76,7 @@ namespace K {
         if (getenv(k.data()) != NULL) return string(getenv(k.data()));
         if (cfRepo.find(k) == cfRepo.end()) {
           if (r) {
-            cout << FN::uiT() << "Errrror: Use of missing \"" << k << "\" configuration. See https://github.com/ctubio/Krypto-trading-bot/blob/master/etc/K.json.dist for latest example." << endl;
+            cout << FN::uiT() << "Errrror: Use of missing \"" << k << "\" configuration."<< endl << "See https://github.com/ctubio/Krypto-trading-bot/blob/master/etc/K.json.dist" << endl;
             exit(1);
           } else return "";
         }
@@ -85,13 +93,13 @@ namespace K {
         string k_ = cfString("TradedPair");
         string k = k_.substr(0, k_.find("/"));
         if (k == k_) { cout << FN::uiT() << "Errrror: Invalid currency pair! Must be in the format of BASE/QUOTE, eg BTC/EUR." << endl; exit(1); }
-        return FN::S2mC(k);
+        return S2mC(k);
       };
       static int cfQuote() {
         string k_ = cfString("TradedPair");
         string k = k_.substr(k_.find("/")+1);
         if (k == k_) { cout << FN::uiT() << "Errrror: Invalid currency pair! Must be in the format of BASE/QUOTE, eg BTC/EUR." << endl; exit(1); }
-        return FN::S2mC(k);
+        return S2mC(k);
       };
       static mExchange cfExchange() {
         string k = FN::S2l(cfString("EXCHANGE"));
@@ -105,6 +113,12 @@ namespace K {
         cout << FN::uiT() << "Errrror: Invalid configuration value \"" << k << "\" as EXCHANGE. See https://github.com/ctubio/Krypto-trading-bot/tree/master/etc#configuration-options for more information." << endl;
         exit(1);
       };
+      static int S2mC(string k) {
+        k = FN::S2u(k);
+        for (unsigned i=0; i<mCurrency.size(); ++i) if (mCurrency[i] == k) return i;
+        cout << FN::uiT() << "Errrror: Use of missing \"" << k << "\" currency." << endl;
+        exit(1);
+      };
     private:
       static void _cfString(const FunctionCallbackInfo<Value> &args) {
         Isolate* isolate = args.GetIsolate();
@@ -115,8 +129,8 @@ namespace K {
         Isolate* isolate = args.GetIsolate();
         HandleScope scope(isolate);
         Local<Object> o = Object::New(isolate);
-        o->Set(FN::v8S("base"), Number::New(isolate, (double)cfBase()));
-        o->Set(FN::v8S("quote"), Number::New(isolate, (double)cfQuote()));
+        o->Set(FN::v8S("base"), Number::New(isolate, cfBase()));
+        o->Set(FN::v8S("quote"), Number::New(isolate, cfQuote()));
         args.GetReturnValue().Set(o);
       };
   };

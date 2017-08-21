@@ -2,6 +2,21 @@
 #define K_UI_H_
 
 namespace K {
+  string A();
+  static uWS::Hub hub(0, true);
+  typedef json (*uiCb)(json);
+  struct uiSess { map<string, Persistent<Function>> _cb; map<string, uiCb> cb; map<uiTXT, vector<json>> D; int u = 0; };
+  static uWS::Group<uWS::SERVER> *uiGroup = hub.createGroup<uWS::SERVER>(uWS::PERMESSAGE_DEFLATE);
+  static uv_check_t loop;
+  static uv_timer_t uiD_;
+  static Persistent<Function> noop;
+  static int iOSR60 = 0;
+  static bool uiOPT = true;
+  static unsigned long uiMDT = 0;
+  static unsigned long uiDDT = 0;
+  static string uiNOTE = "";
+  static string uiNK64 = "";
+  static json app_state;
   class UI {
     public:
       static void main(Local<Object> exports) {
@@ -66,8 +81,14 @@ namespace K {
             if (url.length() > 0) {
               content << ifstream (string("app/pub").append(url)).rdbuf();
             } else {
-              document = "HTTP/1.1 404 Not Found\r\n";
-              content << "Today, is a beautiful day.";
+              srand(time(0));
+              if (rand() % 21) {
+                document = "HTTP/1.1 418 I'm a teapot\r\n";
+                content << "Today, can i haz chocolate milk?";
+              } else {
+                document = "HTTP/1.1 404 Not Found\r\n";
+                content << "Today, is a beautiful day.";
+              }
             }
             document.append("Content-Length: ").append(to_string(content.str().length())).append("\r\n\r\n").append(content.str());
             res->write(document.data(), document.length());
@@ -75,21 +96,21 @@ namespace K {
         });
         uiGroup->onMessage([isolate, sess](uWS::WebSocket<uWS::SERVER> *webSocket, const char *message, size_t length, uWS::OpCode opCode) {
           if (length > 1) {
-            JSON Json;
             HandleScope hs(isolate);
-            Local<Value> reply;
             string m = string(message, length).substr(2, length-2);
-            MaybeLocal<Value> v = (length > 2 && (m[0] == '[' || m[0] == '{')) ? Json.Parse(isolate->GetCurrentContext(), FN::v8S(m.data())) : FN::v8S(length > 2 ? m.data() : "");
+            json v;
+            if (length > 2 && (m[0] == '[' || m[0] == '{')) v = json::parse(m.data());
             if (sess->cb.find(string(message, 2)) != sess->cb.end()) {
-              reply = (*sess->cb[string(message, 2)])(uiBIT::SNAP == (uiBIT)message[0] ? (Local<Value>)Undefined(isolate) : ((m == "true" || m == "false") ? (Local<Value>)Boolean::New(isolate, m == "true") : (v.IsEmpty() ? (Local<Value>)String::Empty(isolate) : v.ToLocalChecked())));
-              if (!reply->IsUndefined() && uiBIT::SNAP == (uiBIT)message[0])
-                webSocket->send(string(message, 2).append(*String::Utf8Value(Json.Stringify(isolate->GetCurrentContext(), reply->ToObject()).ToLocalChecked())).data(), uWS::OpCode::TEXT);
+              json reply = (*sess->cb[string(message, 2)])(v);
+              if (!reply.is_null() && uiBIT::SNAP == (uiBIT)message[0])
+                webSocket->send(string(message, 2).append(reply.dump()).data(), uWS::OpCode::TEXT);
             }
             if (sess->_cb.find(string(message ,2)) != sess->_cb.end()) {
-              Local<Value> argv[] = {uiBIT::SNAP == (uiBIT)message[0] ? (Local<Value>)Undefined(isolate) : ((m == "true" || m == "false") ? (Local<Value>)Boolean::New(isolate, m == "true") : (v.IsEmpty() ? (Local<Value>)String::Empty(isolate) : v.ToLocalChecked()))};
-              reply = Local<Function>::New(isolate, sess->_cb[string(message, 2)])->Call(isolate->GetCurrentContext()->Global(), 1, argv);
+              JSON Json;
+              Local<Value> argv[] = {v.is_null() ? (Local<Value>)Undefined(isolate) : (Local<Value>)Json.Parse(isolate->GetCurrentContext(), FN::v8S(isolate, v.dump())).ToLocalChecked()};
+              Local<Value> reply = Local<Function>::New(isolate, sess->_cb[string(message, 2)])->Call(isolate->GetCurrentContext()->Global(), 1, argv);
               if (!reply->IsUndefined() && uiBIT::SNAP == (uiBIT)message[0])
-                webSocket->send(string(message, 2).append(*String::Utf8Value(Json.Stringify(isolate->GetCurrentContext(), reply->ToObject()).ToLocalChecked())).data(), uWS::OpCode::TEXT);
+                webSocket->send(string(message, 2).append(FN::S8v(Json.Stringify(isolate->GetCurrentContext(), reply->ToObject()).ToLocalChecked())).data(), uWS::OpCode::TEXT);
             }
           }
         });
@@ -101,8 +122,8 @@ namespace K {
         else { cout << FN::uiT() << "Errrror: Use another UI port number, " << to_string(port) << " seems already in use." << endl; exit(1); }
         if (uv_timer_init(uv_default_loop(), &uiD_)) { cout << FN::uiT() << "Errrror: UV uiD_ init timer failed." << endl; exit(1); }
         uiD_.data = isolate;
-        EV::evOn("QuotingParameters", [](Local<Object> qp_) {
-          _uiD_(qp_->Get(FN::v8S("delayUI"))->NumberValue());
+        EV::evOn("QuotingParameters", [](json k) {
+          _uiD_(k["delayUI"].get<double>());
         });
         UI::uiSnap(uiTXT::ApplicationState, &onSnapApp);
         UI::uiSnap(uiTXT::Notepad, &onSnapNote);
@@ -128,76 +149,65 @@ namespace K {
       static void uiDD(uv_timer_t *handle) {
         Isolate* isolate = (Isolate*) handle->data;
         HandleScope scope(isolate);
-        time_t rawtime;
-        time(&rawtime);
         HeapStatistics heapStatistics;
         isolate->GetHeapStatistics(&heapStatistics);
-        Local<Object> app_state = Object::New(isolate);
-        app_state->Set(FN::v8S("memory"), Number::New(isolate, heapStatistics.total_heap_size()));
-        app_state->Set(FN::v8S("hour"), Number::New(isolate, localtime(&rawtime)->tm_hour));
-        app_state->Set(FN::v8S("freq"), Number::New(isolate, iOSR60 / 2));
-        app_state->Set(FN::v8S("dbsize"), Number::New(isolate, DB::dbSize()));
-        app_state->Set(FN::v8S("a"), FN::v8S(A));
-        _app_state.Reset(isolate, app_state);
+        time_t rawtime;
+        time(&rawtime);
+        struct stat st;
+        app_state = {
+          {"memory", heapStatistics.total_heap_size()},
+          {"hour", localtime(&rawtime)->tm_hour},
+          {"freq", iOSR60 / 2},
+          {"dbsize", stat(dbFpath.data(), &st) != 0 ? 0 : st.st_size},
+          {"a", A()}
+        };
         iOSR60 = 0;
-        uiSend(isolate, uiTXT::ApplicationState, app_state);
+        uiSend(uiTXT::ApplicationState, app_state);
       };
       static void uiD(uv_timer_t *handle) {
         Isolate* isolate = (Isolate*) handle->data;
         HandleScope scope(isolate);
         uiSess *sess = (uiSess *) uiGroup->getUserData();
-        for (map<uiTXT, vector<CopyablePersistentTraits<Object>::CopyablePersistent>>::iterator it_=sess->D.begin(); it_!=sess->D.end();) {
+        for (map<uiTXT, vector<json>>::iterator it_=sess->D.begin(); it_!=sess->D.end();) {
           if (it_->first != uiTXT::OrderStatusReports) {
-            for (vector<CopyablePersistentTraits<Object>::CopyablePersistent>::iterator it = it_->second.begin(); it != it_->second.end(); ++it)
-              uiUp(isolate, it_->first, Local<Object>::New(isolate, *it));
+            for (vector<json>::iterator it = it_->second.begin(); it != it_->second.end(); ++it)
+              uiUp(it_->first, *it);
             it_ = sess->D.erase(it_);
           } else ++it_;
         }
         if (sess->D.find(uiTXT::OrderStatusReports) != sess->D.end() && sess->D[uiTXT::OrderStatusReports].size() > 0) {
           int ki = 0;
-          Local<Array> k = Array::New(isolate);
-          for (vector<CopyablePersistentTraits<Object>::CopyablePersistent>::iterator it = sess->D[uiTXT::OrderStatusReports].begin(); it != sess->D[uiTXT::OrderStatusReports].end();) {
-            Local<Object> o = Local<Object>::New(isolate, *it);
-            k->Set(ki++, o);
-            if (mORS::Working != (mORS)o->Get(FN::v8S("orderStatus"))->NumberValue())
+          json k;
+          for (vector<json>::iterator it = sess->D[uiTXT::OrderStatusReports].begin(); it != sess->D[uiTXT::OrderStatusReports].end();) {
+            k.push_back(*it);
+            if (mORS::Working != (mORS)(*it)["orderStatus"].get<int>())
               it = sess->D[uiTXT::OrderStatusReports].erase(it);
             else ++it;
           }
-          if (!k->GetOwnPropertyNames(Context::New(isolate)).IsEmpty())
-            uiUp(isolate, uiTXT::OrderStatusReports, k);
+          if (!k.is_null())
+            uiUp(uiTXT::OrderStatusReports, k);
           sess->D.erase(uiTXT::OrderStatusReports);
         }
         if (uiDDT+60000 > FN::T()) return;
         uiDDT = FN::T();
         uiDD(handle);
       };
-      static Local<Value> onSnapApp(Local<Value> z) {
-        Isolate* isolate = Isolate::GetCurrent();
-        Local<Array> k = Array::New(isolate);
-        k->Set(0, Local<Object>::New(isolate, _app_state));
-        return k;
+      static json onSnapApp(json z) {
+        return { app_state };
       };
-      static Local<Value> onSnapNote(Local<Value> z) {
-        Isolate* isolate = Isolate::GetCurrent();
-        Local<Array> k = Array::New(isolate);
-        k->Set(0, FN::v8S(uiNOTE));
-        return k;
+      static json onSnapNote(json z) {
+        return { uiNOTE };
       };
-      static Local<Value> onHandNote(Local<Value> o_) {
-        Isolate* isolate = Isolate::GetCurrent();
-        uiNOTE = FN::S8v(o_->ToString());
-        return (Local<Value>)Undefined(isolate);
+      static json onHandNote(json k) {
+        uiNOTE = k["/0"_json_pointer].get<string>();
+        return {};
       };
-      static Local<Value> onSnapOpt(Local<Value> z) {
-        Isolate* isolate = Isolate::GetCurrent();
-        Local<Array> k = Array::New(isolate);
-        k->Set(0, Boolean::New(isolate, uiOPT));
-        return k;
+      static json onSnapOpt(json z) {
+        return { uiOPT };
       };
-      static Local<Value> onHandOpt(Local<Value> o_) {
-        Isolate* isolate = Isolate::GetCurrent();
-        uiOPT = o_->BooleanValue();
-        return (Local<Value>)Undefined(isolate);
+      static json onHandOpt(json k) {
+        uiOPT = k["/0"_json_pointer].get<bool>();
+        return {};
       };
       static void uiSnap(uiTXT k, uiCb cb) {
         uiOn(uiBIT::SNAP, k, cb);
@@ -205,18 +215,16 @@ namespace K {
       static void uiHand(uiTXT k, uiCb cb) {
         uiOn(uiBIT::MSG, k, cb);
       };
-      static void uiSend(Isolate* isolate, uiTXT k, Local<Object> o, bool h = false) {
-        if (h) uiHold(isolate, k, o);
-        else uiUp(isolate, k, o);
+      static void uiSend(uiTXT k, json o, bool h = false) {
+        if (h) uiHold(k, o);
+        else uiUp(k, o);
       };
-      static void uiUp(Isolate* isolate, uiTXT k, Local<Object> o) {
-        JSON Json;
+      static void uiUp(uiTXT k, json o) {
         if (k == uiTXT::MarketData) {
           if (uiMDT+369 > FN::T()) return;
           uiMDT = FN::T();
         }
-        MaybeLocal<String> v = o->IsUndefined() ? FN::v8S("") : Json.Stringify(isolate->GetCurrentContext(), o);
-        string m = string(1, (char)uiBIT::MSG).append(string(1, (char)k)).append(*String::Utf8Value(v.ToLocalChecked()));
+        string m = string(1, (char)uiBIT::MSG).append(string(1, (char)k)).append(o.is_null() ? "" : o.dump());
         uiGroup->broadcast(m.data(), m.length(), uWS::OpCode::TEXT);
       };
       static void uiOn(uiBIT k_, uiTXT _k, uiCb cb) {
@@ -244,29 +252,32 @@ namespace K {
       static void _uiSend(const FunctionCallbackInfo<Value> &args) {
         uiSess *sess = (uiSess *) uiGroup->getUserData();
         if (sess->u == 0) return;
-        if (args[2]->IsUndefined() ? false : args[2]->BooleanValue()) uiHold(args.GetIsolate(), (uiTXT)FN::S8v(args[0]->ToString())[0], args[1]->ToObject());
-        else _uiUp(args);
+        if (args[2]->IsUndefined() ? false : args[2]->BooleanValue()) {
+          Isolate* isolate = args.GetIsolate();
+          JSON Json;
+          uiHold((uiTXT)FN::S8v(args[0]->ToString())[0], json::parse(FN::S8v(Json.Stringify(isolate->GetCurrentContext(), args[1]->ToObject()).ToLocalChecked())));
+        } else _uiUp(args);
       };
       static void _uiUp(const FunctionCallbackInfo<Value>& args) {
         if (args[1]->IsUndefined()) return;
-        uiUp(args.GetIsolate(), (uiTXT)FN::S8v(args[0]->ToString())[0], args[1]->ToObject());
+        Isolate* isolate = args.GetIsolate();
+        JSON Json;
+        uiUp((uiTXT)FN::S8v(args[0]->ToString())[0], json::parse(FN::S8v(Json.Stringify(isolate->GetCurrentContext(), args[1]->ToObject()).ToLocalChecked())));
       };
-      static void uiHold(Isolate* isolate, uiTXT k, Local<Object> o) {
+      static void uiHold(uiTXT k, json o) {
+        Isolate* isolate = Isolate::GetCurrent();
         bool isOSR = k == uiTXT::OrderStatusReports;
-        if (isOSR && mORS::New == (mORS)o->Get(FN::v8S(isolate, "orderStatus"))->NumberValue()) return (void)++iOSR60;
-        Local<Object> qp_ = Local<Object>::New(isolate, qpRepo);
-        if (!qp_->Get(FN::v8S(isolate, "delayUI"))->NumberValue()) return uiUp(isolate, k, o);
+        if (isOSR && mORS::New == (mORS)o["orderStatus"].get<int>()) return (void)++iOSR60;
+        if (!qpRepo["delayUI"].get<double>()) return uiUp(k, o);
         uiSess *sess = (uiSess *) uiGroup->getUserData();
         if (sess->D.find(k) != sess->D.end() && sess->D[k].size() > 0) {
           if (!isOSR) sess->D[k].clear();
-          else for (vector<CopyablePersistentTraits<Object>::CopyablePersistent>::iterator it = sess->D[k].begin(); it != sess->D[k].end();)
-            if (Local<Object>::New(isolate, *it)->Get(FN::v8S(isolate, "orderId"))->ToString() == o->Get(FN::v8S(isolate, "orderId"))->ToString())
+          else for (vector<json>::iterator it = sess->D[k].begin(); it != sess->D[k].end();)
+            if ((*it)["orderId"].get<string>() == o["orderId"].get<string>())
               it = sess->D[k].erase(it);
             else ++it;
         }
-        Persistent<Object> _o;
-        _o.Reset(isolate, o);
-        sess->D[k].push_back(_o);
+        sess->D[k].push_back(o);
       };
       static void uiLoop(const FunctionCallbackInfo<Value> &args) {
         Isolate* isolate = args.GetIsolate();
