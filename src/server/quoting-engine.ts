@@ -134,9 +134,6 @@ export class QuotingEngine {
           : params.positionDivergence;
 
           if ((params.aspvalue >= params.asp_high || params.aspvalue <= params.asp_low)
-          || (    params.movement == Models.mMovemomentum.fast
-               && params.moveit == Models.mMoveit.down
-             )
               ) {
             pDiv = 0;
             console.warn(new Date().toISOString().slice(11, -1), 'pDiv', 'pDiv Value Changed to: 0');
