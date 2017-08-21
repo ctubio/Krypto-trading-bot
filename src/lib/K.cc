@@ -59,7 +59,7 @@ using namespace dec;
 #include "mg.h"
 #include "og.h"
 #include "gw.h"
-printf("Lets Load up");
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;namespace K {;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;void main(Local<Object> exports) {;;
