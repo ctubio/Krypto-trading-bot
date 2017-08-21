@@ -63,8 +63,9 @@ namespace K {
       int base = 0;
       virtual void config() = 0;
       virtual void pos() = 0;
-      //virtual void book(uWS::Hub *h) = 0;
-       virtual void book() = 0;
+
+      virtual void book() = 0;
+
       virtual void send(string oI, mSide oS, double oP, double oQ, mOrderType oLM, mTimeInForce oTIF, bool oPO, unsigned long oT) = 0;
       virtual void cancel(string oI, string oE, mSide oS, unsigned long oT) = 0;
       virtual void cancelAll() = 0;
@@ -120,14 +121,11 @@ namespace K {
   struct mGWoa {
     string oI;
     string oE;
-    mORS os;
+    mORS oS;
     double oP;
     double oQ;
     double oLQ;
-    double oC;
-    double oA;
-    mGWoa(string oI, string oE, mORS os, double oP, double oQ, double oLQ, double oC, double oA);
-    //mGWoa(string oI, string oE, mORS os, double oP, double oQ, double oLQ);
+    mGWoa(string oI, string oE, mORS oS, double oP, double oQ, double oLQ);
   };
   struct mGWmt {
     mExchange exchange;
