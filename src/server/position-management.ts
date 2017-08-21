@@ -106,7 +106,7 @@ export class TargetBasePositionManager {
       console.info(new Date().toISOString().slice(11, -1), 'ASP2', 'Movement', movement )
 
 
-/*
+
       if(this.newShort > this.newLong) {
         // Going up!
         params.moveit = Models.mMoveit.up;
@@ -141,7 +141,6 @@ export class TargetBasePositionManager {
       }
       console.info(new Date().toISOString().slice(11, -1), 'Movement', 'Speed: ', Models.mMovemomentum[params.movement] )
 
-*/
 
     }
 
