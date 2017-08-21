@@ -66,7 +66,7 @@ namespace K {
     {  "aspactive",                     false                                  },
     {  "aspvalue",                      decimal_cast<1>("0").getAsDouble()     }
 
-  };
+  }; 
   static vector<string> boolQP = {
     "widthPercentage", "bestWidth", "sellSizeMax", "buySizeMax", "percentageValues",
     "quotingEwmaProtection", "quotingStdevBollingerBands", "cancelOrdersAuto", "audio"
