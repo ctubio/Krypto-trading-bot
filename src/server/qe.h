@@ -441,7 +441,7 @@ namespace K {
           }
           if (++maxLvl==13) break;
         }
-        for (vector<mLevel>::iterator it = mgLevelsFilter.asks.begin(); it != mgLevelsFilter.asks.end(); ++it) {
+        for (vector<mLevel>::reverse_iterator it = mgLevelsFilter.asks.rbegin(); it != mgLevelsFilter.asks.rend(); ++it) {
           if (askSz < it->size) {
             askSz = it->size;
             askPx = it->price;
