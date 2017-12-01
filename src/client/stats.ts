@@ -292,7 +292,7 @@ export class StatsComponent implements OnInit {
       lineWidth:3,
       data: []
     },{
-      name: 'Target',
+      name: 'Target (TBP)',
       type: 'spline',
       linkedTo: 0,
       zIndex: 2,
