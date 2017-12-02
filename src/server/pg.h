@@ -145,9 +145,16 @@ namespace K {
           buySize = fmax(buySize, targetBasePosition - totalBasePosition);
         if (qp->sellSizeMax and qp->aggressivePositionRebalancing != mAPR::Off)
           sellSize = fmax(sellSize, totalBasePosition - targetBasePosition);
+        double widthPing = qp->widthPercentage
+          ? qp->widthPingPercentage * ((MG*)market)->fairValue / 100
+          : qp->widthPing;          
         double widthPong = qp->widthPercentage
           ? qp->widthPongPercentage * ((MG*)market)->fairValue / 100
           : qp->widthPong;
+
+        if(qp->autoPingWidth and ((MG*)market)->mgAvgMarketWidth > widthPing and ((MG*)market)->mgAvgMarketWidth / 2 * 3 > widthPong)
+          widthPong = ((MG*)market)->mgAvgMarketWidth / 2 * 3;
+
         double buyPing = 0;
         double sellPong = 0;
         double buyQty = 0;
@@ -162,8 +169,10 @@ namespace K {
         } else if (qp->pongAt == mPongAt::LongPingFair
           or qp->pongAt == mPongAt::LongPingAggressive
         ) {
-          matchLastPing(&tradesBuy, &buyPing, &buyQty, sellSize, widthPong);
-          matchLastPing(&tradesSell, &sellPong, &sellQty, buySize, widthPong, true);
+          //matchLastPing(&tradesBuy, &buyPing, &buyQty, sellSize, widthPong);
+          //matchLastPing(&tradesSell, &sellPong, &sellQty, buySize, widthPong, true);
+          matchFirstPing(&tradesBuy, &buyPing, &buyQty, sellSize, widthPong*-1);
+          matchFirstPing(&tradesSell, &sellPong, &sellQty, buySize, widthPong*-1);
         }
         if (buyQty) buyPing /= buyQty;
         if (sellQty) sellPong /= sellQty;
