@@ -152,8 +152,8 @@ namespace K {
           ? qp->widthPongPercentage * ((MG*)market)->fairValue / 100
           : qp->widthPong;
 
-        if(qp->autoPingWidth and ((MG*)market)->mgAvgMarketWidth > widthPing and ((MG*)market)->mgAvgMarketWidth / 2 * 4 > widthPong)
-          widthPong = ((MG*)market)->mgAvgMarketWidth / 2 * 4;
+        if(qp->autoPingWidth and ((MG*)market)->mgAvgMarketWidth > widthPing and ((MG*)market)->mgAvgMarketWidth * 3 > widthPong)
+          widthPong = ((MG*)market)->mgAvgMarketWidth * 3;
 
         double buyPing = 0;
         double sellPong = 0;

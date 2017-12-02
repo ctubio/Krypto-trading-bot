@@ -46,9 +46,9 @@ namespace K {
             mgStatTop.push_back(it->value("bid", 0.0));
             mgStatTop.push_back(it->value("ask", 0.0));
 
-            double _mktW = (double)it->value("ask", 0.0) > (double)it->value("bid", 0.0) ? (double)it->value("ask", 0.0) - (double)it->value("bid", 0.0) : 0.0;
-            if(_mktW > 0)
-              mgStatMarketWidth.push_back( _mktW );
+            //double _mktW = (double)it->value("ask", 0.0) > (double)it->value("bid", 0.0) ? (double)it->value("ask", 0.0) - (double)it->value("bid", 0.0) : 0.0;
+            //if(_mktW > 0)
+            //  mgStatMarketWidth.push_back( _mktW );
           }
           calcStdev();
         }
@@ -122,6 +122,12 @@ namespace K {
         gw->evDataWallet(mWallet());
         ((UI*)client)->send(uiTXT::FairValue, {{"price", fairValue}}, true);
       };
+      void calcMarketWidthEwma(double *k, double mktW, int periods) {
+        if (*k) {
+          double alpha = (double)2 / (periods + 1);
+          *k = alpha * mktW + (1 - alpha) * *k;
+        } else *k = mktW;
+      };
     private:
       function<json()> helloTrade = [&]() {
         json k;
@@ -161,17 +167,18 @@ namespace K {
         if (empty()) return;
         double topBid = levels.bids.begin()->price;
         double topAsk = levels.asks.begin()->price;
-        double _mktW = topAsk > topBid ? topAsk - topBid : 0.0;
+        //double _mktW = topAsk > topBid ? topAsk - topBid : 0.0;
         if (!topBid or !topAsk) return;
         mgStatFV.push_back(fairValue);
         mgStatBid.push_back(topBid);
         mgStatAsk.push_back(topAsk);
         mgStatTop.push_back(topBid);
         mgStatTop.push_back(topAsk);
-        if(_mktW > 0){
-          if( _mktW > mgAvgMarketWidth * 4 / 3 ){ mgStatMarketWidth.clear(); mgAvgMarketWidth = ceil(_mktW);}
-          mgStatMarketWidth.push_back(_mktW);
-        }
+        //if(_mktW > 0){
+          //if( _mktW > mgAvgMarketWidth * 4 / 3 ){ mgStatMarketWidth.clear(); mgAvgMarketWidth = ceil(_mktW);}
+          //mgStatMarketWidth.push_back(_mktW);
+          //calcMarketWidthEwma(&mgAvgMarketWidth, _mktW, qp->statWidthPeriodSec);
+        //}
         calcStdev();
         ((DB*)memory)->insert(uiTXT::MarketData, {
           {"fv", fairValue},
@@ -265,7 +272,7 @@ namespace K {
         if (mgStatBid.size()>periods) mgStatBid.erase(mgStatBid.begin(), mgStatBid.end()-periods);
         if (mgStatAsk.size()>periods) mgStatAsk.erase(mgStatAsk.begin(), mgStatAsk.end()-periods);
         if (mgStatTop.size()>periods*2) mgStatTop.erase(mgStatTop.begin(), mgStatTop.end()-(periods*2));
-        if (mgStatMarketWidth.size()>qp->statWidthPeriodSec) mgStatMarketWidth.erase(mgStatMarketWidth.begin(), mgStatMarketWidth.end()-qp->statWidthPeriodSec);
+        //if (mgStatMarketWidth.size()>qp->statWidthPeriodSec) mgStatMarketWidth.erase(mgStatMarketWidth.begin(), mgStatMarketWidth.end()-qp->statWidthPeriodSec);
       };
       void calcStdev() {
         cleanStdev();
@@ -275,7 +282,8 @@ namespace K {
         mgStdevBid = calcStdev(mgStatBid, k, &mgStdevBidMean);
         mgStdevAsk = calcStdev(mgStatAsk, k, &mgStdevAskMean);
         mgStdevTop = calcStdev(mgStatTop, k, &mgStdevTopMean);
-        mgAvgMarketWidth = ceil( calcAvg( mgStatMarketWidth ) );
+        //mgAvgMarketWidth = ceil( calcAvg( mgStatMarketWidth ) );
+        //mgAvgMarketWidth = ceil( calcMarketWidthEwma( mgStatMarketWidth ) );
       };
       double calcStdev(vector<double> a, double f, double *mean) {
         int n = a.size();
