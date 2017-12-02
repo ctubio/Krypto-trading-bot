@@ -169,7 +169,7 @@ namespace K {
         mgStatTop.push_back(topBid);
         mgStatTop.push_back(topAsk);
         if(_mktW > 0){
-          if( _mktW > mgAvgMarketWidth * 1.5 )mgStatMarketWidth.clear();
+          if( _mktW > mgAvgMarketWidth * 4 / 3 ){ mgStatMarketWidth.clear(); mgAvgMarketWidth = ceil(_mktW);}
           mgStatMarketWidth.push_back(_mktW);
         }
         calcStdev();
