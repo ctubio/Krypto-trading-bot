@@ -147,13 +147,13 @@ namespace K {
           sellSize = fmax(sellSize, totalBasePosition - targetBasePosition);
         double widthPing = qp->widthPercentage
           ? qp->widthPingPercentage * ((MG*)market)->fairValue / 100
-          : qp->widthPing;          
+          : qp->widthPing;
         double widthPong = qp->widthPercentage
           ? qp->widthPongPercentage * ((MG*)market)->fairValue / 100
           : qp->widthPong;
 
-        if(qp->autoPingWidth and ((MG*)market)->mgAvgMarketWidth > widthPing and ((MG*)market)->mgAvgMarketWidth / 2 * 3 > widthPong)
-          widthPong = ((MG*)market)->mgAvgMarketWidth / 2 * 3;
+        if(qp->autoPingWidth and ((MG*)market)->mgAvgMarketWidth > widthPing and ((MG*)market)->mgAvgMarketWidth / 2 * 4 > widthPong)
+          widthPong = ((MG*)market)->mgAvgMarketWidth / 2 * 4;
 
         double buyPing = 0;
         double sellPong = 0;
