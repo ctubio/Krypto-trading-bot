@@ -273,7 +273,7 @@ namespace K {
         mgStdevBid = calcStdev(mgStatBid, k, &mgStdevBidMean);
         mgStdevAsk = calcStdev(mgStatAsk, k, &mgStdevAskMean);
         mgStdevTop = calcStdev(mgStatTop, k, &mgStdevTopMean);
-        mgAvgMarketWidth = floor(calcAvg(mgStatMarketWidth));
+        mgAvgMarketWidth = ceil( calcAvg( mgStatMarketWidth ) );
       };
       double calcStdev(vector<double> a, double f, double *mean) {
         int n = a.size();
