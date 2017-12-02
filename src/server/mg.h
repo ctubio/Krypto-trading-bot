@@ -168,8 +168,10 @@ namespace K {
         mgStatAsk.push_back(topAsk);
         mgStatTop.push_back(topBid);
         mgStatTop.push_back(topAsk);
-        if(_mktW > 0)
+        if(_mktW > 0){
+          if( _mktW > mgAvgMarketWidth * 1.5 )mgStatMarketWidth.clear();
           mgStatMarketWidth.push_back(_mktW);
+        }
         calcStdev();
         ((DB*)memory)->insert(uiTXT::MarketData, {
           {"fv", fairValue},
