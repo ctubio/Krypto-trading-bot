@@ -154,10 +154,10 @@ namespace K {
         if (sellSize and qp->aggressivePositionRebalancing != mAPR::Off and qp->sellSizeMax)
           sellSize = fmax(sellSize, totalBasePosition - ((PG*)wallet)->targetBasePosition);
         //
-        if(qp->autoPingWidth and ((MG*)market)->mgAvgMarketWidth > widthPing)
-          widthPing = ((MG*)market)->mgAvgMarketWidth;
-        if(qp->autoPongWidth and ((MG*)market)->mgAvgMarketWidth * qp->autoPingWidthFactor > widthPong)
-          widthPong = ((MG*)market)->mgAvgMarketWidth * 3;
+        if(qp->autoPingWidth and ((MG*)market)->mgEwmaMarketWidth > widthPing)
+          widthPing = ((MG*)market)->mgEwmaMarketWidth;
+        if(qp->autoPongWidth and ((MG*)market)->mgEwmaMarketWidth * qp->autoPingWidthFactor > widthPong)
+          widthPong = ((MG*)market)->mgEwmaMarketWidth * 3;
         mQuote rawQuote = quote(widthPing, buySize, sellSize);
         if (!rawQuote.bid.price and !rawQuote.ask.price) return mQuote();
         if (rawQuote.bid.price < 0 or rawQuote.ask.price < 0) {
