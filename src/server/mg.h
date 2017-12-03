@@ -29,6 +29,7 @@ namespace K {
       double mgStdevBidMean = 0;
       double mgStdevAsk = 0;
       double mgStdevAskMean = 0;
+      double mgEwmaMarketWidth = 0;
     protected:
       void load() {
         json k = ((DB*)memory)->load(uiTXT::MarketData);
@@ -106,6 +107,7 @@ namespace K {
             : (topAskPrice * topBidSize + topBidPrice * topAskSize) / (topAskSize + topBidSize),
           gw->minTick
         );
+        calcEwma(&mgEwmaMarketWidth, topAskPrice - topBidPrice, qp->statWidthPeriodSec);
         if (!fairValue or (fairValue_ and abs(fairValue - fairValue_) < gw->minTick)) return;
         gw->evDataWallet(mWallet());
         ((UI*)client)->send(uiTXT::FairValue, {{"price", fairValue}}, true);
@@ -137,7 +139,8 @@ namespace K {
           {"ewmaMedium", mgEwmaM},
           {"ewmaLong", mgEwmaL},
           {"ewmaVeryLong", mgEwmaVL},
-          {"fairValue", fairValue}
+          {"fairValue", fairValue},
+          {"ewmaMarketWidth", mgEwmaMarketWidth}
         }};
       };
       void stdevPUp() {
@@ -195,7 +198,8 @@ namespace K {
           {"ewmaMedium", mgEwmaM},
           {"ewmaLong", mgEwmaL},
           {"ewmaVeryLong", mgEwmaVL},
-          {"fairValue", fairValue}
+          {"fairValue", fairValue},
+          {"ewmaMarketWidth", mgEwmaMarketWidth}
         }, true);
         ((DB*)memory)->insert(uiTXT::EWMAChart, {
           {"ewmaVeryLong", mgEwmaVL},
@@ -262,6 +266,12 @@ namespace K {
           double alpha = (double)2 / (periods + 1);
           *k = alpha * fairValue + (1 - alpha) * *k;
         } else *k = fairValue;
+      };
+      void calcEwma(double *k, double value, int periods) {
+        if (*k) {
+          double alpha = (double)2 / (periods + 1);
+          *k = alpha * value + (1 - alpha) * *k;
+        } else *k = value;
       };
       void calcTargetPos() {
         mgSMA3.push_back(fairValue);

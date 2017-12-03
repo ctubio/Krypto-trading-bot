@@ -228,6 +228,12 @@ export interface QuotingParameters {
     mediumEwmaPeriods?: number;
     shortEwmaPeriods?: number;
     quotingEwmaProtectionPeriods?: number;
+    /* **************************** */
+    autoPingWidth?: boolean;
+    statWidthPeriodSec?: number;
+    autoPongWidth?: boolean;
+    autoPongWidthFactor?: boolean;
+    /* **************************** */
     quotingStdevProtectionFactor?: number;
     quotingStdevProtectionPeriods?: number;
     aprMultiplier?: number;

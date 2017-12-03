@@ -236,7 +236,11 @@ class DisplayOrder {
                                             <th *ngIf="[6].indexOf(pair.quotingParameters.display.mode)==-1">%w?</th>
                                             <th *ngIf="[1,2,3].indexOf(pair.quotingParameters.display.safety)==-1"><span *ngIf="[6].indexOf(pair.quotingParameters.display.mode)==-1">width</span><span *ngIf="[6].indexOf(pair.quotingParameters.display.mode)>-1">depth</span><span *ngIf="pair.quotingParameters.display.widthPercentage && [6].indexOf(pair.quotingParameters.display.mode)==-1">%</span></th>
                                             <th *ngIf="[1,2,3].indexOf(pair.quotingParameters.display.safety)>-1">pingWidth<span *ngIf="pair.quotingParameters.display.widthPercentage">%</span></th>
+                                            <th>AutoPing</th>
+                                            <th *ngIf="pair.quotingParameters.display.autoPingWidth">Ping Stat Period</th>                                            
                                             <th *ngIf="[1,2,3].indexOf(pair.quotingParameters.display.safety)>-1">pongWidth<span *ngIf="pair.quotingParameters.display.widthPercentage">%</span></th>
+                                            <th *ngIf="[1,2,3].indexOf(pair.quotingParameters.display.safety)>-1">Auto Pong</th>
+                                            <th *ngIf="[1,2,3].indexOf(pair.quotingParameters.display.safety)>-1 && pair.quotingParameters.display.autoPongWidth">Pong Factor</th>                                            
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -351,6 +355,17 @@ class DisplayOrder {
                                                    onClick="this.select()"
                                                    [(ngModel)]="pair.quotingParameters.display.widthPingPercentage">
                                             </td>
+                                            <td style="width:30px;text-align: center;border-bottom: 3px solid #D64A4A;">
+                                                <input type="checkbox"
+                                                   [(ngModel)]="pair.quotingParameters.display.autoPingWidth">
+                                            </td>
+                                            
+                                            <td style="width:60px;border-bottom: 3px solid #D64A4A;" *ngIf="pair.quotingParameters.display.autoPingWidth">
+                                                <input class="form-control input-sm"
+                                                   type="number" step="0.1" min="0.1"
+                                                   onClick="this.select()"
+                                                   [(ngModel)]="pair.quotingParameters.display.statWidthPeriodSec">
+                                            </td>                                            
                                             <td style="width:169px;border-bottom: 3px solid #8BE296;" *ngIf="[1,2,3].indexOf(pair.quotingParameters.display.safety)>-1 && !pair.quotingParameters.display.widthPercentage">
                                                 <input class="width-option form-control input-sm" title="{{ pair_name[1] }}"
                                                    type="number" step="{{ product.advert.minTick}}" min="{{ product.advert.minTick}}"
@@ -363,6 +378,17 @@ class DisplayOrder {
                                                    onClick="this.select()"
                                                    [(ngModel)]="pair.quotingParameters.display.widthPongPercentage">
                                             </td>
+                                            <td style="width:30px;text-align: center;border-bottom: 3px solid #D64A4A;" *ngIf="[1,2,3].indexOf(pair.quotingParameters.display.safety)>-1">
+                                                <input type="checkbox"
+                                                   [(ngModel)]="pair.quotingParameters.display.autoPongWidth">
+                                            </td>
+                                            
+                                            <td style="width:60px;border-bottom: 3px solid #D64A4A;" *ngIf="[1,2,3].indexOf(pair.quotingParameters.display.safety)>-1 && pair.quotingParameters.display.autoPongWidth">
+                                                <input class="form-control input-sm"
+                                                   type="number" step="0.1" min="0.1"
+                                                   onClick="this.select()"
+                                                   [(ngModel)]="pair.quotingParameters.display.autoPongWidthFactor">
+                                            </td>                                            
                                     </tbody>
                                 </table>
                               </td></tr></table>
