@@ -13,9 +13,9 @@ namespace K {
   enum class mPongAt: unsigned int { ShortPingFair, LongPingFair, ShortPingAggressive, LongPingAggressive };
   enum class mQuotingMode: unsigned int { Top, Mid, Join, InverseJoin, InverseTop, HamelinRat, Depth };
   enum class mQuotingSafety: unsigned int { Off, PingPong, Boomerang, AK47 };
-  enum class mQuoteState: unsigned int { Live, Disconnected, DisabledQuotes, MissingData, UnknownHeld, TBPHeld, MaxTradesSeconds, WaitingPing, DepletedFunds, Crossed, UpTrendHeld, DownTrendHeld };
+  enum class mQuoteState: unsigned int { Live, Disconnected, DisabledQuotes, MissingData, UnknownHeld, TBPHeld, MaxTradesSeconds, WaitingPing, DepletedFunds, Crossed };
   enum class mFairValueModel: unsigned int { BBO, wBBO };
-  enum class mAutoPositionMode: unsigned int { Manual, EWMA_LS, EWMA_LMS };
+  enum class mAutoPositionMode: unsigned int { Manual, EWMA_LS, EWMA_LMS, EWMA_4 };
   enum class mPDivMode: unsigned int { Manual, Linear, Sine, SQRT, Switch};
   enum class mAPR: unsigned int { Off, Size, SizeWidth };
   enum class mSOP: unsigned int { Off, Trades, Size, TradesSize };
@@ -29,7 +29,7 @@ namespace K {
     MarketTrade = 'r', Trades = 's', ExternalValuation = 't', QuoteStatus = 'u',
     TargetBasePosition = 'v', TradeSafetyValue = 'w', CancelAllOrders = 'x',
     CleanAllClosedTrades = 'y', CleanAllTrades = 'z', CleanTrade = 'A', TradesChart = 'B',
-    WalletChart = 'C', EWMAChart = 'D', TrendSMU = 'Z'
+    WalletChart = 'C', EWMAChart = 'D'
   };
   struct mQuotingParams {
     double            widthPing                       = 2.0;
@@ -72,6 +72,7 @@ namespace K {
     double            quotingStdevProtectionFactor    = 1.0;
     int               quotingStdevProtectionPeriods   = 1200;
     double            ewmaSensiblityPercentage        = 0.5;
+    int               veryLongEwmaPeriods             = 400;
     int               longEwmaPeriods                 = 200;
     int               mediumEwmaPeriods               = 100;
     int               shortEwmaPeriods                = 50;
@@ -85,28 +86,6 @@ namespace K {
     bool              audio                           = false;
     int               delayUI                         = 7;
     bool              _matchPings                     = true;
-    /*******************************************************/
-    bool              quotingEwmaSMUProtection      = false;
-    double            quotingEwmaSMUThreshold       = 2.0;
-    int               quotingEwmaSMPeriods          = 12;
-    int               quotingEwmaSUPeriods          = 3;
-    bool              flipBidSizesOnDowntrend       = false;
-    bool              blockBidsOnUptrend            = false;
-    bool              blockAsksOnDowntrend          = false;
-    bool              reducePDiv                    = false;
-    double            reducePDivFactor              = 3.0;
-    bool              blockDowntrend                = true;
-    bool              blockUptrend                  = true;
-    bool              keepHighs                     = false;
-    double            highsFactor                   = 0.0;
-    bool              autoPingWidth                 = false;
-    int               statWidthPeriodSec            = 0;
-    bool              glueToSMU                     = false;
-    double            glueToSMUFactor               = 2;
-    bool              increaseBidSzOnUptrend        = false;
-    double            increaseBidSzOnUptrendFactor  = 2;
-    bool              endOfBlockDowntrend           = false;
-    double            endOfBlockDowntrendThreshold  = -0.01;
   };
   static void to_json(json& j, const mQuotingParams& k) {
     j = {
@@ -150,6 +129,7 @@ namespace K {
       {"quotingStdevProtectionFactor", k.quotingStdevProtectionFactor},
       {"quotingStdevProtectionPeriods", k.quotingStdevProtectionPeriods},
       {"ewmaSensiblityPercentage", k.ewmaSensiblityPercentage},
+      {"veryLongEwmaPeriods", k.veryLongEwmaPeriods},
       {"longEwmaPeriods", k.longEwmaPeriods},
       {"mediumEwmaPeriods", k.mediumEwmaPeriods},
       {"shortEwmaPeriods", k.shortEwmaPeriods},
@@ -162,29 +142,7 @@ namespace K {
       {"profitHourInterval", k.profitHourInterval},
       {"audio", k.audio},
       {"delayUI", k.delayUI},
-      {"_matchPings", k._matchPings},
-      // ************************************************
-      {"quotingEwmaSMUProtection", k.quotingEwmaSMUProtection},
-      {"quotingEwmaSMUThreshold", k.quotingEwmaSMUThreshold},
-      {"quotingEwmaSMPeriods", k.quotingEwmaSMPeriods},
-      {"quotingEwmaSUPeriods", k.quotingEwmaSUPeriods},
-      {"reducePDiv", k.reducePDiv},
-      {"reducePDivFactor", k.reducePDivFactor},
-      {"blockDowntrend", k.blockDowntrend},
-      {"blockUptrend", k.blockUptrend},
-      {"keepHighs", k.keepHighs},
-      {"highsFactor", k.highsFactor},
-      {"autoPingWidth", k.autoPingWidth},
-      {"statWidthPeriodSec", k.statWidthPeriodSec},
-      {"glueToSMU", k.glueToSMU},
-      {"glueToSMUFactor", k.glueToSMUFactor},
-      {"blockBidsOnUptrend", k.blockBidsOnUptrend},
-      {"blockAsksOnDowntrend", k.blockAsksOnDowntrend},
-      {"flipBidSizesOnDowntrend", k.flipBidSizesOnDowntrend},
-      {"increaseBidSzOnUptrend", k.increaseBidSzOnUptrend},
-      {"increaseBidSzOnUptrendFactor", k.increaseBidSzOnUptrendFactor},
-      {"endOfBlockDowntrend", k.endOfBlockDowntrend},
-      {"endOfBlockDowntrendThreshold", k.endOfBlockDowntrendThreshold}
+      {"_matchPings", k._matchPings}
     };
   };
   static void from_json(const json& j, mQuotingParams& k) {
@@ -228,6 +186,7 @@ namespace K {
     if (j.end() != j.find("quotingStdevProtectionFactor")) k.quotingStdevProtectionFactor = j.at("quotingStdevProtectionFactor").get<double>();
     if (j.end() != j.find("quotingStdevProtectionPeriods")) k.quotingStdevProtectionPeriods = j.at("quotingStdevProtectionPeriods").get<int>();
     if (j.end() != j.find("ewmaSensiblityPercentage")) k.ewmaSensiblityPercentage = j.at("ewmaSensiblityPercentage").get<double>();
+    if (j.end() != j.find("veryLongEwmaPeriods")) k.veryLongEwmaPeriods = j.at("veryLongEwmaPeriods").get<int>();
     if (j.end() != j.find("longEwmaPeriods")) k.longEwmaPeriods = j.at("longEwmaPeriods").get<int>();
     if (j.end() != j.find("mediumEwmaPeriods")) k.mediumEwmaPeriods = j.at("mediumEwmaPeriods").get<int>();
     if (j.end() != j.find("shortEwmaPeriods")) k.shortEwmaPeriods = j.at("shortEwmaPeriods").get<int>();
@@ -240,30 +199,6 @@ namespace K {
     if (j.end() != j.find("profitHourInterval")) k.profitHourInterval = j.at("profitHourInterval").get<double>();
     if (j.end() != j.find("audio")) k.audio = j.at("audio").get<bool>();
     if (j.end() != j.find("delayUI")) k.delayUI = j.at("delayUI").get<int>();
-    // ************************************************************
-    if (j.end() != j.find("quotingEwmaSMUProtection"))     k.quotingEwmaSMUProtection = j.at("quotingEwmaSMUProtection").get<bool>();
-    if (j.end() != j.find("quotingEwmaSMUThreshold"))      k.quotingEwmaSMUThreshold = j.at("quotingEwmaSMUThreshold").get<double>();
-    if (j.end() != j.find("quotingEwmaSMPeriods"))         k.quotingEwmaSMPeriods = j.at("quotingEwmaSMPeriods").get<int>();
-    if (j.end() != j.find("quotingEwmaSUPeriods"))         k.quotingEwmaSUPeriods = j.at("quotingEwmaSUPeriods").get<int>();
-    if (j.end() != j.find("reducePDiv"))                   k.reducePDiv = j.at("reducePDiv").get<bool>();
-    if (j.end() != j.find("reducePDivFactor"))             k.reducePDivFactor = j.at("reducePDivFactor").get<double>();
-    if (j.end() != j.find("blockDowntrend"))               k.blockDowntrend = j.at("blockDowntrend").get<bool>();
-    if (j.end() != j.find("blockUptrend"))                 k.blockUptrend = j.at("blockUptrend").get<bool>();
-    if (j.end() != j.find("keepHighs"))                    k.keepHighs = j.at("keepHighs").get<bool>();
-    if (j.end() != j.find("highsFactor"))                  k.highsFactor = j.at("highsFactor").get<double>();
-    if (j.end() != j.find("autoPingWidth"))                k.autoPingWidth = j.at("autoPingWidth").get<bool>();
-    if (j.end() != j.find("statWidthPeriodSec"))           k.statWidthPeriodSec = j.at("statWidthPeriodSec").get<int>();
-    if (j.end() != j.find("blockBidsOnUptrend"))           k.blockBidsOnUptrend = j.at("blockBidsOnUptrend").get<bool>();
-    if (j.end() != j.find("blockAsksOnDowntrend"))         k.blockAsksOnDowntrend = j.at("blockAsksOnDowntrend").get<bool>();
-    if (j.end() != j.find("flipBidSizesOnDowntrend"))      k.flipBidSizesOnDowntrend = j.at("flipBidSizesOnDowntrend").get<bool>();
-    if (j.end() != j.find("glueToSMU"))                    k.glueToSMU = j.at("glueToSMU").get<bool>();
-    if (j.end() != j.find("glueToSMUFactor"))              k.glueToSMUFactor = j.at("glueToSMUFactor").get<double>();
-    if (j.end() != j.find("increaseBidSzOnUptrend"))       k.increaseBidSzOnUptrend = j.at("increaseBidSzOnUptrend").get<bool>();
-    if (j.end() != j.find("increaseBidSzOnUptrendFactor")) k.increaseBidSzOnUptrendFactor = j.at("increaseBidSzOnUptrendFactor").get<double>();
-    if (j.end() != j.find("endOfBlockDowntrend"))          k.endOfBlockDowntrend = j.at("endOfBlockDowntrend").get<bool>();
-    if (j.end() != j.find("endOfBlockDowntrendThreshold")) k.endOfBlockDowntrendThreshold = j.at("endOfBlockDowntrendThreshold").get<double>();
-    // ************************************************************
-    if ((int)k.mode > 6) k.mode = mQuotingMode::Top; // remove after everybody have the new mode/safety in their databases (2018)
     if (k.mode == mQuotingMode::Depth) k.widthPercentage = false;
     k._matchPings = k.safety == mQuotingSafety::Boomerang or k.safety == mQuotingSafety::AK47;
   };

@@ -14,8 +14,8 @@ V_JSON  := v2.1.1
 V_UWS   := 0.14.4
 V_SQL   := 3200100
 V_QF    := v.1.14.4
-V_PVS   := 6.19.23789.1731
-KZIP     = 6c518b7e87819d8d0faf7e49738d69ed107664cc
+V_PVS   := 6.20.24121.1823
+KZIP     = ed9280a0b5b916e0d75fc74f40b7422b767f091e
 KARGS    = -Wextra -std=c++11 -O3 -I$(KLOCAL)/include          \
   src/server/K.cxx -pthread -rdynamic -DUWS_THREADSAFE         \
   -DK_STAMP='"$(shell date --rfc-3339=seconds | cut -f1 -d+)"' \
@@ -212,8 +212,9 @@ link:
 	$(MAKE) gdax -s
 
 reinstall: src
+	test -d .git && ((test -n "`git diff`" && (echo && echo !!Local changes will be lost!! press CTRL-C to abort. && echo && sleep 4) || :) \
+	&& git fetch && git merge FETCH_HEAD || (git reset FETCH_HEAD && git checkout .)) || curl https://raw.githubusercontent.com/ctubio/Krypto-trading-bot/master/Makefile > Makefile
 	rm -rf app
-	test -d .git && (git fetch && git merge FETCH_HEAD) || curl https://raw.githubusercontent.com/ctubio/Krypto-trading-bot/master/Makefile > Makefile
 	@$(MAKE) install
 	#@$(MAKE) test -s
 	@$(MAKE) restartall
@@ -232,7 +233,7 @@ stopall:
 	ls -1 *.sh | cut -d / -f2 | cut -d \* -f1 | grep -v ^_ | xargs -I % $(MAKE) K=% stop -s
 
 startall:
-	ls -1 *.sh | cut -d / -f2 | cut -d \* -f1 | grep -v ^_ | xargs -I % $(MAKE) K=% start -s
+	ls -1 *.sh | cut -d / -f2 | cut -d \* -f1 | grep -v ^_ | xargs -I % sh -c 'sleep 2;$(MAKE) K=% start -s'
 	@$(MAKE) list -s
 
 restart:
@@ -259,7 +260,7 @@ gdax:
 	openssl s_client -showcerts -connect fix.gdax.com:4198 -CApath /etc/ssl/certs < /dev/null \
 	| openssl x509 -outform PEM > etc/sslcert/fix.gdax.com.pem
 
-client: node_modules/.bin/tsc src/client
+client: src/client
 	rm -rf $(KLOCAL)/var
 	mkdir -p $(KLOCAL)/var/www
 	@echo Building client dynamic files..
@@ -277,7 +278,7 @@ bundle: client www node_modules/.bin/browserify node_modules/.bin/uglifyjs $(KLO
 	mkdir -p $(KLOCAL)/var/www/js/client
 	./node_modules/.bin/browserify -t [ babelify --presets [ babili es2016 ] ] $(KLOCAL)/var/www/js/main.js $(KLOCAL)/var/www/js/lib/*.js | ./node_modules/.bin/uglifyjs | gzip > $(KLOCAL)/var/www/js/client/bundle.min.js
 	rm $(KLOCAL)/var/www/js/*.js
-	echo $(CARCH) | xargs -d ' ' -I % echo % | grep -v $(CHOST) | xargs -I % sh -c 'rm -rf build-%/local/var;mkdir -p build-%/local/var;cp -R $(KLOCAL)/var build-%/local;'
+	echo $(CARCH) | xargs -d ' ' -I % echo % | grep -v $(CHOST) | xargs -I % sh -c 'if test -d build-%; then rm -rf build-%/local/var;mkdir -p build-%/local/var;cp -R $(KLOCAL)/var build-%/local; fi'
 	@echo DONE
 
 diff: .git
