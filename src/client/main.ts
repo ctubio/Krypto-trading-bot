@@ -383,7 +383,7 @@ class DisplayOrder {
                                                    [(ngModel)]="pair.quotingParameters.display.autoPongWidth">
                                             </td>
                                             
-                                            <td style="width:60px;border-bottom: 3px solid #D64A4A;" *ngIf="[1,2,3].indexOf(pair.quotingParameters.display.safety)>-1 && pair.quotingParameters.display.autoPingWidth">
+                                            <td style="width:60px;border-bottom: 3px solid #D64A4A;" *ngIf="[1,2,3].indexOf(pair.quotingParameters.display.safety)>-1 && pair.quotingParameters.display.autoPongWidth">
                                                 <input class="form-control input-sm"
                                                    type="number" step="0.1" min="0.1"
                                                    onClick="this.select()"

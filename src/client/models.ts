@@ -90,10 +90,10 @@ export interface IStdev {
 export class EWMAChart {
     constructor(public stdevWidth: IStdev,
                 public ewmaQuote: number,
-                public ewmaSMUDiff: number,
                 public ewmaShort: number,
                 public ewmaMedium: number,
                 public ewmaLong: number,
+                public ewmaVeryLong: number,
                 public avgMktWidth: number,
                 public fairValue: number) {}
 }
