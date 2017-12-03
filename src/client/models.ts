@@ -94,7 +94,6 @@ export class EWMAChart {
                 public ewmaMedium: number,
                 public ewmaLong: number,
                 public ewmaVeryLong: number,
-                public avgMktWidth: number,
                 public fairValue: number) {}
 }
 
