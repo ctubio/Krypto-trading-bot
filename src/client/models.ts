@@ -154,9 +154,7 @@ export class OrderRequestFromUI {
 export class FairValue {
     constructor(public price: number) {}
 }
-export class TrendSMU{
-  constructor(public trend: number) {}
-}
+
 export class Quote {
     constructor(public price: number,
                 public size: number,
@@ -167,7 +165,7 @@ export class TwoSidedQuote {
     constructor(public bid: Quote, public ask: Quote) {}
 }
 
-export enum QuoteStatus { Live, Disconnected, DisabledQuotes, MissingData, UnknownHeld, TBPHeld, MaxTradesSeconds, WaitingPing, DepletedFunds, Crossed, UpTrendHeld, DownTrendHeld }
+export enum QuoteStatus { Live, Disconnected, DisabledQuotes, MissingData, UnknownHeld, TBPHeld, MaxTradesSeconds, WaitingPing, DepletedFunds, Crossed }
 
 export class TwoSidedQuoteStatus {
     constructor(public bidStatus: QuoteStatus, public askStatus: QuoteStatus, public quotesInMemoryNew: number, public quotesInMemoryWorking: number, public quotesInMemoryDone: number) {}
@@ -180,7 +178,7 @@ export class CurrencyPair {
 export enum QuotingMode { Top, Mid, Join, InverseJoin, InverseTop, HamelinRat, Depth }
 export enum QuotingSafety { Off, PingPong, Boomerang, AK47 }
 export enum FairValueModel { BBO, wBBO }
-export enum AutoPositionMode { Manual, EWMA_LS, EWMA_LMS }
+export enum AutoPositionMode { Manual, EWMA_LS, EWMA_LMS, EWMA_4 }
 export enum DynamicPDivMode { Manual, Linear, Sine, SQRT, Switch }
 export enum PingAt { BothSides, BidSide, AskSide, DepletedSide, DepletedBidSide, DepletedAskSide, StopPings }
 export enum PongAt { ShortPingFair, LongPingFair, ShortPingAggressive, LongPingAggressive }
@@ -227,34 +225,16 @@ export interface QuotingParameters {
     range?: number;
     rangePercentage?: number;
     ewmaSensiblityPercentage?: number;
+    veryLongEwmaPeriods?: number;
     longEwmaPeriods?: number;
     mediumEwmaPeriods?: number;
     shortEwmaPeriods?: number;
     quotingEwmaProtectionPeriods?: number;
     /* **************************** */
-    quotingEwmaSMUProtection?: boolean;
-    quotingEwmaSMUThreshold?: number;
-    quotingEwmaSMPeriods?: number;
-    quotingEwmaSUPeriods?: number;
-
-    flipBidSizesOnDowntrend?: boolean;
-    blockBidsOnUptrend?: boolean;
-    blockAsksOnDowntrend?: boolean;
-    blockDowntrend?: boolean;
-    blockUptrend?: boolean;
-    reducePDiv?: boolean;
-    reducePDivFactor?: number;
-    increaseBidSzOnUptrend?: boolean;
-    increaseBidSzOnUptrendFactor?: number;
-
-    keepHighs?: boolean;
-    highsFactor?: number;
     autoPingWidth?: boolean;
     statWidthPeriodSec?: number;
-    glueToSMU?: boolean;
-    glueToSMUFactor?: number;
-    endOfBlockDowntrend?: boolean;
-    endOfBlockDowntrendThreshold?: number;
+    autoPongWidth?: boolean;
+    autoPongWidthFactor?: boolean;
     /* **************************** */
     quotingStdevProtectionFactor?: number;
     quotingStdevProtectionPeriods?: number;
@@ -262,7 +242,6 @@ export interface QuotingParameters {
     sopWidthMultiplier?: number;
     sopSizeMultiplier?: number;
     sopTradesMultiplier?: number;
-    delayAPI?: number;
     cancelOrdersAuto?: boolean;
     cleanPongsAuto?: number;
     stepOverSize?: number;
