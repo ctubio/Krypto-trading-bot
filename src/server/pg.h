@@ -134,26 +134,25 @@ namespace K {
         map<double, mTrade> tradesBuy;
         map<double, mTrade> tradesSell;
         for (vector<mTrade>::iterator it = ((OG*)broker)->tradesHistory.begin(); it != ((OG*)broker)->tradesHistory.end(); ++it)
-          if (it->side == mSide::Bid)
+          if (it->side == mSide::Bid) {
             tradesBuy[it->price] = *it;
-          else tradesSell[it->price] = *it;
-        /*if (qp->safety == mQuotingSafety::PingPong) {
-          if (tradesSell.size()) buySize = tradesSell.rbegin()->second.quantity;
-          if (tradesBuy.size()) sellSize = tradesBuy.rbegin()->second.quantity;
-        }*/
+            if (qp->safety == mQuotingSafety::PingPong)
+              buySize = it->quantity;
+          } else {
+            tradesSell[it->price] = *it;
+            if (qp->safety == mQuotingSafety::PingPong)
+              sellSize = it->quantity;
+          }
         if (qp->buySizeMax and qp->aggressivePositionRebalancing != mAPR::Off)
           buySize = fmax(buySize, targetBasePosition - totalBasePosition);
         if (qp->sellSizeMax and qp->aggressivePositionRebalancing != mAPR::Off)
           sellSize = fmax(sellSize, totalBasePosition - targetBasePosition);
-        double widthPing = qp->widthPercentage
-          ? qp->widthPingPercentage * ((MG*)market)->fairValue / 100
-          : qp->widthPing;
         double widthPong = qp->widthPercentage
           ? qp->widthPongPercentage * ((MG*)market)->fairValue / 100
           : qp->widthPong;
 
-        if(qp->autoPingWidth and ((MG*)market)->mgAvgMarketWidth > widthPing and ((MG*)market)->mgAvgMarketWidth * 3 > widthPong)
-          widthPong = ((MG*)market)->mgAvgMarketWidth * 3;
+        if(qp->autoPongWidth and ((MG*)market)->mgAvgMarketWidth * qp->autoPongWidthFactor > widthPong )
+          widthPong = ((MG*)market)->mgAvgMarketWidth * qp->autoPongWidthFactor;
 
         double buyPing = 0;
         double sellPong = 0;
@@ -169,10 +168,8 @@ namespace K {
         } else if (qp->pongAt == mPongAt::LongPingFair
           or qp->pongAt == mPongAt::LongPingAggressive
         ) {
-          //matchLastPing(&tradesBuy, &buyPing, &buyQty, sellSize, widthPong);
-          //matchLastPing(&tradesSell, &sellPong, &sellQty, buySize, widthPong, true);
-          matchFirstPing(&tradesBuy, &buyPing, &buyQty, sellSize, widthPong*-1);
-          matchFirstPing(&tradesSell, &sellPong, &sellQty, buySize, widthPong*-1);
+          matchLastPing(&tradesBuy, &buyPing, &buyQty, sellSize, widthPong);
+          matchLastPing(&tradesSell, &sellPong, &sellQty, buySize, widthPong, true);
         }
         if (buyQty) buyPing /= buyQty;
         if (sellQty) sellPong /= sellQty;
