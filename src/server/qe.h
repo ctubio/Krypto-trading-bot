@@ -156,8 +156,8 @@ namespace K {
         //
         if(qp->autoPingWidth and ((MG*)market)->mgEwmaMarketWidth > widthPing)
           widthPing = ((MG*)market)->mgEwmaMarketWidth;
-        if(qp->autoPongWidth and ((MG*)market)->mgEwmaMarketWidth * qp->autoPingWidthFactor > widthPong)
-          widthPong = ((MG*)market)->mgEwmaMarketWidth * 3;
+        if(qp->autoPongWidth and ((MG*)market)->mgEwmaMarketWidth * qp->autoPongWidthFactor > widthPong)
+          widthPong = ((MG*)market)->mgEwmaMarketWidth * qp->autoPongWidthFactor;
         mQuote rawQuote = quote(widthPing, buySize, sellSize);
         if (!rawQuote.bid.price and !rawQuote.ask.price) return mQuote();
         if (rawQuote.bid.price < 0 or rawQuote.ask.price < 0) {
