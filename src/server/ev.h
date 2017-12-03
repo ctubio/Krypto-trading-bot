@@ -13,7 +13,6 @@ namespace K  {
       function<void(mOrder)> ogOrder;
       function<void(mTrade)> ogTrade;
       function<void()>       mgLevels,
-                             mgEwmaSMUProtection,
                              mgEwmaQuoteProtection,
                              mgTargetPosition,
                              pgTargetBasePosition,
@@ -85,10 +84,10 @@ namespace K  {
         exit(code);
       };
       function<void()> happyEnding = [&]() {
-        cout << FN::uiT() << gw->name << " ";
+        cout << FN::uiT() << gw->name;
         for(unsigned int i = 0; i < 21; ++i)
-          cout << "THE END IS NEVER ";
-        cout << "THE END." << '\n';
+          cout << " THE END IS NEVER";
+        cout << " THE END." << '\n';
       };
       static void quit(int sig) {
         FN::screen_quit();
