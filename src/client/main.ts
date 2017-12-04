@@ -377,6 +377,7 @@ class DisplayOrder {
                                             <th>/sec</th>
                                             <th>ewma?</th>
                                             <th *ngIf="pair.quotingParameters.display.quotingEwmaProtection">periodsᵉʷᵐᵃ</th>
+                                            <th *ngIf="pair.quotingParameters.display.quotingEwmaProtection">offset %ᵉʷᵐᵃ</th>
                                             <th>stdev</th>
                                             <th *ngIf="pair.quotingParameters.display.quotingStdevProtection">periodsˢᵗᵈᶜᵛ</th>
                                             <th *ngIf="pair.quotingParameters.display.quotingStdevProtection">factor</th>
@@ -429,6 +430,12 @@ class DisplayOrder {
                                                    type="number" step="1" min="1"
                                                    onClick="this.select()"
                                                    [(ngModel)]="pair.quotingParameters.display.quotingEwmaProtectionPeriods">
+                                            </td>                                            
+                                            <td style="width:88px;border-bottom: 3px solid #F0A0A0;" *ngIf="pair.quotingParameters.display.quotingEwmaProtection">
+                                                <input class="form-control input-sm"
+                                                   type="number" step="0.01" min="0.01"
+                                                   onClick="this.select()"
+                                                   [(ngModel)]="pair.quotingParameters.display.quotingEwmaProtectionPriceOffsetPercent">
                                             </td>
                                             <td style="width:121px;border-bottom: 3px solid #AF451E;">
                                                 <select class="form-control input-sm"
