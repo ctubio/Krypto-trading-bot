@@ -150,10 +150,6 @@ namespace K {
         double widthPong = qp->widthPercentage
           ? qp->widthPongPercentage * ((MG*)market)->fairValue / 100
           : qp->widthPong;
-
-        if(qp->autoPongWidth and ((MG*)market)->mgEwmaMarketWidth * qp->autoPongWidthFactor > widthPong )
-          widthPong = ((MG*)market)->mgEwmaMarketWidth * qp->autoPongWidthFactor;
-
         double buyPing = 0;
         double sellPong = 0;
         double buyQty = 0;

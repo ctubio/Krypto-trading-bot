@@ -86,12 +86,6 @@ namespace K {
     bool              audio                           = false;
     int               delayUI                         = 7;
     bool              _matchPings                     = true;
-    /*******************************************************/
-    bool              autoPongWidth                 = false;
-    double            autoPongWidthFactor           = 3.0;
-    bool              autoPingWidth                 = false;
-    int               statWidthPeriodSec            = 0;
-    /*******************************************************/
   };
   static void to_json(json& j, const mQuotingParams& k) {
     j = {
@@ -148,12 +142,7 @@ namespace K {
       {"profitHourInterval", k.profitHourInterval},
       {"audio", k.audio},
       {"delayUI", k.delayUI},
-      {"_matchPings", k._matchPings},
-      // ************************************************
-      {"autoPongWidth", k.autoPongWidth},
-      {"autoPongWidthFactor", k.autoPongWidthFactor},
-      {"autoPingWidth", k.autoPingWidth},
-      {"statWidthPeriodSec", k.statWidthPeriodSec},
+      {"_matchPings", k._matchPings}
     };
   };
   static void from_json(const json& j, mQuotingParams& k) {
@@ -210,13 +199,6 @@ namespace K {
     if (j.end() != j.find("profitHourInterval")) k.profitHourInterval = j.at("profitHourInterval").get<double>();
     if (j.end() != j.find("audio")) k.audio = j.at("audio").get<bool>();
     if (j.end() != j.find("delayUI")) k.delayUI = j.at("delayUI").get<int>();
-    // ************************************************************
-    if (j.end() != j.find("autoPongWidth"))                k.autoPongWidth = j.at("autoPongWidth").get<bool>();
-    if (j.end() != j.find("autoPongWidthFactor"))          k.autoPongWidthFactor = j.at("autoPongWidthFactor").get<double>();
-    if (j.end() != j.find("autoPingWidth"))                k.autoPingWidth = j.at("autoPingWidth").get<bool>();
-    if (j.end() != j.find("statWidthPeriodSec"))           k.statWidthPeriodSec = j.at("statWidthPeriodSec").get<int>();
-    // ************************************************************
-    if ((int)k.mode > 6) k.mode = mQuotingMode::Top; // remove after everybody have the new mode/safety in their databases (2018)
     if (k.mode == mQuotingMode::Depth) k.widthPercentage = false;
     k._matchPings = k.safety == mQuotingSafety::Boomerang or k.safety == mQuotingSafety::AK47;
   };

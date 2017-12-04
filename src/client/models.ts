@@ -93,6 +93,8 @@ export class EWMAChart {
                 public ewmaMedium: number,
                 public ewmaLong: number,
                 public ewmaVeryLong: number,
+                public tradesBuySize: number,
+                public tradesSellSize: number,
                 public fairValue: number) {}
 }
 
@@ -228,12 +230,6 @@ export interface QuotingParameters {
     mediumEwmaPeriods?: number;
     shortEwmaPeriods?: number;
     quotingEwmaProtectionPeriods?: number;
-    /* **************************** */
-    autoPingWidth?: boolean;
-    statWidthPeriodSec?: number;
-    autoPongWidth?: boolean;
-    autoPongWidthFactor?: boolean;
-    /* **************************** */
     quotingStdevProtectionFactor?: number;
     quotingStdevProtectionPeriods?: number;
     aprMultiplier?: number;

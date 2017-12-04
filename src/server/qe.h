@@ -153,11 +153,6 @@ namespace K {
           buySize = fmax(buySize, ((PG*)wallet)->targetBasePosition - totalBasePosition);
         if (sellSize and qp->aggressivePositionRebalancing != mAPR::Off and qp->sellSizeMax)
           sellSize = fmax(sellSize, totalBasePosition - ((PG*)wallet)->targetBasePosition);
-        //
-        if(qp->autoPingWidth and ((MG*)market)->mgEwmaMarketWidth > widthPing)
-          widthPing = ((MG*)market)->mgEwmaMarketWidth;
-        if(qp->autoPongWidth and ((MG*)market)->mgEwmaMarketWidth * qp->autoPongWidthFactor > widthPong)
-          widthPong = ((MG*)market)->mgEwmaMarketWidth * qp->autoPongWidthFactor;
         mQuote rawQuote = quote(widthPing, buySize, sellSize);
         if (!rawQuote.bid.price and !rawQuote.ask.price) return mQuote();
         if (rawQuote.bid.price < 0 or rawQuote.ask.price < 0) {
@@ -168,7 +163,7 @@ namespace K {
         const double rawAskSz = rawQuote.ask.size;
         bool superTradesActive = false;
         debuq("?", rawQuote); applySuperTrades(&rawQuote, &superTradesActive, widthPing, buySize, sellSize, quoteAmount, baseAmount);
-        debuq("A", rawQuote); applyEwmaProtection(&rawQuote);
+        debuq("A", rawQuote); applyEwmaProtection(&rawQuote, widthPing);
         debuq("B", rawQuote); applyTotalBasePosition(&rawQuote, totalBasePosition, pDiv, buySize, sellSize, quoteAmount, baseAmount);
         debuq("C", rawQuote); applyStdevProtection(&rawQuote);
         debuq("D", rawQuote); applyAggressivePositionRebalancing(&rawQuote, widthPong, safetyBuyPing, safetySellPong);
@@ -360,10 +355,21 @@ namespace K {
           );
         }
       };
-      void applyEwmaProtection(mQuote *rawQuote) {
+      void applyEwmaProtection(mQuote *rawQuote, double widthPing) {
         if (!qp->quotingEwmaProtection or !((MG*)market)->mgEwmaP) return;
-        rawQuote->ask.price = fmax(((MG*)market)->mgEwmaP, rawQuote->ask.price);
-        rawQuote->bid.price = fmin(((MG*)market)->mgEwmaP, rawQuote->bid.price);
+
+        if( ((MG*)market)->fairValue * 1.0015 < ((MG*)market)->mgEwmaP )
+        {
+          askStatus = mQuoteState::TBPHeld;
+          rawQuote->ask.price = 0;
+          rawQuote->ask.size = 0;
+          //
+          bidStatus = mQuoteState::TBPHeld;
+          rawQuote->bid.price = 0;
+          rawQuote->bid.size = 0;
+        }
+        //rawQuote->ask.price = fmax(((MG*)market)->mgEwmaP, rawQuote->ask.price);
+        //rawQuote->bid.price = fmin(((MG*)market)->mgEwmaP, rawQuote->bid.price);
       };
       mQuote quote(double widthPing, double buySize, double sellSize) {
         if (quotingMode.find(qp->mode) == quotingMode.end()) FN::logExit("QE", "Invalid quoting mode", EXIT_SUCCESS);
