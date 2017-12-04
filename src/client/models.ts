@@ -230,6 +230,7 @@ export interface QuotingParameters {
     mediumEwmaPeriods?: number;
     shortEwmaPeriods?: number;
     quotingEwmaProtectionPeriods?: number;
+    quotingEwmaProtectionPriceOffsetPercent?: number;
     quotingStdevProtectionFactor?: number;
     quotingStdevProtectionPeriods?: number;
     aprMultiplier?: number;
