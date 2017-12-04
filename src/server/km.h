@@ -67,6 +67,7 @@ namespace K {
     int               tradeRateSeconds                = 3;
     bool              quotingEwmaProtection           = true;
     int               quotingEwmaProtectionPeriods    = 200;
+    double            quotingEwmaProtectionPriceOffsetPercent = 1.0;
     mSTDEV            quotingStdevProtection          = mSTDEV::Off;
     bool              quotingStdevBollingerBands      = false;
     double            quotingStdevProtectionFactor    = 1.0;
@@ -124,6 +125,7 @@ namespace K {
       {"tradeRateSeconds", k.tradeRateSeconds},
       {"quotingEwmaProtection", k.quotingEwmaProtection},
       {"quotingEwmaProtectionPeriods", k.quotingEwmaProtectionPeriods},
+      {"quotingEwmaProtectionPriceOffsetPercent", k.quotingEwmaProtectionPriceOffsetPercent},
       {"quotingStdevProtection", (int)k.quotingStdevProtection},
       {"quotingStdevBollingerBands", k.quotingStdevBollingerBands},
       {"quotingStdevProtectionFactor", k.quotingStdevProtectionFactor},
@@ -181,6 +183,7 @@ namespace K {
     if (j.end() != j.find("tradeRateSeconds")) k.tradeRateSeconds = j.at("tradeRateSeconds").get<int>();
     if (j.end() != j.find("quotingEwmaProtection")) k.quotingEwmaProtection = j.at("quotingEwmaProtection").get<bool>();
     if (j.end() != j.find("quotingEwmaProtectionPeriods")) k.quotingEwmaProtectionPeriods = j.at("quotingEwmaProtectionPeriods").get<int>();
+    if (j.end() != j.find("quotingEwmaProtectionPriceOffsetPercent")) k.quotingEwmaProtectionPriceOffsetPercent = j.at("quotingEwmaProtectionPriceOffsetPercent").get<double>();
     if (j.end() != j.find("quotingStdevProtection")) k.quotingStdevProtection = (mSTDEV)j.at("quotingStdevProtection").get<int>();
     if (j.end() != j.find("quotingStdevBollingerBands")) k.quotingStdevBollingerBands = j.at("quotingStdevBollingerBands").get<bool>();
     if (j.end() != j.find("quotingStdevProtectionFactor")) k.quotingStdevProtectionFactor = j.at("quotingStdevProtectionFactor").get<double>();
