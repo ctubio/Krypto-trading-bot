@@ -358,7 +358,7 @@ namespace K {
       void applyEwmaProtection(mQuote *rawQuote, double widthPing) {
         if (!qp->quotingEwmaProtection or !((MG*)market)->mgEwmaP) return;
 
-        if( ((MG*)market)->fairValue * 1.0015 < ((MG*)market)->mgEwmaP )
+        if( ((MG*)market)->fairValue * ( 1 + qp->quotingEwmaProtectionPriceOffsetPercent / 100 ) < ((MG*)market)->mgEwmaP )
         {
           askStatus = mQuoteState::TBPHeld;
           rawQuote->ask.price = 0;
