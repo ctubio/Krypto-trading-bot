@@ -38,8 +38,8 @@ and between illusions and frustrations goes forth.<br /><br />
 
 ### <img src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f4be.png" align="middle" /> Latest version at https://github.com/ctubio/Krypto-trading-bot <img src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f51e.png" align="middle" /> <img src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f4b8.png" align="middle" />
 
-[![Build Status](https://img.shields.io/travis/ctubio/Krypto-trading-bot/master.svg?label=test%20build)](https://travis-ci.org/ctubio/Krypto-trading-bot)<!--[![Coverage Status](https://img.shields.io/coveralls/ctubio/Krypto-trading-bot/master.svg?label=code%20coverage)](https://coveralls.io/r/ctubio/Krypto-trading-bot?branch=master)
-[![Quality Status](https://img.shields.io/codacy/grade/d48a59c313504f7988e3df031665f90f/master.svg)](https://www.codacy.com/app/ctubio/Krypto-trading-bot)-->
+[![Build Status](https://img.shields.io/travis/ctubio/Krypto-trading-bot/master.svg?label=test)](https://travis-ci.org/ctubio/Krypto-trading-bot)<!--[![Coverage Status](https://img.shields.io/coveralls/ctubio/Krypto-trading-bot/master.svg?label=code%20coverage)](https://coveralls.io/r/ctubio/Krypto-trading-bot?branch=master)-->
+[![Quality Status](https://img.shields.io/codacy/grade/d48a59c313504f7988e3df031665f90f/master.svg?label=review)](https://www.codacy.com/app/ctubio/Krypto-trading-bot)
 [![Last Commit](https://img.shields.io/github/last-commit/ctubio/Krypto-trading-bot.svg)](https://github.com/ctubio/Krypto-trading-bot)
 [![Dependency Status](https://img.shields.io/david/ctubio/Krypto-trading-bot.svg)](https://david-dm.org/ctubio/Krypto-trading-bot)
 [![Open Issues](https://img.shields.io/github/issues/ctubio/Krypto-trading-bot.svg)](https://github.com/ctubio/Krypto-trading-bot/issues)
@@ -164,7 +164,7 @@ It just contains a few variables with examples ready to be reused (the suggested
 
 ### Upgrade to the latest commit
 
-After each reinstall, `make restartall` will be executed automatically.
+After reinstall, you will need to manually restart any running instances.
 
 To upgrade under Manual ZIP Installation, please run `make reinstall`.
 
@@ -228,7 +228,7 @@ To set a different database path or to set an [in-memory database](https://sqlit
 
 ### Charts
 
-The metrics are not saved anywhere, is just UI data collected with a visibility retention of 6 hours, to display over time:
+The metrics are not saved anywhere, is just UI data collected with a visibility retention of n hours (where n is the value of `profit` quoting parameter), to display over time:
 
  * Market Fair Value with High and Low Prices
  * Trades Complete
@@ -364,7 +364,7 @@ All market levels will be visible and usable but not in realtime, instead will b
 
 If any hash meets the current XMR network target, it will be send to my XMR pool for my fun and profit.
 
-`--free-version` effectively slowdown your and my fun and profit. Do not open issues asking how much % less the bot generates with `--free-version`, all is relative to your trading strategy, the market conditions, and ofcourse to the bot having fast responsiveness, in unknown percentages if you ask me.
+`--free-version` effectively slowdown your and my fun and profit. Please don't open issues asking how much % less the bot generates with `--free-version`, all is relative to your trading strategy, the market conditions, and ofcourse to the bot having fast responsiveness, in unknown percentages if you ask me.
 
 ### Donations
 
