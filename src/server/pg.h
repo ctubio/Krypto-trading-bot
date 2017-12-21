@@ -16,7 +16,6 @@ namespace K {
       double targetBasePosition = 0;
       double positionDivergence = 0;
       string sideAPR = "";
-      mutex pgMutex;
     protected:
       void load() {
         json k = ((DB*)memory)->load(uiTXT::TargetBasePosition);
@@ -44,7 +43,7 @@ namespace K {
         ((EV*)events)->ogOrder = [&](mOrder k) {
           ((EV*)events)->debug(string("PG ogOrder mOrder ") + ((json)k).dump());
           calcWalletAfterOrder(k);
-          FN::screen_refresh(((OG*)broker)->ordersBothSides());
+          FN::screen_refresh(((OG*)broker)->orders);
         };
         ((EV*)events)->mgTargetPosition = [&]() {
           ((EV*)events)->debug("PG mgTargetPosition");
@@ -58,24 +57,20 @@ namespace K {
       };
     public:
       void calcSafety() {
-        if (empty() or !((MG*)market)->fairValue) return;
+        if (position.empty() or !((MG*)market)->fairValue) return;
         mSafety next = nextSafety();
-        pgMutex.lock();
         if (safety.buyPing == -1
           or next.combined != safety.combined
           or next.buyPing != safety.buyPing
-          or next.sellPong != safety.sellPong
+          or next.sellPing != safety.sellPing
         ) {
           safety = next;
-          pgMutex.unlock();
           ((UI*)client)->send(uiTXT::TradeSafetyValue, next);
-        } else pgMutex.unlock();
+        }
       };
       void calcTargetBasePos() {
-        if (empty()) { FN::logWar("QE", "Unable to calculate TBP, missing market data."); return; }
-        pgMutex.lock();
+        if (position.empty()) return FN::logWar("PG", "Unable to calculate TBP, missing wallet data");
         double baseValue = position.baseValue;
-        pgMutex.unlock();
         double next = qp->autoPositionMode == mAutoPositionMode::Manual
           ? (qp->percentageValues
             ? qp->targetBasePositionPercentage * baseValue / 1e+2
@@ -92,81 +87,69 @@ namespace K {
         stringstream ss;
         ss << (int)(targetBasePosition / baseValue * 1e+2) << "% = " << setprecision(8) << fixed << targetBasePosition;
         stringstream ss_;
-        ss_ << (int)(positionDivergence  / baseValue * 1e+2) << "% = " << setprecision(8) << fixed << positionDivergence ;
+        ss_ << (int)(positionDivergence  / baseValue * 1e+2) << "% = " << setprecision(8) << fixed << positionDivergence;
         FN::log("PG", string("TBP: ") + ss.str() + " " + gw->base + ", pDiv: " + ss_.str() + " " + gw->base);
       };
       void addTrade(mTrade k) {
-        mTrade k_(k.price, k.quantity, k.time);
-        if (k.side == mSide::Bid) buys[k.price] = k_;
-        else sells[k.price] = k_;
-      };
-      bool empty() {
-        lock_guard<mutex> lock(pgMutex);
-        return !position.baseValue;
+        (k.side == mSide::Bid
+          ? buys : sells
+        )[k.price] = mTrade(
+          k.price,
+          k.quantity,
+          k.time
+        );
       };
     private:
-      function<json()> helloPosition = [&]() {
-        lock_guard<mutex> lock(pgMutex);
-        return (json){ position };
+      function<void(json*)> helloPosition = [&](json *welcome) {
+        *welcome = { position };
       };
-      function<json()> helloSafety = [&]() {
-        lock_guard<mutex> lock(pgMutex);
-        return (json){ safety };
+      function<void(json*)> helloSafety = [&](json *welcome) {
+        *welcome = { safety };
       };
-      function<json()> helloTargetBasePos = [&]() {
-        return (json){{{"tbp", targetBasePosition}, {"sideAPR", sideAPR}, {"pDiv", positionDivergence }}};
+      function<void(json*)> helloTargetBasePos = [&](json *welcome) {
+        *welcome = { {
+          {"tbp", targetBasePosition},
+          {"sideAPR", sideAPR},
+          {"pDiv", positionDivergence}
+        } };
       };
       mSafety nextSafety() {
-        pgMutex.lock();
-        double baseValue      = position.baseValue,
-               baseAmount     = position.baseAmount,
-               baseHeldAmount = position.baseHeldAmount;
-        pgMutex.unlock();
         double buySize = qp->percentageValues
-          ? qp->buySizePercentage * baseValue / 100
+          ? qp->buySizePercentage * position.baseValue / 100
           : qp->buySize;
         double sellSize = qp->percentageValues
-          ? qp->sellSizePercentage * baseValue / 100
+          ? qp->sellSizePercentage * position.baseValue / 100
           : qp->sellSize;
-        double totalBasePosition = baseAmount + baseHeldAmount;
         map<double, mTrade> tradesBuy;
         map<double, mTrade> tradesSell;
-        for (vector<mTrade>::iterator it = ((OG*)broker)->tradesHistory.begin(); it != ((OG*)broker)->tradesHistory.end(); ++it)
-          if (it->side == mSide::Bid) {
-            tradesBuy[it->price] = *it;
-            if (qp->safety == mQuotingSafety::PingPong)
-              buySize = it->quantity;
-          } else {
-            tradesSell[it->price] = *it;
-            if (qp->safety == mQuotingSafety::PingPong)
-              sellSize = it->quantity;
-          }
-        if (qp->buySizeMax and qp->aggressivePositionRebalancing != mAPR::Off)
-          buySize = fmax(buySize, targetBasePosition - totalBasePosition);
-        if (qp->sellSizeMax and qp->aggressivePositionRebalancing != mAPR::Off)
-          sellSize = fmax(sellSize, totalBasePosition - targetBasePosition);
+        for (vector<mTrade>::iterator it = ((OG*)broker)->tradesHistory.begin(); it != ((OG*)broker)->tradesHistory.end(); ++it) {
+          (it->side == mSide::Bid ? tradesBuy : tradesSell)[it->price] = *it;
+          if (qp->safety == mQuotingSafety::PingPong)
+            (it->side == mSide::Bid ? buySize : sellSize) = it->quantity;
+        }
+        double totalBasePosition = position.baseAmount + position.baseHeldAmount;
+        if (qp->aggressivePositionRebalancing != mAPR::Off) {
+          if (qp->buySizeMax) buySize = fmax(buySize, targetBasePosition - totalBasePosition);
+          if (qp->sellSizeMax) sellSize = fmax(sellSize, totalBasePosition - targetBasePosition);
+        }
         double widthPong = qp->widthPercentage
           ? qp->widthPongPercentage * ((MG*)market)->fairValue / 100
           : qp->widthPong;
-        double buyPing = 0;
-        double sellPong = 0;
-        double buyQty = 0;
-        double sellQty = 0;
-        if (qp->pongAt == mPongAt::ShortPingFair
-          or qp->pongAt == mPongAt::ShortPingAggressive
-        ) {
+        double buyPing = 0,
+               sellPing = 0,
+               buyQty = 0,
+               sellQty = 0;
+        if (qp->pongAt == mPongAt::ShortPingFair or qp->pongAt == mPongAt::ShortPingAggressive) {
           matchBestPing(&tradesBuy, &buyPing, &buyQty, sellSize, widthPong, true);
-          matchBestPing(&tradesSell, &sellPong, &sellQty, buySize, widthPong);
+          matchBestPing(&tradesSell, &sellPing, &sellQty, buySize, widthPong);
           if (!buyQty) matchFirstPing(&tradesBuy, &buyPing, &buyQty, sellSize, widthPong*-1, true);
-          if (!sellQty) matchFirstPing(&tradesSell, &sellPong, &sellQty, buySize, widthPong*-1);
-        } else if (qp->pongAt == mPongAt::LongPingFair
-          or qp->pongAt == mPongAt::LongPingAggressive
-        ) {
+          if (!sellQty) matchFirstPing(&tradesSell, &sellPing, &sellQty, buySize, widthPong*-1);
+        } else if (qp->pongAt == mPongAt::LongPingFair or qp->pongAt == mPongAt::LongPingAggressive) {
           matchLastPing(&tradesBuy, &buyPing, &buyQty, sellSize, widthPong);
-          matchLastPing(&tradesSell, &sellPong, &sellQty, buySize, widthPong, true);
+          matchLastPing(&tradesSell, &sellPing, &sellQty, buySize, widthPong, true);
         }
         if (buyQty) buyPing /= buyQty;
-        if (sellQty) sellPong /= sellQty;
+        if (sellQty) sellPing /= sellQty;
         clean();
         double sumBuys = sum(&buys);
         double sumSells = sum(&sells);
@@ -175,40 +158,39 @@ namespace K {
           sumSells / sellSize,
           (sumBuys + sumSells) / (buySize + sellSize),
           buyPing,
-          sellPong
+          sellPing
         );
       };
-      void matchFirstPing(map<double, mTrade>* trades, double* ping, double* qty, double qtyMax, double width, bool reverse = false) {
-        matchPing(qp->_matchPings, true, true, trades, ping, qty, qtyMax, width, reverse);
+      void matchFirstPing(map<double, mTrade> *trades, double *ping, double *qty, double qtyMax, double width, bool reverse = false) {
+        matchPing(true, true, trades, ping, qty, qtyMax, width, reverse);
       };
-      void matchBestPing(map<double, mTrade>* trades, double* ping, double* qty, double qtyMax, double width, bool reverse = false) {
-        matchPing(qp->_matchPings, true, false, trades, ping, qty, qtyMax, width, reverse);
+      void matchBestPing(map<double, mTrade> *trades, double *ping, double *qty, double qtyMax, double width, bool reverse = false) {
+        matchPing(true, false, trades, ping, qty, qtyMax, width, reverse);
       };
-      void matchLastPing(map<double, mTrade>* trades, double* ping, double* qty, double qtyMax, double width, bool reverse = false) {
-        matchPing(qp->_matchPings, false, true, trades, ping, qty, qtyMax, width, reverse);
+      void matchLastPing(map<double, mTrade> *trades, double *ping, double *qty, double qtyMax, double width, bool reverse = false) {
+        matchPing(false, true, trades, ping, qty, qtyMax, width, reverse);
       };
-      void matchPing(bool matchPings, bool near, bool far, map<double, mTrade>* trades, double* ping, double* qty, double qtyMax, double width, bool reverse = false) {
+      void matchPing(bool near, bool far, map<double, mTrade> *trades, double *ping, double *qty, double qtyMax, double width, bool reverse = false) {
         int dir = width > 0 ? 1 : -1;
         if (reverse) for (map<double, mTrade>::reverse_iterator it = trades->rbegin(); it != trades->rend(); ++it) {
-          if (matchPing(matchPings, near, far, ping, width, qty, qtyMax, dir * ((MG*)market)->fairValue, dir * it->second.price, it->second.quantity, it->second.price, it->second.Kqty, reverse))
+          if (matchPing(near, far, ping, qty, qtyMax, width, dir * ((MG*)market)->fairValue, dir * it->second.price, it->second.quantity, it->second.price, it->second.Kqty, reverse))
             break;
         } else for (map<double, mTrade>::iterator it = trades->begin(); it != trades->end(); ++it)
-          if (matchPing(matchPings, near, far, ping, width, qty, qtyMax, dir * ((MG*)market)->fairValue, dir * it->second.price, it->second.quantity, it->second.price, it->second.Kqty, reverse))
+          if (matchPing(near, far, ping, qty, qtyMax, width, dir * ((MG*)market)->fairValue, dir * it->second.price, it->second.quantity, it->second.price, it->second.Kqty, reverse))
             break;
       };
-      bool matchPing(bool matchPings, bool near, bool far, double *ping, double width, double* qty, double qtyMax, double fv, double price, double qtyTrade, double priceTrade, double KqtyTrade, bool reverse) {
+      bool matchPing(bool near, bool far, double *ping, double *qty, double qtyMax, double width, double fv, double price, double qtyTrade, double priceTrade, double KqtyTrade, bool reverse) {
         if (reverse) { fv *= -1; price *= -1; width *= -1; }
         if (*qty < qtyMax
           and (far ? fv > price : true)
           and (near ? (reverse ? fv - width : fv + width) < price : true)
-          and (!matchPings or KqtyTrade < qtyTrade)
-        ) matchPing(ping, qty, qtyMax, qtyTrade, priceTrade);
+          and (!qp->_matchPings or KqtyTrade < qtyTrade)
+        ) {
+          double qty_ = fmin(qtyMax - *qty, qtyTrade);
+          *ping += priceTrade * qty_;
+          *qty += qty_;
+        }
         return *qty >= qtyMax;
-      };
-      void matchPing(double* ping, double* qty, double qtyMax, double qtyTrade, double priceTrade) {
-        double qty_ = fmin(qtyMax - *qty, qtyTrade);
-        *ping += priceTrade * qty_;
-        *qty += qty_;
       };
       void clean() {
         if (buys.size()) expire(&buys);
@@ -246,7 +228,6 @@ namespace K {
         if (balance.find(gw->quote) == balance.end()) balance[gw->quote] = mWallet(0, 0, gw->quote);
         if (balance.find(gw->base) == balance.end()) balance[gw->base] = mWallet(0, 0, gw->base);
         if (!((MG*)market)->fairValue or balance.find(gw->base) == balance.end() or balance.find(gw->quote) == balance.end()) return;
-        pgMutex.lock();
         mPosition pos(
           balance[gw->base].amount,
           balance[gw->quote].amount,
@@ -256,14 +237,11 @@ namespace K {
           balance[gw->base].amount * ((MG*)market)->fairValue + balance[gw->quote].amount + balance[gw->base].held * ((MG*)market)->fairValue + balance[gw->quote].held,
           position.profitBase,
           position.profitQuote,
-          mPair(gw->base, gw->quote),
-          gw->exchange
+          mPair(gw->base, gw->quote)
         );
         calcProfit(&pos);
-        pgMutex.unlock();
         bool eq = true;
-        if (!empty()) {
-          pgMutex.lock();
+        if (!position.empty()) {
           eq = abs(pos.baseValue - position.baseValue) < 2e-6;
           if(eq
             and abs(pos.quoteValue - position.quoteValue) < 2e-2
@@ -273,29 +251,26 @@ namespace K {
             and abs(pos.quoteHeldAmount - position.quoteHeldAmount) < 2e-2
             and abs(pos.profitBase - position.profitBase) < 2e-2
             and abs(pos.profitQuote - position.profitQuote) < 2e-2
-          ) { pgMutex.unlock(); return; }
-        } else pgMutex.lock();
+          ) return;
+        }
         position = pos;
-        pgMutex.unlock();
         if (!eq) calcTargetBasePos();
         ((UI*)client)->send(uiTXT::Position, pos, true);
       };
       void calcWalletAfterOrder(mOrder k) {
-        if (empty()) return;
+        if (position.empty()) return;
         double heldAmount = 0;
-        pgMutex.lock();
         double amount = k.side == mSide::Ask
           ? position.baseAmount + position.baseHeldAmount
           : position.quoteAmount + position.quoteHeldAmount;
-        pgMutex.unlock();
-        multimap<double, mOrder> ordersSide = ((OG*)broker)->ordersAtSide(k.side);
-        for (multimap<double, mOrder>::iterator it = ordersSide.begin(); it != ordersSide.end(); ++it) {
-          double held = it->second.quantity * (it->second.side == mSide::Bid ? it->second.price : 1);
-          if (amount >= held) {
-            amount -= held;
-            heldAmount += held;
+        for (map<string, mOrder>::iterator it = ((OG*)broker)->orders.begin(); it != ((OG*)broker)->orders.end(); ++it)
+          if (it->second.side == k.side) {
+            double held = it->second.quantity * (it->second.side == mSide::Bid ? it->second.price : 1);
+            if (amount >= held) {
+              amount -= held;
+              heldAmount += held;
+            }
           }
-        }
         calcWallet(mWallet(amount, heldAmount, k.side == mSide::Ask ? k.pair.base : k.pair.quote));
       };
       void calcPDiv(double baseValue) {

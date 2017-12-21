@@ -9,9 +9,9 @@ namespace K {
              notepad = "";
       bool toggleSettings = true,
            realtimeClient = false;
+      map<char, function<void(json*)>*> hello;
+      map<char, function<void(json)>*> kisses;
       map<uiTXT, string> queue;
-      map<char, function<json()>*> hello;
-      map<char, function<void(json)>*> kiss;
       unsigned long uiT_1m = 0;
     public:
       unsigned int orders60sec = 0;
@@ -28,7 +28,7 @@ namespace K {
       };
       void waitTime() {
         if (((CF*)config)->argHeadless) return;
-        ((EV*)events)->tClient->setData(this);
+        ((EV*)events)->tClient->data = this;
         ((EV*)events)->tClient->start(sendState, 0, 0);
       };
       void waitData() {
@@ -83,18 +83,14 @@ namespace K {
               document += "Content-Type: audio/mpeg\r\n";
               url = path;
             }
-            if (url.length() > 0) content << ifstream(FN::readlink("app/client").substr(3) + url).rdbuf();
-            else {
-              struct timespec txxs;
-              clock_gettime(CLOCK_MONOTONIC, &txxs);
-              srand((time_t)txxs.tv_nsec);
-              if (rand() % 21) {
-                document = "HTTP/1.1 404 Not Found\r\n";
-                content << "Today, is a beautiful day.";
-              } else { // Humans! go to any random url to check your luck
-                document = "HTTP/1.1 418 I'm a teapot\r\n";
-                content << "Today, is your lucky day!";
-              }
+            if (url.length())
+              content << ifstream(FN::readlink("app/client").substr(3) + url).rdbuf();
+            else if (stol(FN::int64Id()) % 21) {
+              document = "HTTP/1.1 404 Not Found\r\n";
+              content << "Today, is a beautiful day.";
+            } else { // Humans! go to any random url to check your luck
+              document = "HTTP/1.1 418 I'm a teapot\r\n";
+              content << "Today, is your lucky day!";
             }
             document += "Content-Length: " + to_string(content.str().length()) + "\r\n\r\n" + content.str();
             res->write(document.data(), document.length());
@@ -109,16 +105,18 @@ namespace K {
               return;
           }
           if (uiBIT::Hello == (uiBIT)message[0] and hello.find(message[1]) != hello.end()) {
-            json reply = (*hello[message[1]])();
-            if (!reply.is_null()) webSocket->send(string(message, 2).append(reply.dump()).data(), uWS::OpCode::TEXT);
-          } else if (uiBIT::Kiss == (uiBIT)message[0] and kiss.find(message[1]) != kiss.end())
-            (*kiss[message[1]])(json::parse((length > 2 and (message[2] == '[' or message[2] == '{'))
+            json welcome;
+            (*hello[message[1]])(&welcome);
+            if (!welcome.is_null()) webSocket->send((string(message, 2) + welcome.dump()).data(), uWS::OpCode::TEXT);
+          } else if (uiBIT::Kiss == (uiBIT)message[0] and kisses.find(message[1]) != kisses.end())
+            (*kisses[message[1]])(json::parse((length > 2 and (message[2] == '[' or message[2] == '{'))
               ? string(message, length).substr(2, length-2) : "{}"
             ));
         });
       };
       void waitUser() {
         welcome(uiTXT::ApplicationState, &helloServer);
+        welcome(uiTXT::ProductAdvertisement, &helloProduct);
         welcome(uiTXT::Notepad, &helloNotes);
         clickme(uiTXT::Notepad, &kissNotes);
         welcome(uiTXT::ToggleSettings, &helloSettings);
@@ -129,23 +127,23 @@ namespace K {
         ((EV*)events)->listen();
       };
     public:
-      void welcome(uiTXT k, function<json()> *cb) {
+      void welcome(uiTXT k, function<void(json*)> *fn) {
         if (((CF*)config)->argHeadless) return;
         if (hello.find((char)k) == hello.end())
-          hello[(char)k] = cb;
+          hello[(char)k] = fn;
         else FN::logExit("UI", string("Use only a single unique message handler for each \"") + (char)k + "\" event", EXIT_SUCCESS);
       };
-      void clickme(uiTXT k, function<void(json)> *cb) {
+      void clickme(uiTXT k, function<void(json)> *fn) {
         if (((CF*)config)->argHeadless) return;
-        if (kiss.find((char)k) == kiss.end())
-          kiss[(char)k] = cb;
+        if (kisses.find((char)k) == kisses.end())
+          kisses[(char)k] = fn;
         else FN::logExit("UI", string("Use only a single unique message handler for each \"") + (char)k + "\" event", EXIT_SUCCESS);
       };
-      void delayme(double delayUI) {
+      void delayme(unsigned int delayUI) {
         if (((CF*)config)->argHeadless) return;
         realtimeClient = !delayUI;
         ((EV*)events)->tClient->stop();
-        ((EV*)events)->tClient->start(sendState, 0, realtimeClient ? 6e+4 : (int)(delayUI*1e+3));
+        ((EV*)events)->tClient->start(sendState, 0, realtimeClient ? 6e+4 : delayUI*1e+3);
       };
       void send(uiTXT k, json o, bool delayed = false) {
         if (((CF*)config)->argHeadless or connections == 0) return;
@@ -153,27 +151,39 @@ namespace K {
         else queue[k] = o.dump();
       };
     private:
-      function<json()> helloServer = [&]() {
-        return (json){ serverState() };
+      function<void(json*)> helloServer = [&](json *welcome) {
+        *welcome = { serverState() };
       };
-      function<json()> helloNotes = [&]() {
-        return (json){ notepad };
+      function<void(json*)> helloProduct = [&](json *welcome) {
+        *welcome = { {
+          {"exchange", gw->exchange},
+          {"pair", mPair(gw->base, gw->quote)},
+          {"minTick", gw->minTick},
+          {"environment", ((CF*)config)->argTitle},
+          {"matryoshka", ((CF*)config)->argMatryoshka},
+          {"homepage", "https://github.com/ctubio/Krypto-trading-bot"}
+        } };
       };
-      function<void(json)> kissNotes = [&](json k) {
-        if (!k.is_null() and k.size())
-          notepad = k.at(0);
+      function<void(json*)> helloNotes = [&](json *welcome) {
+        *welcome = { notepad };
       };
-      function<json()> helloSettings = [&]() {
-        return (json){ toggleSettings };
+      function<void(json)> kissNotes = [&](json butterfly) {
+        if (!butterfly.is_null() and butterfly.size())
+          notepad = butterfly.at(0);
       };
-      function<void(json)> kissSettings = [&](json k) {
-        if (!k.is_null() and k.size())
-          toggleSettings = k.at(0);
+      function<void(json*)> helloSettings = [&](json *welcome) {
+        *welcome = { toggleSettings };
+      };
+      function<void(json)> kissSettings = [&](json butterfly) {
+        if (!butterfly.is_null() and butterfly.size())
+          toggleSettings = butterfly.at(0);
       };
       void send(uiTXT k, string j) {
         string m(1, (char)uiBIT::Kiss);
         m += string(1, (char)k) + j;
-        ((EV*)events)->uiGroup->broadcast(m.data(), m.length(), uWS::OpCode::TEXT);
+        ((EV*)events)->deferred([this, m]() {
+          ((EV*)events)->uiGroup->broadcast(m.data(), m.length(), uWS::OpCode::TEXT);
+        });
       };
       void sendQueue() {
         for (map<uiTXT, string>::iterator it = queue.begin(); it != queue.end(); ++it)
