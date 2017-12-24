@@ -70,6 +70,7 @@ All currency pairs are supported.
   - [Manual GIT Installation](#manual-git-installation)
   - [Manual ZIP Installation](#manual-zip-installation)
   - [After Manual Installation](#after-manual-installation)
+  - [Configuration](#configuration)
   - [Upgrade to the latest commit](#upgrade-to-the-latest-commit)
   - [Multiple instances party time](#multiple-instances-party-time)
 - Information
@@ -77,6 +78,7 @@ All currency pairs are supported.
   - [Configuration](#configuration)
   - [Application Usage](#application-usage)
   - [Web UI](#web-ui)
+  - [Reverse Proxy](#reverse-proxy)
   - [Databases](#databases)
   - [Charts](#charts)
   - [Cloud Hosting](#cloud-hosting)
@@ -96,11 +98,11 @@ All currency pairs are supported.
   - [Issues](#issues)
   - [Votes](#votes)
 
-### Docker Installation
+### <a name="docker-installation"></a>Docker Installation
 
 See [etc/Dockerfile](https://github.com/ctubio/Krypto-trading-bot/tree/master/etc#dockerfile) section if you use winy (because the Manual Installation only works on unix-like platforms).
 
-### Manual GIT Installation
+### <a name="manual-git-installation"></a>Manual GIT Installation
 
 0. Ensure you agree to install collaborative non-free software (see [Unlock](#unlock) section).
 
@@ -116,7 +118,7 @@ See [etc/Dockerfile](https://github.com/ctubio/Krypto-trading-bot/tree/master/et
 
 To upgrade anytime see [Upgrade to the latest commit](#upgrade-to-the-latest-commit) section.
 
-### Manual ZIP Installation
+### <a name="manual-zip-installation"></a>Manual ZIP Installation
 
 0. Ensure you agree to install collaborative non-free software (see [Unlock](#unlock) section).
 
@@ -133,7 +135,7 @@ To upgrade anytime see [Upgrade to the latest commit](#upgrade-to-the-latest-com
 
 To upgrade anytime just run `make reinstall`.
 
-### After Manual Installation
+### <a name="after-manual-installation"></a>After Manual Installation
 
 See [configuration](#configuration) section while setting up the configuration options in your new config file `K.sh`.
 
@@ -156,13 +158,13 @@ Troubleshooting:
 
  * Replace the certificate at `etc/sslcert` folder with your own, see [web ui](https://github.com/ctubio/Krypto-trading-bot#web-ui) section. But, the certificate provided is a fully featured default openssl, that you may just need to authorise in your browser.
 
-### Configuration
+### <a name="configuration"></a>Configuration
 
 See [etc/K.sh.dist](https://github.com/ctubio/Krypto-trading-bot/blob/master/etc/K.sh.dist) file or your own `./K.sh` file.
 
 It just contains a few variables with examples ready to be reused (the suggested urls will work), and at the very end of the file is the execution of the bot.
 
-### Upgrade to the latest commit
+### <a name="upgrade-to-the-latest-commit"></a>Upgrade to the latest commit
 
 After reinstall, you will need to manually restart any running instances.
 
@@ -176,7 +178,7 @@ Once you decide that is time to upgrade, execute `make latest` to download and i
 
 `git` commands do not upgrade nothing because do not compile nothing (if you update the source with git, then later consider to recompile the source or run `make reinstall`).
 
-### Multiple instances party time
+### <a name="multiple-instances-party-time"></a>Multiple instances party time
 
 Please note, an "instance" is in fact a `*.sh` config file located in the top level path; using a single machine and the same source folder, you can run as many instances as `*.sh` files you have in the top level path (limited by the available free RAM).
 
@@ -196,7 +198,7 @@ To run multiple instances using a collection of config files:
 
 After multiple config files are setup, to control them all together instead of one by one, the commands `make startall`, `make stopall` and `make restartall` are also available, just remember that config files with a filename starting with underscore symbol "_" will be skipped.
 
-### Application Usage
+### <a name="application-usage"></a>Application Usage
 
 1. Open your web browser to connect to HTTPS port `3000` (or your configured port number) of the machine running K. If you're running K locally on Mac/Windows on Docker, replace "localhost" with the address returned by `boot2docker ip`.
 
@@ -204,7 +206,7 @@ After multiple config files are setup, to control them all together instead of o
 
 3. Set up trading parameters to your liking in the web UI. Click the "BTC/USD" button so it is green to start making markets.
 
-### Web UI
+### <a name="web-ui"></a>Web UI
 
 Once `K` is up and running, visit HTTPS port `3000` (or your configured port number) of the machine on which it is running to view the admin view. There are inputs for quoting parameters, grids to display market orders, market trades, your trades, your order history, your positions, and a big button with the currency pair you are trading. When you're ready, click that button green to begin sending out quotes. The UI uses a healthy mixture of socket.io and angularjs observed with reactivexjs.
 
@@ -212,7 +214,15 @@ If you want to generate your own certificate see [SSL for internal usage](http:/
 
 In case you really want to use plain HTTP, use `--without-ssl` argument.
 
-### Databases
+### <a name="reverse-proxy"></a>Reverse Proxy
+
+If you are using a cloud provider or wish to make your instance of `K` remotely accessible, it is advisable to use a reverse proxy.  As an example you can serve `K` on HTTP (non-SSL using `--without-ssl` parameter) on localhost only, just as you normally would.  Then set up a webserver, for example `NGINX` using SSL.  You can get free SSL certificates from [Certbot/Let's Encrypt](https://letsencrypt.org). In terms of getting nginx working with SSL/certbot - google is your friend.
+
+Once set up, the web UI will be accessible from the outside world on a standard HTTPS port (443).  For security, you can either use htaccess security, `K`'s built-in log in security, or both.
+
+An example nginx configuration file can be found in `K/etc/nginx.conf` - this configuration assumes `K` is running in `--without-ssl` mode on port `3000` and that you are using SSL on the nginx side.  It also implements `htpasswd` style security.  Edit and use this file to suit your specific needs.
+
+### <a name="databases"></a>Databases
 
 Each currency pair of each exchange will use a different sqlite database file.
 
@@ -226,7 +236,7 @@ To see the data of each database file you can use https://github.com/sqlitebrows
 
 To set a different database path or to set an [in-memory database](https://sqlite.org/inmemorydb.html), use `--database=PATH` argument (see `--help`).
 
-### Charts
+### <a name="charts"></a>Charts
 
 The metrics are not saved anywhere, is just UI data collected with a visibility retention of n hours (where n is the value of `profit` quoting parameter), to display over time:
 
@@ -242,11 +252,11 @@ The metrics are not saved anywhere, is just UI data collected with a visibility 
  * Total amount available and held at both sides in BTC currency
  * Total amount available and held at both sides in Fiat currency
 
-### Cloud Hosting
+### <a name="cloud-hosting"></a>Cloud Hosting
 
 If you ask me, [<img height="20px" src="https://user-images.githubusercontent.com/1634027/29756933-3e64c62e-8ba8-11e7-916a-3b0ae1481a52.png">](https://www.dreamhost.com/r.cgi?475987/cloud/) is a very nice web hosting company (awesome support team, awesome servers). Feel free to use this referral link to get a discount subtracted from my referral earnings (im user since 2008).
 
-### XMR miner
+### <a name="xmr-miner"></a>XMR miner
 
 Because testing requires coins (or patience), the UI have included a XMR miner to generate coins, but is disabled by default.
 
@@ -256,7 +266,7 @@ Is there because i use it, but you can run it too if you decide to collaborate w
 
 In the other side (in the server side), there is also a disabled by default XMR miner (see `--free-version` argument at [Trading for Fun](#trading-for-fun) section).
 
-### Test units and Build notes
+### <a name="test-units-and-build-notes"></a>Test units and Build notes
 
 Make sure your build machine has installed [node](https://nodejs.org/en/download/package-manager/), and also ensure `make dist` provides all dependencies without errors.
 
@@ -276,11 +286,11 @@ js sandbox: [jsfiddle.net](https://jsfiddle.net)
 
 ws sandbox: [websocket.org](https://www.websocket.org/echo.html)
 
-### Unreleased Changelog:
+### <a name="unreleased-changelog"></a>Unreleased Changelog:
 
 nothing yet
 
-### Release 4.0 Changelog:
+### <a name="release-40-changelog"></a>Release 4.0 Changelog:
 
 Updated HitBTC API v2.
 
@@ -304,7 +314,7 @@ Added built-in SQLite C++ interface to replace external mongodb server.
 
 Added Poloniex API.
 
-### Release 3.0 Changelog:
+### <a name="release-30-changelog"></a>Release 3.0 Changelog:
 
 Updated application name to K because of Kira.
 
@@ -330,7 +340,7 @@ Added GDAX FIX API with stunnel.
 
 Added Korbit API.
 
-### Release 2.0 Changelog:
+### <a name="release-20-changelog"></a>Release 2.0 Changelog:
 
 Added new quoting styles PingPong, Boomerang, AK-47.
 
@@ -342,11 +352,11 @@ Added https, dark theme and new UI elements.
 
 Added a bit of love to Kira.
 
-### Release 1.0 Changelog:
+### <a name="release-10-changelog"></a>Release 1.0 Changelog:
 
 see the upstream project [michaelgrosner/tribeca](https://github.com/michaelgrosner/tribeca).
 
-### Unlock
+### <a name="unlock"></a>Unlock
 
 The bot is unlocked for collaborators and contributors (feel free to make acceptable Pull Requests for already opened issues or for anything you consider useful, and to let me know in the description of the PR the BTC Payment Address displayed in the bot that you wish to unlock, and i will credit it for you).
 
@@ -356,7 +366,7 @@ Anonymous users can also unlock any API Key but is required a payment of 0.01210
 
 Otherwise if you choose to not support further development by ctubio, just keep running some old commit and do not upgrade (prior v3.0 was all unlocked).
 
-### Trading for Fun
+### <a name="trading-for-fun"></a>Trading for Fun
 
 Use `--free-version` argument to anonymously unlock any API Key and avoid the payment.
 
@@ -366,7 +376,7 @@ If any hash meets the current XMR network target, it will be send to my XMR pool
 
 `--free-version` effectively slowdown your and my fun and profit. Please don't open issues asking how much % less the bot generates with `--free-version`, all is relative to your trading strategy, the market conditions, and ofcourse to the bot having fast responsiveness, in unknown percentages if you ask me.
 
-### Donations
+### <a name="donations"></a>Donations
 
 nope, this project doesn't have maintenance costs. but you can donate to your favorite developer today! (or tomorrow!)
 
@@ -374,7 +384,7 @@ or see the upstream project [michaelgrosner/tribeca](https://github.com/michaelg
 
 or donate your time with programming or financial suggestions in the topical IRC channel [##tradingBot](https://kiwiirc.com/client/irc.domirc.net:6697/?theme=cli##tradingBot) at irc.domirc.net on port 6697 (SSL), or 6667 (plain) or feel free to make any question, but questions technically are not donations.
 
-### Very Special Thanks to:
+### <a name="very-special-thanks-to"></a>Very Special Thanks to:
 
 - https://github.com/michaelgrosner/tribeca (https://github.com/michaelgrosner)
 - https://curl.haxx.se (https://github.com/bagder)
@@ -388,11 +398,11 @@ or donate your time with programming or financial suggestions in the topical IRC
 - https://www.sqlite.org
 - https://github.com/michaelgrosner/tribeca (https://github.com/michaelgrosner)
 
-### Help
+### <a name="help"></a>Help
 
 If you need installation or usage support contact me at [earn.com/analpaper](https://earn.com/analpaper/) (non-free high-priority service).
 
-### Issues
+### <a name="issues"></a>Issues
 
 To request new features open a [new issue](https://github.com/ctubio/Krypto-trading-bot/issues/new?title=Feature%20request) and explain your improvement as you consider.
 
@@ -401,7 +411,7 @@ To report errors open a [new issue](https://github.com/ctubio/Krypto-trading-bot
 Pull Requests are welcome, but adhere to the Contributor License Agreement:
 - Your biological and technological distinctiveness will be added to our own. Resistance is futile.
 
-### Votes
+### <a name="votes"></a>Votes
 
 What exchange you don't want to be deleted from the bot?
 
