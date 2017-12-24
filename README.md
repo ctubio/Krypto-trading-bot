@@ -215,13 +215,11 @@ In case you really want to use plain HTTP, use `--without-ssl` argument.
 
 ### Reverse Proxy
 
-If you are using a cloud provider or wish to make your instance of `K` remotely accessible, it is advisable to use a reverse proxy.  As an example you can serve K on HTTP (non-SSL using --without-ssl parameter) on localhost only, just as you normally would.  Then set up a webserver, for example NGINX using SSL.  You can get free SSL certificates from Certbot/Let's Encrypt, google is your friend here.
+If you are using a cloud provider or wish to make your instance of `K` remotely accessible, it is advisable to use a reverse proxy.  As an example you can serve `K` on HTTP (non-SSL using `--without-ssl` parameter) on localhost only, just as you normally would.  Then set up a webserver, for example `NGINX` using SSL.  You can get free SSL certificates from [Certbot/Let's Encrypt](https://letsencrypt.org). In terms of getting nginx working with SSL/certbot - google is your friend.
 
-Once set up, the web UI will be accessible from the outside world on a standard HTTPS port (443).
+Once set up, the web UI will be accessible from the outside world on a standard HTTPS port (443).  For security, you can either use htaccess security, `K`'s built-in log in security, or both.
 
-You can either use htaccess security, K's built-in log in security, or both.
-
-An example nginx configuration file can be found in K_Base_Dir/etc/nginx.conf - this configuration assumes K is running in "without-ssl" mode on port 3000 and that you are using SSL on the nginx side.  It also implements htpasswd style security.
+An example nginx configuration file can be found in `K/etc/nginx.conf` - this configuration assumes `K` is running in `--without-ssl` mode on port `3000` and that you are using SSL on the nginx side.  It also implements `htpasswd` style security.  Edit and use this file to suit your specific needs.
 
 ### Databases
 
