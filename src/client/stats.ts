@@ -143,17 +143,23 @@ export class StatsComponent implements OnInit {
       type: 'spline',
       zIndex:1,
       colorIndex: 5,
+      lineWidth: 1,
       tooltip: {pointFormatter: this.pointFormatterBase},
       data: [],
       id: 'sellseries'
     },{
       name: 'Sell',
-      type: 'bubble',
+      type: 'spline',
       zIndex:2,
-      color: 'white',
-      marker: {enabled: true,fillColor: 'transparent',lineColor: Highcharts.getOptions().colors[5]},
+      color: 'transparent',
+      marker: {
+        enabled: true,
+        symbol: 'triangle-down',
+        width: 18,
+        height: 18,
+        fillColor: Highcharts.getOptions().colors[5]
+      },
       tooltip: {pointFormatter: this.pointFormatterBase},
-      dataLabels: {enabled: true,format: '{point.title}'},
       data: [],
       linkedTo: ':previous'
     },{
@@ -161,17 +167,24 @@ export class StatsComponent implements OnInit {
       type: 'spline',
       zIndex:1,
       colorIndex: 0,
+      lineWidth: 1,
       tooltip: {pointFormatter: this.pointFormatterBase},
       data: [],
       id: 'buyseries'
     },{
       name: 'Buy',
-      type: 'bubble',
+      type: 'spline',
       zIndex:2,
-      color: 'white',
-      marker: {enabled: true,fillColor: 'transparent',lineColor: Highcharts.getOptions().colors[0]},
+      color: 'transparent',
+      marker: {
+        enabled: true,
+
+        symbol: 'triangle',
+        width: 18,
+        height: 18,
+        fillColor: Highcharts.getOptions().colors[0]
+      },
       tooltip: {pointFormatter: this.pointFormatterBase},
-      dataLabels: {enabled: true,format: '{point.title}'},
       data: [],
       linkedTo: ':previous'
     },{
