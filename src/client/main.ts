@@ -9,9 +9,8 @@ import {AgGridModule} from 'ag-grid-angular/main';
 import {ChartModule} from 'angular2-highcharts';
 import {PopoverModule} from 'ng4-popover';
 import * as Highcharts from 'highcharts';
-import * as Highstock from 'highcharts/highstock';
 declare var require: (filename: string) => any;
-require('highcharts/highcharts-more')(Highstock);
+require('highcharts/highcharts-more')(Highcharts);
 
 import * as Models from './models';
 import * as Subscribe from './subscribe';
@@ -925,14 +924,14 @@ class ClientComponent implements OnInit {
     return (input / Math.pow(1024, index)).toFixed(precision) + unit[index] + 'B'
   }
 
-  private onAppState = (as : Models.ApplicationState) => {
-    this.server_memory = this.bytesToSize(as.memory, 0);
+  private onAppState = (o : Models.ApplicationState) => {
+    this.server_memory = this.bytesToSize(o.memory, 0);
     this.client_memory = this.bytesToSize((<any>window.performance).memory ? (<any>window.performance).memory.usedJSHeapSize : 1, 0);
-    this.db_size = this.bytesToSize(as.dbsize, 0);
-    this.system_theme = this.getTheme(as.hour);
-    this.A = (<any>as).a;
-    this.tradeFreq = (as.freq);
+    this.db_size = this.bytesToSize(o.dbsize, 0);
+    this.tradeFreq = (o.freq);
+    this.system_theme = this.getTheme((new Date).getHours());
     this.setTheme();
+    this.A = (<any>o).a;
   }
 
   private setTheme = () => {
@@ -1016,8 +1015,7 @@ class ClientComponent implements OnInit {
       BaseCurrencyCellComponent,
       QuoteCurrencyCellComponent
     ]),
-    ChartModule.forRoot(Highcharts),
-    ChartModule.forRoot(Highstock)
+    ChartModule.forRoot(Highcharts)
   ],
   declarations: [
     ClientComponent,

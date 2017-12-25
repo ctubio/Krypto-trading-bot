@@ -27,6 +27,7 @@ namespace K  {
         signal(SIGUSR1, wtf);
         signal(SIGABRT, wtf);
         signal(SIGSEGV, wtf);
+        version();
         gw->hub = hub = new uWS::Hub(0, true);
       };
       void waitTime() {
@@ -46,13 +47,6 @@ namespace K  {
         hotkey = async(launch::async, FN::screen_events);
       };
       void run() {
-        if (FN::output("test -d .git || echo -n zip") == "zip")
-          FN::logVer("", -1);
-        else {
-          FN::output("git fetch");
-          string k = changelog();
-          FN::logVer(k, count(k.begin(), k.end(), '\n'));
-        }
         if (((CF*)config)->argDebugEvents) return;
         debug = [&](string k) {};
       };
@@ -109,6 +103,13 @@ namespace K  {
             raise(SIGINT);
         }
       };
+      void version() {
+        if (access(".git", F_OK) != -1) {
+          FN::output("git fetch");
+          string k = changelog();
+          FN::logVer(k, count(k.begin(), k.end(), '\n'));
+        } else FN::logVer("", -1);
+      };
       static void halt(int code) {
         for (vector<function<void()>*>::iterator it=gwEndings.begin(); it!=gwEndings.end();++it) (**it)();
         cout << FN::uiT() << "K exit code " << to_string(code) << "." << '\n';
@@ -119,16 +120,14 @@ namespace K  {
         cout << '\n';
         json k = FN::wJet("https://api.icndb.com/jokes/random?escape=javascript&limitTo=[nerdy]", true);
         cout << FN::uiT() << "Excellent decision! "
-          << ((k.is_null() or !k["/value/joke"_json_pointer].is_string())
-            ? "let's plant a tree instead.." : k["/value/joke"_json_pointer].get<string>()
-          ) << '\n';
+             << k.value("/value/joke"_json_pointer, "let's plant a tree instead..") << '\n';
         halt(EXIT_SUCCESS);
       };
       static void wtf(int sig) {
         FN::screen_quit();
         cout << FN::uiT() << RCYAN << "Errrror: Signal " << sig << " "  << strsignal(sig);
         if (latest()) {
-          cout << " (Three-Headed Monkey found)." << '\n';
+          cout << " (Three-Headed Monkey found):" << '\n';
           report();
           this_thread::sleep_for(chrono::seconds(3));
         } else {
