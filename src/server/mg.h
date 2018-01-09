@@ -284,7 +284,7 @@ namespace K {
       };
       void calcTargetPos() {
         mgSMA3.push_back(fairValue);
-        if (mgSMA3.size()>3) mgSMA3.erase(mgSMA3.begin(), mgSMA3.end()-3);
+        // if (mgSMA3.size()>3) mgSMA3.erase(mgSMA3.begin(), mgSMA3.end()-3);
         double SMA3 = 0;
         for (double &it : mgSMA3) SMA3 += it;
         SMA3 /= mgSMA3.size();
