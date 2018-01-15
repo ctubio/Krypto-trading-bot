@@ -87,6 +87,27 @@ namespace K {
     bool              audio                           = false;
     unsigned int      delayUI                         = 7;
     bool              _matchPings                     = true;
+    bool              _diffVLEP                       = false;
+    bool              _diffLEP                        = false;
+    bool              _diffMEP                        = false;
+    bool              _diffSEP                        = false;
+    void tidy() {
+      if (mode == mQuotingMode::Depth) widthPercentage = false;
+    };
+    void flag() {
+      _matchPings = safety == mQuotingSafety::Boomerang or safety == mQuotingSafety::AK47;
+    };
+    void diff(mQuotingParams prev) {
+      _diffVLEP = prev.veryLongEwmaPeriods != veryLongEwmaPeriods;
+      _diffLEP = prev.longEwmaPeriods != longEwmaPeriods;
+      _diffMEP = prev.mediumEwmaPeriods != mediumEwmaPeriods;
+      _diffSEP = prev.shortEwmaPeriods != shortEwmaPeriods;
+    };
+    bool diffOnce(bool *k) {
+      bool ret = *k;
+      if (*k) *k = false;
+      return ret;
+    };
   };
   static void to_json(json& j, const mQuotingParams& k) {
     j = {
@@ -147,63 +168,62 @@ namespace K {
     };
   };
   static void from_json(const json& j, mQuotingParams& k) {
-    mQuotingParams def;
-    k.widthPing                       = fmax(1e-8,            j.value("widthPing", def.widthPing));
-    k.widthPingPercentage             = fmin(1e+2, fmax(1e-1, j.value("widthPingPercentage", def.widthPingPercentage)));
-    k.widthPong                       = fmax(1e-8,            j.value("widthPong", def.widthPong));
-    k.widthPongPercentage             = fmin(1e+2, fmax(1e-1, j.value("widthPongPercentage", def.widthPongPercentage)));
-    k.widthPercentage                 =                       j.value("widthPercentage", def.widthPercentage);
-    k.bestWidth                       =                       j.value("bestWidth", def.bestWidth);
-    k.buySize                         = fmax(1e-8,            j.value("buySize", def.buySize));
-    k.buySizePercentage               = fmin(1e+2, fmax(1,    j.value("buySizePercentage", def.buySizePercentage)));
-    k.buySizeMax                      =                       j.value("buySizeMax", def.buySizeMax);
-    k.sellSize                        = fmax(1e-8,            j.value("sellSize", def.sellSize));
-    k.sellSizePercentage              = fmin(1e+2, fmax(1,    j.value("sellSizePercentage", def.sellSizePercentage)));
-    k.sellSizeMax                     =                       j.value("sellSizeMax", def.sellSizeMax);
-    k.pingAt                          =                       j.value("pingAt", def.pingAt);
-    k.pongAt                          =                       j.value("pongAt", def.pongAt);
-    k.mode                            =                       j.value("mode", def.mode);
-    k.safety                          =                       j.value("safety", def.safety);
-    k.bullets                         = fmin(10, fmax(1,      j.value("bullets", def.bullets)));
-    k.range                           =                       j.value("range", def.range);
-    k.rangePercentage                 = fmin(1e+2, fmax(1e-1, j.value("rangePercentage", def.rangePercentage)));
-    k.fvModel                         =                       j.value("fvModel", def.fvModel);
-    k.targetBasePosition              =                       j.value("targetBasePosition", def.targetBasePosition);
-    k.targetBasePositionPercentage    = fmin(1e+2, fmax(0,    j.value("targetBasePositionPercentage", def.targetBasePositionPercentage)));
-    k.positionDivergenceMin           =                       j.value("positionDivergenceMin", def.positionDivergenceMin);
-    k.positionDivergenceMode          =                       j.value("positionDivergenceMode", def.positionDivergenceMode);
-    k.positionDivergence              =                       j.value("positionDivergence", def.positionDivergence);
-    k.positionDivergencePercentage    = fmin(1e+2, fmax(0,    j.value("positionDivergencePercentage", def.positionDivergencePercentage)));
-    k.positionDivergencePercentageMin = fmin(1e+2, fmax(0,    j.value("positionDivergencePercentageMin", def.positionDivergencePercentageMin)));
-    k.percentageValues                =                       j.value("percentageValues", def.percentageValues);
-    k.autoPositionMode                =                       j.value("autoPositionMode", def.autoPositionMode);
-    k.aggressivePositionRebalancing   =                       j.value("aggressivePositionRebalancing", def.aggressivePositionRebalancing);
-    k.superTrades                     =                       j.value("superTrades", def.superTrades);
-    k.tradesPerMinute                 =                       j.value("tradesPerMinute", def.tradesPerMinute);
-    k.tradeRateSeconds                = fmax(0,               j.value("tradeRateSeconds", def.tradeRateSeconds));
-    k.protectionEwmaWidthPing         =                       j.value("protectionEwmaWidthPing", def.protectionEwmaWidthPing);
-    k.protectionEwmaQuotePrice        =                       j.value("protectionEwmaQuotePrice", def.protectionEwmaQuotePrice);
-    k.protectionEwmaPeriods           = fmax(1,               j.value("protectionEwmaPeriods", def.protectionEwmaPeriods));
-    k.quotingStdevProtection          =                       j.value("quotingStdevProtection", def.quotingStdevProtection);
-    k.quotingStdevBollingerBands      =                       j.value("quotingStdevBollingerBands", def.quotingStdevBollingerBands);
-    k.quotingStdevProtectionFactor    =                       j.value("quotingStdevProtectionFactor", def.quotingStdevProtectionFactor);
-    k.quotingStdevProtectionPeriods   = fmax(1,               j.value("quotingStdevProtectionPeriods", def.quotingStdevProtectionPeriods));
-    k.ewmaSensiblityPercentage        =                       j.value("ewmaSensiblityPercentage", def.ewmaSensiblityPercentage);
-    k.veryLongEwmaPeriods             = fmax(1,               j.value("veryLongEwmaPeriods", def.veryLongEwmaPeriods));
-    k.longEwmaPeriods                 = fmax(1,               j.value("longEwmaPeriods", def.longEwmaPeriods));
-    k.mediumEwmaPeriods               = fmax(1,               j.value("mediumEwmaPeriods", def.mediumEwmaPeriods));
-    k.shortEwmaPeriods                = fmax(1,               j.value("shortEwmaPeriods", def.shortEwmaPeriods));
-    k.aprMultiplier                   =                       j.value("aprMultiplier", def.aprMultiplier);
-    k.sopWidthMultiplier              =                       j.value("sopWidthMultiplier", def.sopWidthMultiplier);
-    k.sopSizeMultiplier               =                       j.value("sopSizeMultiplier", def.sopSizeMultiplier);
-    k.sopTradesMultiplier             =                       j.value("sopTradesMultiplier", def.sopTradesMultiplier);
-    k.cancelOrdersAuto                =                       j.value("cancelOrdersAuto", def.cancelOrdersAuto);
-    k.cleanPongsAuto                  =                       j.value("cleanPongsAuto", def.cleanPongsAuto);
-    k.profitHourInterval              =                       j.value("profitHourInterval", def.profitHourInterval);
-    k.audio                           =                       j.value("audio", def.audio);
-    k.delayUI                         = fmax(0,               j.value("delayUI", def.delayUI));
-    if (k.mode == mQuotingMode::Depth) k.widthPercentage = false;
-    k._matchPings = k.safety == mQuotingSafety::Boomerang or k.safety == mQuotingSafety::AK47;
+    k.widthPing                       = fmax(1e-8,            j.value("widthPing", k.widthPing));
+    k.widthPingPercentage             = fmin(1e+2, fmax(1e-1, j.value("widthPingPercentage", k.widthPingPercentage)));
+    k.widthPong                       = fmax(1e-8,            j.value("widthPong", k.widthPong));
+    k.widthPongPercentage             = fmin(1e+2, fmax(1e-1, j.value("widthPongPercentage", k.widthPongPercentage)));
+    k.widthPercentage                 =                       j.value("widthPercentage", k.widthPercentage);
+    k.bestWidth                       =                       j.value("bestWidth", k.bestWidth);
+    k.buySize                         = fmax(1e-8,            j.value("buySize", k.buySize));
+    k.buySizePercentage               = fmin(1e+2, fmax(1,    j.value("buySizePercentage", k.buySizePercentage)));
+    k.buySizeMax                      =                       j.value("buySizeMax", k.buySizeMax);
+    k.sellSize                        = fmax(1e-8,            j.value("sellSize", k.sellSize));
+    k.sellSizePercentage              = fmin(1e+2, fmax(1,    j.value("sellSizePercentage", k.sellSizePercentage)));
+    k.sellSizeMax                     =                       j.value("sellSizeMax", k.sellSizeMax);
+    k.pingAt                          =                       j.value("pingAt", k.pingAt);
+    k.pongAt                          =                       j.value("pongAt", k.pongAt);
+    k.mode                            =                       j.value("mode", k.mode);
+    k.safety                          =                       j.value("safety", k.safety);
+    k.bullets                         = fmin(10, fmax(1,      j.value("bullets", k.bullets)));
+    k.range                           =                       j.value("range", k.range);
+    k.rangePercentage                 = fmin(1e+2, fmax(1e-1, j.value("rangePercentage", k.rangePercentage)));
+    k.fvModel                         =                       j.value("fvModel", k.fvModel);
+    k.targetBasePosition              =                       j.value("targetBasePosition", k.targetBasePosition);
+    k.targetBasePositionPercentage    = fmin(1e+2, fmax(0,    j.value("targetBasePositionPercentage", k.targetBasePositionPercentage)));
+    k.positionDivergenceMin           =                       j.value("positionDivergenceMin", k.positionDivergenceMin);
+    k.positionDivergenceMode          =                       j.value("positionDivergenceMode", k.positionDivergenceMode);
+    k.positionDivergence              =                       j.value("positionDivergence", k.positionDivergence);
+    k.positionDivergencePercentage    = fmin(1e+2, fmax(0,    j.value("positionDivergencePercentage", k.positionDivergencePercentage)));
+    k.positionDivergencePercentageMin = fmin(1e+2, fmax(0,    j.value("positionDivergencePercentageMin", k.positionDivergencePercentageMin)));
+    k.percentageValues                =                       j.value("percentageValues", k.percentageValues);
+    k.autoPositionMode                =                       j.value("autoPositionMode", k.autoPositionMode);
+    k.aggressivePositionRebalancing   =                       j.value("aggressivePositionRebalancing", k.aggressivePositionRebalancing);
+    k.superTrades                     =                       j.value("superTrades", k.superTrades);
+    k.tradesPerMinute                 =                       j.value("tradesPerMinute", k.tradesPerMinute);
+    k.tradeRateSeconds                = fmax(0,               j.value("tradeRateSeconds", k.tradeRateSeconds));
+    k.protectionEwmaWidthPing         =                       j.value("protectionEwmaWidthPing", k.protectionEwmaWidthPing);
+    k.protectionEwmaQuotePrice        =                       j.value("protectionEwmaQuotePrice", k.protectionEwmaQuotePrice);
+    k.protectionEwmaPeriods           = fmax(1,               j.value("protectionEwmaPeriods", k.protectionEwmaPeriods));
+    k.quotingStdevProtection          =                       j.value("quotingStdevProtection", k.quotingStdevProtection);
+    k.quotingStdevBollingerBands      =                       j.value("quotingStdevBollingerBands", k.quotingStdevBollingerBands);
+    k.quotingStdevProtectionFactor    =                       j.value("quotingStdevProtectionFactor", k.quotingStdevProtectionFactor);
+    k.quotingStdevProtectionPeriods   = fmax(1,               j.value("quotingStdevProtectionPeriods", k.quotingStdevProtectionPeriods));
+    k.ewmaSensiblityPercentage        =                       j.value("ewmaSensiblityPercentage", k.ewmaSensiblityPercentage);
+    k.veryLongEwmaPeriods             = fmax(1,               j.value("veryLongEwmaPeriods", k.veryLongEwmaPeriods));
+    k.longEwmaPeriods                 = fmax(1,               j.value("longEwmaPeriods", k.longEwmaPeriods));
+    k.mediumEwmaPeriods               = fmax(1,               j.value("mediumEwmaPeriods", k.mediumEwmaPeriods));
+    k.shortEwmaPeriods                = fmax(1,               j.value("shortEwmaPeriods", k.shortEwmaPeriods));
+    k.aprMultiplier                   =                       j.value("aprMultiplier", k.aprMultiplier);
+    k.sopWidthMultiplier              =                       j.value("sopWidthMultiplier", k.sopWidthMultiplier);
+    k.sopSizeMultiplier               =                       j.value("sopSizeMultiplier", k.sopSizeMultiplier);
+    k.sopTradesMultiplier             =                       j.value("sopTradesMultiplier", k.sopTradesMultiplier);
+    k.cancelOrdersAuto                =                       j.value("cancelOrdersAuto", k.cancelOrdersAuto);
+    k.cleanPongsAuto                  =                       j.value("cleanPongsAuto", k.cleanPongsAuto);
+    k.profitHourInterval              =                       j.value("profitHourInterval", k.profitHourInterval);
+    k.audio                           =                       j.value("audio", k.audio);
+    k.delayUI                         = fmax(0,               j.value("delayUI", k.delayUI));
+    k.tidy();
+    k.flag();
   };
   struct mPair {
     string base,
@@ -405,18 +425,19 @@ namespace K {
              bool isPong,
                   preferPostOnly;
     unsigned long time,
-                  computationalLatency;
+                  waitingCancel,
+                  latency;
     mOrder():
-      orderId(""), exchangeId(""), pair(mPair()), side((mSide)0), quantity(0), type((mOrderType)0), isPong(false), price(0), timeInForce((mTimeInForce)0), orderStatus((mStatus)0), preferPostOnly(false), tradeQuantity(0), time(0), computationalLatency(0)
+      orderId(""), exchangeId(""), pair(mPair()), side((mSide)0), quantity(0), type((mOrderType)0), isPong(false), price(0), timeInForce((mTimeInForce)0), orderStatus((mStatus)0), preferPostOnly(false), tradeQuantity(0), time(0), waitingCancel(0), latency(0)
     {};
     mOrder(string o, mStatus s):
-      orderId(o), exchangeId(""), pair(mPair()), side((mSide)0), quantity(0), type((mOrderType)0), isPong(false), price(0), timeInForce((mTimeInForce)0), orderStatus(s), preferPostOnly(false), tradeQuantity(0), time(0), computationalLatency(0)
+      orderId(o), exchangeId(""), pair(mPair()), side((mSide)0), quantity(0), type((mOrderType)0), isPong(false), price(0), timeInForce((mTimeInForce)0), orderStatus(s), preferPostOnly(false), tradeQuantity(0), time(0), waitingCancel(0), latency(0)
     {};
     mOrder(string o, string e, mStatus s, double p, double q, double Q):
-      orderId(o), exchangeId(e), pair(mPair()), side((mSide)0), quantity(q), type((mOrderType)0), isPong(false), price(p), timeInForce((mTimeInForce)0), orderStatus(s), preferPostOnly(false), tradeQuantity(Q), time(0), computationalLatency(0)
+      orderId(o), exchangeId(e), pair(mPair()), side((mSide)0), quantity(q), type((mOrderType)0), isPong(false), price(p), timeInForce((mTimeInForce)0), orderStatus(s), preferPostOnly(false), tradeQuantity(Q), time(0), waitingCancel(0), latency(0)
     {};
     mOrder(string o, mPair P, mSide S, double q, mOrderType t, bool i, double p, mTimeInForce F, mStatus s, bool O):
-      orderId(o), exchangeId(""), pair(P), side(S), quantity(q), type(t), isPong(i), price(p), timeInForce(F), orderStatus(s), preferPostOnly(O), tradeQuantity(0), time(0), computationalLatency(0)
+      orderId(o), exchangeId(""), pair(P), side(S), quantity(q), type(t), isPong(i), price(p), timeInForce(F), orderStatus(s), preferPostOnly(O), tradeQuantity(0), time(0), waitingCancel(0), latency(0)
     {};
     string quantity2str() {
       stringstream ss;
@@ -436,20 +457,20 @@ namespace K {
   };
   static void to_json(json& j, const mOrder& k) {
     j = {
-      {             "orderId", k.orderId             },
-      {          "exchangeId", k.exchangeId          },
-      {                "pair", k.pair                },
-      {                "side", k.side                },
-      {            "quantity", k.quantity            },
-      {                "type", k.type                },
-      {              "isPong", k.isPong              },
-      {               "price", k.price               },
-      {         "timeInForce", k.timeInForce         },
-      {         "orderStatus", k.orderStatus         },
-      {      "preferPostOnly", k.preferPostOnly      },
-      {       "tradeQuantity", k.tradeQuantity       },
-      {                "time", k.time                },
-      {"computationalLatency", k.computationalLatency}
+      {       "orderId", k.orderId       },
+      {    "exchangeId", k.exchangeId    },
+      {          "pair", k.pair          },
+      {          "side", k.side          },
+      {      "quantity", k.quantity      },
+      {          "type", k.type          },
+      {        "isPong", k.isPong        },
+      {         "price", k.price         },
+      {   "timeInForce", k.timeInForce   },
+      {   "orderStatus", k.orderStatus   },
+      {"preferPostOnly", k.preferPostOnly},
+      { "tradeQuantity", k.tradeQuantity },
+      {          "time", k.time          },
+      {       "latency", k.latency       }
     };
   };
   struct mLevel {
@@ -536,9 +557,6 @@ namespace K {
       {   "quotesInMemoryDone", k.quotesInMemoryDone   }
     };
   };
-  static const char alphanum[] = "0123456789"
-                                 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                                 "abcdefghijklmnopqrstuvwxyz";
   static char RBLACK[] = "\033[0;30m", RRED[]    = "\033[0;31m", RGREEN[] = "\033[0;32m", RYELLOW[] = "\033[0;33m",
               RBLUE[]  = "\033[0;34m", RPURPLE[] = "\033[0;35m", RCYAN[]  = "\033[0;36m", RWHITE[]  = "\033[0;37m",
               BBLACK[] = "\033[1;30m", BRED[]    = "\033[1;31m", BGREEN[] = "\033[1;32m", BYELLOW[] = "\033[1;33m",
@@ -570,7 +588,7 @@ namespace K {
              ws      = "", http    = "";
       virtual   void wallet() = 0,
                      levels() = 0,
-                     send(string, mSide, string, string, mOrderType, mTimeInForce, bool, unsigned long) = 0,
+                     send(string, string, string, mSide, string, string, mOrderType, mTimeInForce, bool, unsigned long) = 0,
                      cancel(string, string, mSide, unsigned long) = 0,
                      cancelAll() = 0,
                      close() = 0;

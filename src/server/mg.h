@@ -36,6 +36,8 @@ namespace K {
       double mgStdevBidMean = 0;
       double mgStdevAsk = 0;
       double mgStdevAskMean = 0;
+      map<double, double> filterBidOrders,
+                          filterAskOrders;
     protected:
       void load() {
         for (json &it : ((DB*)memory)->load(mMatter::MarketData)) {
@@ -113,10 +115,10 @@ namespace K {
         averageWidth /= ++averageCount;
       };
       void calcEwmaHistory() {
-        calcEwmaHistory(&mgEwmaVL, qp->veryLongEwmaPeriods, "VeryLong");
-        calcEwmaHistory(&mgEwmaL, qp->longEwmaPeriods, "Long");
-        calcEwmaHistory(&mgEwmaM, qp->mediumEwmaPeriods, "Medium");
-        calcEwmaHistory(&mgEwmaS, qp->shortEwmaPeriods, "Short");
+        if (qp->diffOnce(&qp->_diffVLEP)) calcEwmaHistory(&mgEwmaVL, qp->veryLongEwmaPeriods, "VeryLong");
+        if (qp->diffOnce(&qp->_diffLEP)) calcEwmaHistory(&mgEwmaL, qp->longEwmaPeriods, "Long");
+        if (qp->diffOnce(&qp->_diffMEP)) calcEwmaHistory(&mgEwmaM, qp->mediumEwmaPeriods, "Medium");
+        if (qp->diffOnce(&qp->_diffSEP)) calcEwmaHistory(&mgEwmaS, qp->shortEwmaPeriods, "Short");
       };
     private:
       function<void(json*)> helloTrade = [&](json *welcome) {
@@ -164,12 +166,29 @@ namespace K {
         ((UI*)client)->send(mMatter::MarketTrade, k);
       };
       void levelUp(mLevels k) {
-        filter(k);
+        levels = k;
+        if (!filterBidOrders.empty()) filter(&levels.bids, filterBidOrders);
+        if (!filterAskOrders.empty()) filter(&levels.asks, filterAskOrders);
+        calcFairValue();
+        ((EV*)events)->mgLevels();
         if (mgT_369ms + 369e+0 > _Tstamp_) return;
         ((UI*)client)->bid_levels = k.bids.size();
         ((UI*)client)->ask_levels = k.asks.size();
         ((UI*)client)->send(mMatter::MarketData, k);
         mgT_369ms = _Tstamp_;
+      };
+      void filter(vector<mLevel> *k, map<double, double> o) {
+        for (vector<mLevel>::iterator it = k->begin(); it != k->end();) {
+          for (map<double, double>::iterator it_ = o.begin(); it_ != o.end();)
+            if (abs(it->price - it_->first) < gw->minTick) {
+              it->size = it->size - it_->second;
+              o.erase(it_);
+              break;
+            } else ++it_;
+          if (it->size < gw->minTick) it = k->erase(it);
+          else ++it;
+          if (o.empty()) break;
+        }
       };
       void calcStatsEwmaPosition() {
         fairValue96h.push_back(fairValue);
@@ -223,23 +242,6 @@ namespace K {
           {"fairValue", fairValue}
         };
       };
-      void filter(mLevels k) {
-        levels = k;
-        if (levels.empty()) return;
-        for (map<string, mOrder>::value_type &it : ((OG*)broker)->orders)
-          filter(mSide::Bid == it.second.side ? &levels.bids : &levels.asks, it.second);
-        if (levels.empty()) return;
-        calcFairValue();
-        ((EV*)events)->mgLevels();
-      };
-      void filter(vector<mLevel>* k, mOrder o) {
-        for (vector<mLevel>::iterator it = k->begin(); it != k->end();)
-          if (abs(it->price - o.price) < gw->minTick) {
-            it->size = it->size - o.quantity;
-            if (it->size < gw->minTick) k->erase(it);
-            break;
-          } else ++it;
-      };
       void cleanStdev() {
         size_t periods = (size_t)qp->quotingStdevProtectionPeriods;
         if (mgStatFV.size()>periods) mgStatFV.erase(mgStatFV.begin(), mgStatFV.end()-periods);
@@ -271,9 +273,8 @@ namespace K {
       };
       void calcEwmaHistory(double *mean, unsigned int periods, string name) {
         unsigned int n = fairValue96h.size();
-        if (!n or !periods or n < periods) return;
-        n = periods;
-        *mean = 0;
+        if (!n) return;
+        *mean = fairValue96h.front();
         while (n--) calcEwma(mean, periods, *(fairValue96h.rbegin()+n));
         FN::log("MG", string("reloaded ") + to_string(*mean) + " EWMA " + name);
       };

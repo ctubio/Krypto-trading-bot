@@ -9,6 +9,7 @@ namespace K {
       map<double, mTrade> sells;
       map<string, mWallet> balance;
       unsigned long profitT_21s = 0;
+      unsigned long walletT_2s = 0;
       string sideAPR_ = "!=";
     public:
       mPosition position;
@@ -36,9 +37,12 @@ namespace K {
         gw->evDataWallet = [&](mWallet k) {                         _debugEvent_
           calcWallet(k);
         };
-        ((EV*)events)->ogOrder = [&](mOrder k) {                    _debugEvent_
+        ((EV*)events)->ogOrder = [&](mOrder *k) {                   _debugEvent_
           calcWalletAfterOrder(k);
           FN::screen_refresh(((OG*)broker)->orders);
+        };
+        ((EV*)events)->ogTrade = [&](mTrade *k) {                   _debugEvent_
+          calcSafetyAfterTrade(k);
         };
         ((EV*)events)->mgTargetPosition = [&]() {                   _debugEvent_
           calcTargetBasePos();
@@ -62,13 +66,13 @@ namespace K {
           ((UI*)client)->send(mMatter::TradeSafetyValue, next);
         }
       };
-      void calcSafetyAfterTrade(mTrade k) {
-        (k.side == mSide::Bid
+      void calcSafetyAfterTrade(mTrade *k) {
+        (k->side == mSide::Bid
           ? buys : sells
-        )[k.price] = mTrade(
-          k.price,
-          k.quantity,
-          k.time
+        )[k->price] = mTrade(
+          k->price,
+          k->quantity,
+          k->time
         );
         calcSafety();
       };
@@ -252,32 +256,26 @@ namespace K {
         if (!eq) calcTargetBasePos();
         ((UI*)client)->send(mMatter::Position, pos);
       };
-      void calcWalletAfterOrder(mOrder k) {
+      void calcWalletAfterOrder(mOrder *k) {
         if (position.empty()) return;
         double heldAmount = 0;
-        double amount = k.side == mSide::Ask
+        double amount = k->side == mSide::Ask
           ? position.baseAmount + position.baseHeldAmount
           : position.quoteAmount + position.quoteHeldAmount;
         for (map<string, mOrder>::value_type &it : ((OG*)broker)->orders)
-          if (it.second.side == k.side) {
+          if (it.second.side == k->side) {
             double held = it.second.quantity * (it.second.side == mSide::Bid ? it.second.price : 1);
             if (amount >= held) {
               amount -= held;
               heldAmount += held;
             }
           }
-        double completedAmount = k.tradeQuantity * (k.side == mSide::Ask ? k.price : 1);
-        if (completedAmount) {
-          double oppositeAmount = k.side == mSide::Ask
-            ? position.quoteAmount
-            : position.baseAmount;
-          double oppositeHeldAmount = k.side == mSide::Ask
-            ? position.quoteHeldAmount
-            : position.baseHeldAmount;
-          calcWallet(mWallet(fmax(0, oppositeAmount + completedAmount), oppositeHeldAmount, k.side == mSide::Ask ? k.pair.quote : k.pair.base));
-        }
-        completedAmount = k.tradeQuantity * (k.side == mSide::Bid ? k.price : 1);
-        calcWallet(mWallet(fmax(0, amount - completedAmount), heldAmount, k.side == mSide::Ask ? k.pair.base : k.pair.quote));
+        calcWallet(mWallet(amount, heldAmount, k->side == mSide::Ask ? k->pair.base : k->pair.quote));
+        if (!k->tradeQuantity or walletT_2s + 2e+3 > _Tstamp_) return;
+        walletT_2s = _Tstamp_;
+        ((EV*)events)->deferred([this]() {
+          gw->wallet();
+        });
       };
       void calcPDiv(double baseValue) {
         double pDiv = qp->percentageValues

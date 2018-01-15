@@ -1,4 +1,4 @@
-<p align="center"><a href="https://www.edwardsnowden.com/"><img src="https://user-images.githubusercontent.com/1634027/34749312-0d46f928-f5a1-11e7-8fe2-d8fc437ec2a0.jpg" /></a></p><br/>
+<p align="right">self reminder:<br><b>patience is the mother of science</b></p>
 <!--
 
 ```c++
@@ -185,7 +185,7 @@ Feel free anytime to check if there are new modifications with `make diff`.
 
 Once you decide that is time to upgrade, execute `make latest` to download and install the latest modifications in your remote branch (or directly `make reinstall` to skip the validation of the new commit messages).
 
-If you only use `git` to pull the latest commits, you will still need to recompile using `make reinstall` and then `make restart` to start using the latest version.
+If you only use `git` to pull the latest commits, you will still need to recompile using `make reinstall` (or using `make dist K bundle` if you have modified source files) and then `make restart` to start using the latest version.
 
 ### Multiple instances party time
 
@@ -236,6 +236,8 @@ If a database file does not exist, the application will create it on boot; other
 To explore each database file you can use https://github.com/sqlitebrowser/sqlitebrowser or a similar tool.
 
 To set a different database path or to set an [in-memory database](https://sqlite.org/inmemorydb.html), use `--database=PATH` argument (see `--help`).
+
+Even if using an in-memory database, the quoting parameters are always loaded from and saved into the disk file database.
 
 ### Charts
 
