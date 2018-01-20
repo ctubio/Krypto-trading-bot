@@ -21,6 +21,7 @@ namespace K {
       unsigned long long mgT_369ms = 0;
       double averageWidth = 0;
       unsigned int averageCount = 0;
+	  unsigned int takeProfitState = 0;
     public:
       mLevels levels;
       double fairValue = 0;
@@ -298,7 +299,28 @@ namespace K {
         else if (qp->autoPositionMode == mAutoPositionMode::EWMA_4) {
           if (mgEwmaL < mgEwmaVL) newTargetPosition = -1;
           else newTargetPosition = ((mgEwmaS * 100/ mgEwmaM) - 100) * (1 / qp->ewmaSensiblityPercentage);
-        }
+        } else if (qp->autoPositionMode == mAutoPositionMode::TakeProfit) {
+			double lastBid = 0;
+			double takeProfit;
+			double pTakeProfit = 0.02; //set to 2% for now
+			for (mTrade &it : ((OG*)broker)->tradesHistory){
+				if (it.side == mSide.bid){
+					lastBid = it.price;
+				}
+			}
+			takeProfit = pTakeProfit * lastBid;
+			if (mgEwmaS > mgEwmaL){
+				if (SMA3 > takeProfit)
+					newTargetPosition = 1;
+				else if (SMA3 < takeProfit)
+					newTargetPosition = 1 - pTakeProfit;
+			}else if{mgEwmaS < mgEwmaL}{
+				if (SMA3 > takeProfit)
+					newTargetPosition = -1 + pTakeProfit;
+				else if (SMA3 < takeProfit)
+					newTargetPosition = -1;
+			}
+		}
         if (newTargetPosition > 1) newTargetPosition = 1;
         else if (newTargetPosition < -1) newTargetPosition = -1;
         targetPosition = newTargetPosition;
