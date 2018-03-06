@@ -81,7 +81,7 @@ See [etc/Dockerfile](https://github.com/ctubio/Krypto-trading-bot/tree/master/et
 
 2. Install it wherever you want (feel free to customize the suggested folder name K):
 ```
- $ git clone ssh://git@github.com/ctubio/Krypto-trading-bot K
+ $ git clone https://github.com/ctubio/Krypto-trading-bot K
  $ cd K
  $ make install
 ```
