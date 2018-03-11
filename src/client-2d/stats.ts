@@ -8,10 +8,10 @@ import * as Models from './models';
   selector: 'market-stats',
   template: `<div class="col-md-6 col-xs-6">
   <table><tr><td>
-    <chart style="position:relative;top:5px;height:380px;width:700px;" [options]="fvChartOptions" (load)="saveInstance($event.context, 'fv')"></chart>
+    <chart style="position:relative;top:5px;height:330px;width:700px;" [options]="fvChartOptions" (load)="saveInstance($event.context, 'fv')"></chart>
   </td><td>
-    <chart style="position:relative;top:10px;height:180px;width:700px;" [options]="baseChartOptions" (load)="saveInstance($event.context, 'base')"></chart>
-    <chart style="position:relative;top:11px;height:180px;width:700px;" [options]="quoteChartOptions" (load)="saveInstance($event.context, 'quote')"></chart>
+    <chart style="position:relative;top:10px;height:155px;width:700px;" [options]="baseChartOptions" (load)="saveInstance($event.context, 'base')"></chart>
+    <chart style="position:relative;top:11px;height:155px;width:700px;" [options]="quoteChartOptions" (load)="saveInstance($event.context, 'quote')"></chart>
   </td></tr></table>
     </div>`
 })
@@ -71,7 +71,7 @@ export class StatsComponent implements OnInit {
     chart: {
         type: 'bubble',
         width: 700,
-        height: 380,
+        height: 330,
         zoomType: false,
         backgroundColor:'rgba(255, 255, 255, 0)',
     },
@@ -312,7 +312,7 @@ export class StatsComponent implements OnInit {
     title: 'quote wallet',
     chart: {
         width: 700,
-        height: 180,
+        height: 155,
         zoomType: false,
         resetZoomButton: {theme: {display: 'none'}},
         backgroundColor:'rgba(255, 255, 255, 0)'
@@ -391,7 +391,7 @@ export class StatsComponent implements OnInit {
     title: 'base wallet',
     chart: {
         width: 700,
-        height: 180,
+        height: 155,
         zoomType: false,
         resetZoomButton: {theme: {display: 'none'}},
         backgroundColor:'rgba(255, 255, 255, 0)'
@@ -623,9 +623,9 @@ export class StatsComponent implements OnInit {
         if (this.stdevWidth.tops) Highcharts.charts[this.fvChart].series[12].addPoint([time, this.stdevWidth.tops], false);
         if (this.stdevWidth.ask) Highcharts.charts[this.fvChart].series[13].addPoint([time, this.stdevWidth.ask], false);
         if (this.stdevWidth.bid) Highcharts.charts[this.fvChart].series[14].addPoint([time, this.stdevWidth.bid], false);
-        if (this.stdevWidth.fv && this.stdevWidth.fvMean) Highcharts.charts[this.fvChart].series[15].addPoint([time, this.stdevWidth.fvMean-this.stdevWidth.fv, this.stdevWidth.fvMean+this.stdevWidth.fv], this.showStats, false, false);
-        if (this.stdevWidth.tops && this.stdevWidth.topsMean) Highcharts.charts[this.fvChart].series[16].addPoint([time, this.stdevWidth.topsMean-this.stdevWidth.tops, this.stdevWidth.topsMean+this.stdevWidth.tops], this.showStats, false, false);
-        if (this.stdevWidth.ask && this.stdevWidth.bid && this.stdevWidth.askMean && this.stdevWidth.bidMean) Highcharts.charts[this.fvChart].series[17].addPoint([time, this.stdevWidth.bidMean-this.stdevWidth.bid, this.stdevWidth.askMean+this.stdevWidth.ask], this.showStats, false, false);
+        if (this.stdevWidth.fv && this.stdevWidth.fvMean) Highcharts.charts[this.fvChart].series[15].addPoint({x:time, low:this.stdevWidth.fvMean-this.stdevWidth.fv, high:this.stdevWidth.fvMean+this.stdevWidth.fv}, this.showStats, false, false);
+        if (this.stdevWidth.tops && this.stdevWidth.topsMean) Highcharts.charts[this.fvChart].series[16].addPoint({x:time, low:this.stdevWidth.topsMean-this.stdevWidth.tops, high:this.stdevWidth.topsMean+this.stdevWidth.tops}, this.showStats, false, false);
+      if (this.stdevWidth.ask && this.stdevWidth.bid && this.stdevWidth.askMean && this.stdevWidth.bidMean) Highcharts.charts[this.fvChart].series[17].addPoint({x:time, low:this.stdevWidth.bidMean-this.stdevWidth.bid, high:this.stdevWidth.askMean+this.stdevWidth.ask}, this.showStats, false, false);
       }
       Highcharts.charts[this.fvChart].yAxis[2].setExtremes(0, Math.max(this.tradesBuySize*4,this.tradesSellSize*4,Highcharts.charts[this.fvChart].yAxis[2].getExtremes().dataMax*4), false, true, { trigger: 'syncExtremes' });
       if (this.tradesBuySize) Highcharts.charts[this.fvChart].series[18].addPoint([time, this.tradesBuySize], false);
@@ -639,16 +639,16 @@ export class StatsComponent implements OnInit {
       if (this.ewmaShort) Highcharts.charts[this.fvChart].series[10].addPoint([time, this.ewmaShort], false);
       Highcharts.charts[this.fvChart].series[0].addPoint([time, this.fairValue], this.showStats);
       if (this.ewmaTrendDiff) Highcharts.charts[this.fvChart].series[20].addPoint([time, this.ewmaTrendDiff], false);
-      if ((<any>Highcharts).quotingParameters.protectionEwmaWidthPing && this.ewmaWidth) Highcharts.charts[this.fvChart].series[1].addPoint([time, this.fairValue-this.ewmaWidth, this.fairValue+this.ewmaWidth], this.showStats, false, false);
-      else if (this.width) Highcharts.charts[this.fvChart].series[1].addPoint([time, this.fairValue-this.width, this.fairValue+this.width], this.showStats, false, false);
+      if ((<any>Highcharts).quotingParameters.protectionEwmaWidthPing && this.ewmaWidth) Highcharts.charts[this.fvChart].series[1].addPoint({x:time, low:this.fairValue-this.ewmaWidth, high:this.fairValue+this.ewmaWidth}, this.showStats, false, false);
+      else if (this.width) Highcharts.charts[this.fvChart].series[1].addPoint({x:time, low:this.fairValue-this.width, high:this.fairValue+this.width}, this.showStats, false, false);
     }
     if (this.positionData) {
       Highcharts.charts[this.quoteChart].yAxis[1].setExtremes(0, Math.max(this.positionData.quoteValue,Highcharts.charts[this.quoteChart].yAxis[1].getExtremes().dataMax), false, true, { trigger: 'syncExtremes' });
       Highcharts.charts[this.baseChart].yAxis[1].setExtremes(0, Math.max(this.positionData.baseValue,Highcharts.charts[this.baseChart].yAxis[1].getExtremes().dataMax), false, true, { trigger: 'syncExtremes' });
       Highcharts.charts[this.quoteChart].series[1].addPoint([time, (this.positionData.baseValue-this.targetBasePosition)*this.positionData.quoteValue/this.positionData.baseValue], false);
       Highcharts.charts[this.baseChart].series[1].addPoint([time, this.targetBasePosition], false);
-      Highcharts.charts[this.quoteChart].series[2].addPoint([time, Math.max(0, this.positionData.baseValue-this.targetBasePosition-this.positionDivergence)*this.positionData.quoteValue/this.positionData.baseValue, Math.min(this.positionData.baseValue, this.positionData.baseValue-this.targetBasePosition+this.positionDivergence)*this.positionData.quoteValue/this.positionData.baseValue], this.showStats, false, false);
-      Highcharts.charts[this.baseChart].series[2].addPoint([time, Math.max(0,this.targetBasePosition-this.positionDivergence), Math.min(this.positionData.baseValue, this.targetBasePosition+this.positionDivergence)], this.showStats, false, false);
+      Highcharts.charts[this.quoteChart].series[2].addPoint({x:time, low:Math.max(0, this.positionData.baseValue-this.targetBasePosition-this.positionDivergence)*this.positionData.quoteValue/this.positionData.baseValue, high:Math.min(this.positionData.baseValue, this.positionData.baseValue-this.targetBasePosition+this.positionDivergence)*this.positionData.quoteValue/this.positionData.baseValue}, this.showStats, false, false);
+      Highcharts.charts[this.baseChart].series[2].addPoint({x:time, low:Math.max(0,this.targetBasePosition-this.positionDivergence), high:Math.min(this.positionData.baseValue, this.targetBasePosition+this.positionDivergence)}, this.showStats, false, false);
       Highcharts.charts[this.quoteChart].series[0].addPoint([time, this.positionData.quoteValue], false);
       Highcharts.charts[this.quoteChart].series[3].addPoint([time, this.positionData.quoteAmount], false);
       Highcharts.charts[this.quoteChart].series[4].addPoint([time, this.positionData.quoteHeldAmount], this.showStats);

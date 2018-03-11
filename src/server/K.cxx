@@ -1,8 +1,7 @@
+#include <stdlib.h>
 #include <iostream>
-#include <fstream>
 #include <sstream>
-#include <cstdlib>
-#include <cstring>
+#include <string>
 #include <random>
 #include <thread>
 #include <mutex>
@@ -44,9 +43,9 @@ using namespace std;
 
 using namespace nlohmann;
 
+#include "fn.h"
 #include "km.h"
 #include "sh.h"
-#include "fn.h"
 #include "cf.h"
 #include "ev.h"
 #include "db.h"

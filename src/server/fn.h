@@ -9,21 +9,34 @@
                    chrono::system_clock::now().time_since_epoch() \
                  ).count()
 
+#define _fixedX_(d, s, X) { stringstream ss;     \
+                           ss << setprecision(X) \
+                              << fixed << d;     \
+                           s = ss.str();         }
+
+#define _fixed8_(d, s) _fixedX_(d, s, 8)
+
+#define _trunc8_(d) { string s;      \
+                      _fixed8_(d, s) \
+                      d = stod(s);   }
+
 namespace K {
   class FN {
     public:
-      static string S2l(string k) { transform(k.begin(), k.end(), k.begin(), ::tolower); return k; };
-      static string S2u(string k) { transform(k.begin(), k.end(), k.begin(), ::toupper); return k; };
+      inline static string strX(double d, unsigned int X) { string s; _fixedX_(d, s, X) return s; };
+      inline static string str8(double d) { return strX(d, 8); };
+      inline static string S2l(string s) { transform(s.begin(), s.end(), s.begin(), ::tolower); return s; };
+      inline static string S2u(string s) { transform(s.begin(), s.end(), s.begin(), ::toupper); return s; };
       static unsigned long long int64() {
         static random_device rd;
         static mt19937_64 gen(rd());
         return uniform_int_distribution<unsigned long long>()(gen);
       };
       static string int45Id() {
-        return to_string(int64()).substr(0,10);
+        return to_string(int64()).substr(0, 10);
       };
       static string int32Id() {
-        return to_string(int64()).substr(0,8);
+        return to_string(int64()).substr(0, 8);
       };
       static string char16Id() {
         char s[16];
@@ -31,7 +44,7 @@ namespace K {
         return string(s, 16);
       };
       static string uuid36Id() {
-        string uuid = string(36,' ');
+        string uuid = string(36, ' ');
         unsigned long long rnd = int64();
         unsigned long long rnd_ = int64();
         uuid[8] = '-';
@@ -75,7 +88,7 @@ namespace K {
        unsigned int len = k.length();
         string k_;
         for (unsigned int i=0; i < len; i+=2) {
-          string byte = k.substr(i,2);
+          string byte = k.substr(i, 2);
           char chr = (char)(int)strtol(byte.data(), NULL, 16);
           k_.push_back(chr);
         }
@@ -151,12 +164,11 @@ namespace K {
       };
       static string output(string cmd) {
         string data;
-        FILE *stream;
-        const int max_buffer = 256;
-        char buffer[max_buffer];
         cmd.append(" 2>&1");
-        stream = popen(cmd.data(), "r");
+        FILE *stream = popen(cmd.data(), "r");
         if (stream) {
+          const int max_buffer = 256;
+          char buffer[max_buffer];
           while (!feof(stream))
             if (fgets(buffer, max_buffer, stream) != NULL) data.append(buffer);
           pclose(stream);
@@ -238,7 +250,7 @@ namespace K {
           curl_easy_setopt(curl, CURLOPT_POSTFIELDS, p.data());
         });
       };
-      static json wJet(string k, string t, string a, string s, string p) {
+      static json wJet(string k, string t, string a, string s, string p, bool d = false) {
         return curl_perform(k, [&](CURL *curl) {
           struct curl_slist *h_ = NULL;
           h_ = curl_slist_append(h_, string("CB-ACCESS-KEY: ").append(a).data());
@@ -246,17 +258,7 @@ namespace K {
           h_ = curl_slist_append(h_, string("CB-ACCESS-TIMESTAMP: ").append(t).data());
           h_ = curl_slist_append(h_, string("CB-ACCESS-PASSPHRASE: ").append(p).data());
           curl_easy_setopt(curl, CURLOPT_HTTPHEADER, h_);
-        });
-      };
-      static json wJet(string k, string t, string a, string s, string p, bool d) {
-        return curl_perform(k, [&](CURL *curl) {
-          struct curl_slist *h_ = NULL;
-          h_ = curl_slist_append(h_, string("CB-ACCESS-KEY: ").append(a).data());
-          h_ = curl_slist_append(h_, string("CB-ACCESS-SIGN: ").append(s).data());
-          h_ = curl_slist_append(h_, string("CB-ACCESS-TIMESTAMP: ").append(t).data());
-          h_ = curl_slist_append(h_, string("CB-ACCESS-PASSPHRASE: ").append(p).data());
-          curl_easy_setopt(curl, CURLOPT_HTTPHEADER, h_);
-          curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+          if (d) curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
         });
       };
       static json curl_perform(string url, function<void(CURL *curl)> curl_setopt, bool debug = true) {
@@ -265,7 +267,7 @@ namespace K {
         if (curl) {
           curl_setopt(curl);
           curl_easy_setopt(curl, CURLOPT_USERAGENT, "K");
-          curl_easy_setopt(curl, CURLOPT_CAINFO, "etc/K-cabundle.pem");
+          curl_easy_setopt(curl, CURLOPT_CAINFO, "etc/cabundle.pem");
           curl_easy_setopt(curl, CURLOPT_URL, url.data());
           curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &curl_write);
           curl_easy_setopt(curl, CURLOPT_WRITEDATA, &reply);

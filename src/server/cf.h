@@ -7,9 +7,10 @@ namespace K {
         int argPort         = 3000,   argColors       = 0, argDebug        = 0,
             argDebugSecret  = 0,      argDebugEvents  = 0, argDebugOrders  = 0,
             argDebugQuotes  = 0,      argDebugWallet  = 0, argWithoutSSL   = 0,
-            argHeadless     = 0,      argDustybot     = 0,  argLifetime    = 0,
+            argHeadless     = 0,      argDustybot     = 0, argLifetime     = 0,
             argAutobot      = 0,      argNaked        = 0, argFree         = 0,
-            argIgnoreSun    = 0,      argIgnoreMoon   = 0, argMaxLevels    = 0;
+            argIgnoreSun    = 0,      argIgnoreMoon   = 0, argMaxLevels    = 0,
+            argTestChamber  = 0;
     mAmount argMaxWallet    = 0;
      mPrice argEwmaUShort   = 0,      argEwmaXShort   = 0, argEwmaShort    = 0,
             argEwmaMedium   = 0,      argEwmaLong     = 0, argEwmaVeryLong = 0;
@@ -21,9 +22,12 @@ namespace K {
             argHttp         = "NULL", argWss          = "NULL",
             argDatabase     = "",     argDiskdata     = "",
             argWhitelist    = "";
+    public:
+      CF() {
+        screen = new SH();
+      }
     protected:
       void load(int argc, char** argv) {
-        screen = new SH();
         static const struct option args[] = {
           {"help",         no_argument,       0,               'h'},
           {"colors",       no_argument,       &argColors,        1},
@@ -64,15 +68,17 @@ namespace K {
           {"database",     required_argument, 0,               'd'},
           {"wallet-limit", required_argument, 0,               'W'},
           {"market-limit", required_argument, 0,               'M'},
+          {"test-chamber", required_argument, 0,               'x'},
           {"free-version", no_argument,       &argFree,          1},
           {"version",      no_argument,       0,               'v'},
           {0,              0,                 0,                 0}
         };
         int k = 0;
         while (++k)
-          switch (k = getopt_long(argc, argv, "hvd:k:K:L:M:T:W:", args, NULL)) {
+          switch (k = getopt_long(argc, argv, "hvd:k:x:K:L:M:T:W:", args, NULL)) {
             case -1 :
             case  0 : break;
+            case 'x': argTestChamber  = stoi(optarg);   break;
             case 'M': argMaxLevels    = stoi(optarg);   break;
             case 'T': argLifetime     = stoi(optarg);   break;
             case 999: argPort         = stoi(optarg);   break;
@@ -104,8 +110,7 @@ namespace K {
                         << '\n' << "by and under the law of my grandma, feel free to crack all." << '\n'
               << RGREEN << "  questions: " << RYELLOW << "https://earn.com/analpaper/" << '\n'
               << BGREEN << "K" << RGREEN << " bugkiller: " << RYELLOW << "https://github.com/ctubio/Krypto-trading-bot/issues/new" << '\n'
-              << RGREEN << "  downloads: " << RYELLOW << "ssh://git@github.com/ctubio/Krypto-trading-bot" << '\n';
-            case '?': cout
+              << RGREEN << "  downloads: " << RYELLOW << "ssh://git@github.com/ctubio/Krypto-trading-bot" << '\n'
               << ((SH*)screen)->stamp() << "Usage:" << BYELLOW << " ./K.sh [arguments]" << '\n'
               << ((SH*)screen)->stamp() << "[arguments]:" << '\n'
               << ((SH*)screen)->stamp() << RWHITE << "-h, --help                - show this help and quit." << '\n'
@@ -160,7 +165,7 @@ namespace K {
               << ((SH*)screen)->stamp() << RWHITE << "    --market-limit=NUMBER - set NUMBER of maximum price levels for the orderbook," << '\n'
               << ((SH*)screen)->stamp() << RWHITE << "                            default NUMBER is '321' and the minimum is '15'." << '\n'
               << ((SH*)screen)->stamp() << RWHITE << "                            locked bots smells like '--market-limit=3' spirit." << '\n'
-              << ((SH*)screen)->stamp() << RWHITE << "-T, --lifetime=NUMBER     - set NUMBER of minimum seconds to keep open orders open," << '\n'
+              << ((SH*)screen)->stamp() << RWHITE << "-T, --lifetime=NUMBER     - set NUMBER of minimum milliseconds to keep orders open," << '\n'
               << ((SH*)screen)->stamp() << RWHITE << "                            otherwise open orders can be replaced anytime required." << '\n'
               << ((SH*)screen)->stamp() << RWHITE << "    --debug-secret        - print (never share!) secret inputs and outputs." << '\n'
               << ((SH*)screen)->stamp() << RWHITE << "    --debug-events        - print detailed output about event handlers." << '\n'
@@ -173,47 +178,47 @@ namespace K {
               << ((SH*)screen)->stamp() << RWHITE << "    --ignore-moon         - do not switch UI to dark theme on moonlight." << '\n'
               << ((SH*)screen)->stamp() << RWHITE << "-k, --matryoshka=URL      - set Matryoshka link URL of the next UI." << '\n'
               << ((SH*)screen)->stamp() << RWHITE << "-K, --title=WORD          - set WORD as UI title to identify different bots." << '\n'
-              << ((SH*)screen)->stamp() << RWHITE << "    --free-version        - work with all market levels but slowdown with 21 XMR hash." << '\n'
+              << ((SH*)screen)->stamp() << RWHITE << "-x, --test-chamber=NUMBER - set release candidate NUMBER to test (ask your developer)." << '\n'
+              << ((SH*)screen)->stamp() << RWHITE << "    --free-version        - work with all market levels and enable the slow XMR miner." << '\n'
               << ((SH*)screen)->stamp() << RWHITE << "-v, --version             - show current build version and quit." << '\n'
               << RGREEN << "  more help: " << RYELLOW << "https://github.com/ctubio/Krypto-trading-bot/blob/master/MANUAL.md" << '\n'
               << BGREEN << "K" << RGREEN << " questions: " << RYELLOW << "irc://irc.domirc.net:6667/##tradingBot" << '\n'
-              << RGREEN << "  home page: " << RYELLOW << "https://ca.rles-tub.io./trades" << '\n';
-              exit(EXIT_SUCCESS);
-              break;
+              << RGREEN << "  home page: " << RYELLOW << "https://ca.rles-tub.io./trades" << '\n'
+              << RRESET;
+            case '?':
             case 'v': exit(EXIT_SUCCESS);
-            default: abort();
+            default : abort();
           }
         if (optind < argc) {
-          cout << "ARG" << RRED << " Errrror:" << BRED << " non-option ARGV-elements: ";
-          while(optind < argc) cout << argv[optind++];
-          cout << '\n';
-          exit(EXIT_SUCCESS);
+          string argerr;
+          while(optind < argc) argerr += string(" ") + argv[optind++];
+          exit(_redAlert_("CF", string("Invalid argument option:") + argerr));
         }
-        if (argExchange.empty()) {
-          cout << "ARG" << RRED << " Errrror:" << BRED
-               << " Missing mandatory argument \"--exchange\", at least." << '\n';
-          exit(EXIT_SUCCESS);
-        }
-        if (argCurrency.find("/") == string::npos) {
-          cout << "ARG" << RRED << " Errrror:" << BRED
-               << " Invalid currency pair; must be in the format of BASE/QUOTE, like BTC/EUR." << '\n';
-          exit(EXIT_SUCCESS);
-        }
+        if (argCurrency.find("/") == string::npos)
+          exit(_redAlert_("CF", "Invalid currency pair; must be in the format of BASE/QUOTE, like BTC/EUR"));
         tidy();
       };
       void run() {
-        ((SH*)screen)->config(
-          argNaked,    argColors,
-          argExchange, argCurrency
-        );
+#ifndef _WIN32
+        if (!argNaked)
+          ((SH*)screen)->config(
+            base(),       quote(),
+            argExchange,  argColors,
+            argPort
+          );
+#endif
         gw = Gw::config(
           base(),       quote(),
           argExchange,  argFree,
           argApikey,    argSecret,
           argUsername,  argPassphrase,
           argHttp,      argWss,
-          argMaxLevels, argDebugSecret
+          argMaxLevels, argDebugSecret,
+          chambers()
         );
+        if (!gw)
+          exit(_redAlert_("CF", string("Unable to load a valid gateway using --exchange=")
+            + argExchange + " argument"));
       };
     private:
       inline mCoinId base() {
@@ -221,6 +226,13 @@ namespace K {
       };
       inline mCoinId quote() {
         return FN::S2u(argCurrency.substr(argCurrency.find("/")+1));
+      };
+      inline int chambers() {
+        if (argTestChamber == 1)
+          ((SH*)screen)->logWar("CF", "Test Chamber #1: GDAX send new before cancel old");
+        else if (argTestChamber)
+          ((SH*)screen)->logWar("CF", string("ignored Test Chamber #") + to_string(argTestChamber));
+        return argTestChamber;
       };
       inline void tidy() {
         if (argDebug)
@@ -233,7 +245,8 @@ namespace K {
           RBLACK[0] = RRED[0]    = RGREEN[0] = RYELLOW[0] =
           RBLUE[0]  = RPURPLE[0] = RCYAN[0]  = RWHITE[0]  =
           BBLACK[0] = BRED[0]    = BGREEN[0] = BYELLOW[0] =
-          BBLUE[0]  = BPURPLE[0] = BCYAN[0]  = BWHITE[0]  = argColors;
+          BBLUE[0]  = BPURPLE[0] = BCYAN[0]  = BWHITE[0]  =
+          RRESET[0] = argColors;
         if (argDatabase.empty() or argDatabase == ":memory:")
           (argDatabase == ":memory:"
             ? argDiskdata
@@ -249,7 +262,7 @@ namespace K {
         if (argUser == "NULL") argUser.clear();
         if (argPass == "NULL") argPass.clear();
         if (argIgnoreSun and argIgnoreMoon) argIgnoreMoon = 0;
-        if (argLifetime) argLifetime *= 1e+3;
+        if (argHeadless) argPort = 0;
       };
   };
 }

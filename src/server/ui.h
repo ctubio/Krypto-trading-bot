@@ -1,6 +1,12 @@
 #ifndef K_UI_H_
 #define K_UI_H_
 
+extern const char _www_html_index,     _www_ico_favicon,     _www_css_base,
+                  _www_gzip_bomb,      _www_mp3_audio_0,     _www_css_light,
+                  _www_js_bundle,      _www_mp3_audio_1,     _www_css_dark;
+extern const  int _www_html_index_len, _www_ico_favicon_len, _www_css_base_len,
+                  _www_gzip_bomb_len,  _www_mp3_audio_0_len, _www_css_light_len,
+                  _www_js_bundle_len,  _www_mp3_audio_1_len, _www_css_dark_len;
 namespace K {
   class UI: public Klass {
     private:
@@ -34,73 +40,72 @@ namespace K {
           ((SH*)screen)->logUIsess(--connections, webSocket->getAddress().address);
         });
         ((EV*)events)->uiGroup->onHttpRequest([&](uWS::HttpResponse *res, uWS::HttpRequest req, char *data, size_t length, size_t remainingBytes) {
-          string document;
-          stringstream content;
-          string auth = req.getHeader("authorization").toString();
-          string addr = res->getHttpSocket()->getAddress().address;
+          string document,
+                 content,
+                 addr = res->getHttpSocket()->getAddress().address;
+          const string auth = req.getHeader("authorization").toString();
           if (addr.length() > 7 and addr.substr(0, 7) == "::ffff:") addr = addr.substr(7);
           if (addr.length() > 7 and !((CF*)config)->argWhitelist.empty() and ((CF*)config)->argWhitelist.find(addr) == string::npos) {
             ((SH*)screen)->log("UI", "dropping gzip bomb on", addr);
-            content << ifstream("etc/K-bomb.gzip").rdbuf();
-            document = "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nCache-Control: public, max-age=0\r\n";
-            document += "Content-Encoding: gzip\r\nContent-Length: " + to_string(content.str().length()) + "\r\n\r\n" + content.str();
-            res->write(document.data(), document.length());
+            document = "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nCache-Control: public, max-age=0\r\nContent-Encoding: gzip\r\n";
+            content = string(&_www_gzip_bomb, _www_gzip_bomb_len);
           } else if (!B64auth.empty() and auth.empty()) {
             ((SH*)screen)->log("UI", "authorization attempt from", addr);
-            document = "HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Basic realm=\"Basic Authorization\"\r\nConnection: keep-alive\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nContent-Type:text/plain; charset=UTF-8\r\nContent-Length: 0\r\n\r\n";
-            res->write(document.data(), document.length());
+            document = "HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Basic realm=\"Basic Authorization\"\r\nConnection: keep-alive\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nContent-Type:text/plain; charset=UTF-8\r\n";
           } else if (!B64auth.empty() and auth != B64auth) {
             ((SH*)screen)->log("UI", "authorization failed from", addr);
-            document = "HTTP/1.1 403 Forbidden\r\nConnection: keep-alive\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nContent-Type:text/plain; charset=UTF-8\r\nContent-Length: 0\r\n\r\n";
-            res->write(document.data(), document.length());
+            document = "HTTP/1.1 403 Forbidden\r\nConnection: keep-alive\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nContent-Type:text/plain; charset=UTF-8\r\n";
           } else if (req.getMethod() == uWS::HttpMethod::METHOD_GET) {
-            string url = "";
             document = "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nCache-Control: public, max-age=0\r\n";
-            string path = req.getUrl().toString();
-            string::size_type n = 0;
-            while ((n = path.find("..", n)) != string::npos) path.replace(n, 2, "");
-            const string leaf = path.substr(path.find_last_of('.')+1);
+            const string path = req.getUrl().toString(),
+                         leaf = path.substr(path.find_last_of('.')+1);
             if (leaf == "/") {
               ((SH*)screen)->log("UI", "authorization success from", addr);
               document += "Content-Type: text/html; charset=UTF-8\r\n";
-              url = "/index.html";
+              content = string(&_www_html_index, _www_html_index_len);
             } else if (leaf == "js") {
               document += "Content-Type: application/javascript; charset=UTF-8\r\nContent-Encoding: gzip\r\n";
-              url = path;
+              content = string(&_www_js_bundle, _www_js_bundle_len);
             } else if (leaf == "css") {
               document += "Content-Type: text/css; charset=UTF-8\r\n";
-              url = path;
-            } else if (leaf == "png") {
-              document += "Content-Type: image/png\r\n";
-              url = path;
-            } else if (leaf == "mp3") {
-              document += "Content-Type: audio/mpeg\r\n";
-              url = path;
-            }
+              if (path.find("css/bootstrap.min.css") != string::npos)
+                content = string(&_www_css_base, _www_css_base_len);
+              else if (path.find("css/bootstrap-theme-dark.min.css") != string::npos)
+                content = string(&_www_css_dark, _www_css_dark_len);
+              else if (path.find("css/bootstrap-theme.min.css") != string::npos)
+                content = string(&_www_css_light, _www_css_light_len);
             } else if (leaf == "ico") {
               document += "Content-Type: image/x-icon\r\n";
-              url = path;
+              content = string(&_www_ico_favicon, _www_ico_favicon_len);
+            } else if (leaf == "mp3") {
+              document += "Content-Type: audio/mpeg\r\n";
+              if (path.find("audio/0.mp3") != string::npos)
+                content = string(&_www_mp3_audio_0, _www_mp3_audio_0_len);
+              else if (path.find("audio/1.mp3") != string::npos)
+                content = string(&_www_mp3_audio_1, _www_mp3_audio_1_len);
             }
-            if (!url.empty())
-              content << ifstream(readlink("app/client").substr(48) + url).rdbuf();
-            else if (FN::int64() % 21) {
-              document = "HTTP/1.1 404 Not Found\r\n";
-              content << "Today, is a beautiful day.";
-            } else { // Humans! go to any random url to check your luck
-              document = "HTTP/1.1 418 I'm a teapot\r\n";
-              content << "Today, is your lucky day!";
-            }
-            document += "Content-Length: " + to_string(content.str().length()) + "\r\n\r\n" + content.str();
-            res->write(document.data(), document.length());
+            if (content.empty())
+              if (FN::int64() % 21) {
+                document = "HTTP/1.1 404 Not Found\r\n";
+                content = "Today, is a beautiful day.";
+              } else { // Humans! go to any random url to check your luck
+                document = "HTTP/1.1 418 I'm a teapot\r\n";
+                content = "Today, is your lucky day!";
+              }
           }
+          if (document.empty()) return;
+          document += "Content-Length: " + to_string(content.length()) + "\r\n\r\n" + content;
+          res->write(document.data(), document.length());
         });
         ((EV*)events)->uiGroup->onMessage([&](uWS::WebSocket<uWS::SERVER> *webSocket, const char *message, size_t length, uWS::OpCode opCode) {
           if (length < 2) return;
           if (!((CF*)config)->argWhitelist.empty()) {
             string addr = webSocket->getAddress().address;
             if (addr.length() > 7 and addr.substr(0, 7) == "::ffff:") addr = addr.substr(7);
-            if (addr.length() > 7 and ((CF*)config)->argWhitelist.find(addr) == string::npos)
+            if (addr.length() > 7 and ((CF*)config)->argWhitelist.find(addr) == string::npos) {
+              webSocket->send(string(&_www_gzip_bomb, _www_gzip_bomb_len).data(), uWS::OpCode::BINARY);
               return;
+            }
           }
           if (mPortal::Hello == (mPortal)message[0] and hello.find(message[1]) != hello.end()) {
             json reply;
@@ -140,12 +145,16 @@ namespace K {
       };
     public:
       function<void(mMatter, function<void(json*)>*)> welcome = [&](mMatter type, function<void(json*)> *fn) {
-        if (hello.find((char)type) == hello.end()) hello[(char)type] = fn;
-        else exit(_errorEvent_("UI", string("Use only a single unique message handler for \"") + (char)type + "\" welcome event"));
+        if (hello.find((char)type) != hello.end())
+          exit(_redAlert_("UI", string("Use only a single unique message handler for \"")
+            + (char)type + "\" welcome event"));
+        hello[(char)type] = fn;
       };
       function<void(mMatter, function<void(json)>*)> clickme = [&](mMatter type, function<void(json)> *fn) {
-        if (kisses.find((char)type) == kisses.end()) kisses[(char)type] = fn;
-        else exit(_errorEvent_("UI", string("Use only a single unique message handler for \"") + (char)type + "\" clickme event"));
+        if (kisses.find((char)type) != kisses.end())
+          exit(_redAlert_("UI", string("Use only a single unique message handler for \"")
+            + (char)type + "\" clickme event"));
+        kisses[(char)type] = fn;
       };
       function<void(unsigned int)> delayme = [&](unsigned int delayUI) {
         realtimeClient = !delayUI;
@@ -234,17 +243,6 @@ namespace K {
           {"dbsize", ((DB*)memory)->size()},
           {"a", gw->A()}
         };
-      };
-      string readlink(const char* path) {
-        string buffer(64, '\0');
-#ifndef _WIN32
-        ssize_t len;
-        while((len = ::readlink(path, &buffer[0], buffer.size())) == (ssize_t)buffer.size())
-          buffer.resize(buffer.size() * 2);
-        if (len == -1) buffer.clear();
-        else buffer.resize(len);
-#endif
-        return buffer;
       };
   };
 }

@@ -14,7 +14,7 @@ namespace K {
            sync_orders = false;
     protected:
       void load() {                                                 _debugEvent_
-        gwEndings.back() = &happyEnding;
+        endingFn.back() = &happyEnding;
         gwAdminEnabled = (mConnectivity)((CF*)config)->argAutobot;
         handshake(gw->exchange);
       };
@@ -130,7 +130,7 @@ namespace K {
       };
       inline void stunnel(bool reboot = false) {
         system("pkill stunnel || :");
-        if (reboot) system("stunnel etc/K-stunnel.conf");
+        if (reboot) system("stunnel etc/stunnel.conf");
       };
       inline void handshake(mExchange k) {
         json reply;
@@ -148,6 +148,8 @@ namespace K {
           reply = FN::wJet(string(gw->http) + "/public/symbol/" + gw->symbol);
           gw->minTick = stod(reply.value("tickSize", "0"));
           gw->minSize = stod(reply.value("quantityIncrement", "0"));
+          gw->base = reply.value("baseCurrency", gw->base);
+          gw->quote = reply.value("quoteCurrency", gw->quote);
         }
         else if (k == mExchange::Bitfinex or k == mExchange::BitfinexMargin) {
           gw->randId = FN::int45Id;
@@ -217,18 +219,20 @@ namespace K {
           gw->minSize = 0.01;
         }
         if (!gw->minTick or !gw->minSize)
-          exit(_errorEvent_("CF", "Unable to fetch data from " + gw->name + " for symbol \"" + gw->symbol + "\", possible error message: " + reply.dump(), true));
+          exit(_redAlert_("CF", "Unable to fetch data from " + gw->name
+            + " for symbol \"" + gw->symbol + "\", possible error message: "
+            + reply.dump(),
+          true));
         if (k != mExchange::Null)
           ((SH*)screen)->log(string("GW ") + gw->name, "allows client IP");
-        stringstream ss;
-        ss << setprecision(gw->minTick < 1e-8 ? 10 : 8) << fixed << '\n'
-          << "- autoBot: " << (!gwAdminEnabled ? "no" : "yes") << '\n'
-          << "- symbols: " << gw->symbol << '\n'
-          << "- minTick: " << gw->minTick << '\n'
-          << "- minSize: " << gw->minSize << '\n'
-          << "- makeFee: " << gw->makeFee << '\n'
-          << "- takeFee: " << gw->takeFee;
-        ((SH*)screen)->log(string("GW ") + gw->name + ":", ss.str());
+        unsigned int precision = gw->minTick < 1e-8 ? 10 : 8;
+        ((SH*)screen)->log(string("GW ") + gw->name + ":", string("\n")
+          + "- autoBot: " + (!gwAdminEnabled ? "no" : "yes") + '\n'
+          + "- symbols: " + gw->symbol + '\n'
+          + "- minTick: " + FN::strX(gw->minTick, precision) + '\n'
+          + "- minSize: " + FN::strX(gw->minSize, precision) + '\n'
+          + "- makeFee: " + FN::strX(gw->makeFee, precision) + '\n'
+          + "- takeFee: " + FN::strX(gw->takeFee, precision));
       };
   };
 }

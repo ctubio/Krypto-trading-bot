@@ -58,7 +58,8 @@ namespace K {
       };
       inline void findMode(string reason) {
         if (quotingMode.find(qp->mode) == quotingMode.end())
-          exit(_errorEvent_("QE", string("Invalid quoting mode ") + reason + ", consider to remove the database file"));
+          exit(_redAlert_("QE", string("Invalid quoting mode ")
+            + reason + ", consider to remove the database file"));
       }
       void calcQuote() {                                            _debugEvent_
         bidStatus = mQuoteState::MissingData;
@@ -173,14 +174,12 @@ namespace K {
       };
       inline void applyRoundSize(mQuote *rawQuote) {
         if (!rawQuote->ask.empty()) {
-          if (rawQuote->ask.size > ((PG*)wallet)->position._baseTotal)
-            rawQuote->ask.size = ((PG*)wallet)->position._baseTotal;
-          rawQuote->ask.size = floor(fmax(gw->minSize, rawQuote->ask.size) / 1e-8) * 1e-8;
+          rawQuote->ask.size = fmax(fmin(rawQuote->ask.size, ((PG*)wallet)->position._baseTotal), gw->minSize);
+          _trunc8_(rawQuote->ask.size)
         }
         if (!rawQuote->bid.empty()) {
-          if (rawQuote->bid.size > ((PG*)wallet)->position._quoteTotal)
-            rawQuote->bid.size = ((PG*)wallet)->position._quoteTotal;
-          rawQuote->bid.size = floor(fmax(gw->minSize, rawQuote->bid.size) / 1e-8) * 1e-8;
+          rawQuote->bid.size = fmax(fmin(rawQuote->bid.size, ((PG*)wallet)->position._quoteTotal), gw->minSize);
+          _trunc8_(rawQuote->bid.size)
         }
       };
       inline void applyDepleted(mQuote *rawQuote) {

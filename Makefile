@@ -1,26 +1,29 @@
 K       ?= K.sh
-CHOST   ?= $(shell (test -d .git && test -n "`command -v g++`") && g++ -dumpmachine || ls -1 . | grep build- | head -n1 | cut -d '/' -f1 | cut -d '-' -f2-)
+MAJOR    = 0
+MINOR    = 4
+PATCH    = 5
+BUILD    = 9
+CHOST   ?= $(shell $(MAKE) CHOST= chost)
 CARCH    = x86_64-linux-gnu arm-linux-gnueabihf aarch64-linux-gnu x86_64-apple-darwin17 x86_64-w64-mingw32
-KLOCAL   = build-$(CHOST)/local
-CXX      = $(CHOST)-g++
-CC       = $(CHOST)-gcc
-ERR      = *** K require g++ v6, but g++ v6 was not found at $(shell which $(CXX))
-HINT     = consider to create a symlink at $(shell which $(CXX)) pointing to your g++-6 executable
-KGIT     = 4.0
-KHUB     = 8656597
-V_ZLIB  := 1.2.11
-V_SSL   := 1.1.0g
-V_CURL  := 7.57.0
-V_NCUR  := 6.0
-V_JSON  := v3.0.0
-V_UWS   := 0.14.4
-V_SQL   := 3210000
-V_QF    := v.1.14.4
-V_UV    := 1.18.0
-V_PVS   := 6.21.24657.1946
-KZIP     = 9c7bf77891be45fedb6b670cbc228a3ec559dbea
-KARGS    = src/server/K.cxx                              \
-  -std=c++11 -O3 -I$(KLOCAL)/include -pthread -Wextra    \
+KLOCAL  := build-$(CHOST)/local
+CXX     := $(CHOST)-g++
+CC      := $(CHOST)-gcc
+V_CXX    = 6
+ERR     := *** K require g++ v$(V_CXX), but g++ v$(V_CXX) was not found at $(shell which "$(CXX)" 2> /dev/null)
+HINT    := consider to create a symlink at $(shell which "$(CXX)" 2> /dev/null) pointing to your g++-$(V_CXX) executable
+V_ZLIB   = 1.2.11
+V_SSL    = 1.1.0g
+V_CURL   = 7.57.0
+V_NCUR   = 6.0
+V_JSON   = v3.0.0
+V_UWS    = 0.14.4
+V_SQL    = 3210000
+V_QF     = v.1.14.4
+V_UV     = 1.18.0
+V_PVS    = 6.21.24657.1946
+KARGS   := -I$(KLOCAL)/include -pthread -std=c++11 -O3   \
+  $(KLOCAL)/lib/K-$(CHOST)-docroot.o src/server/K.cxx    \
+  -DK_0_DAY='"v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)"'     \
   -DK_STAMP='"$(shell date "+%Y-%m-%d %H:%M:%S")"'       \
   -DK_BUILD='"$(CHOST)"'     $(KLOCAL)/include/uWS/*.cpp \
   $(KLOCAL)/lib/K-$(CHOST).a $(KLOCAL)/lib/libquickfix.a \
@@ -58,10 +61,11 @@ help:
 	#  make changelog    - show commits                #
 	#  make latest       - show commits and reinstall  #
 	#                                                  #
-	#  make client       - compile K client src        #
-	#  make www          - compile K client src        #
-	#  make css          - compile K client css        #
-	#  make bundle       - compile K client bundle     #
+	#  make clients      - compile K clients src       #
+	#  make www          - compile K clients src       #
+	#  make css          - compile K clients css       #
+	#  make bundle       - compile K clients bundle    #
+	#  make docroot      - compile K clients lib       #
 	#                                                  #
 	#  make test         - run tests                   #
 	#  make test-cov     - run tests and coverage      #
@@ -85,11 +89,15 @@ help:
 	#  make cleandb      - remove databases            #
 	#                                                  #
 
+chost:
+	@echo -n $(shell (test -d .git && test -n "`command -v g++`") && \
+	g++ -dumpmachine || ls -1 . | grep build- | head -n1 | cut -d '/' -f1 | cut -d '-' -f2-)
+
 K: src/server/K.cxx
 ifdef KALL
 	unset KALL && echo -n $(CARCH) | tr ' ' "\n" | xargs -I % $(MAKE) CHOST=% $@
 else
-	@$(if $(shell sh -c 'test "`g++ -dumpversion | cut -d . -f1`" != "6" || echo 1'),,$(warning $(ERR));$(error $(HINT)))
+	@$(if $(shell sh -c 'test "`g++ -dumpversion | cut -d . -f1`" != $(V_CXX) || echo 1'),,$(warning $(ERR));$(error $(HINT)))
 	@$(CXX) --version
 	mkdir -p $(KLOCAL)/bin
 	CHOST=$(CHOST) $(MAKE) $(shell test -n "`echo $(CHOST) | grep darwin`" && echo Darwin || (test -n "`echo $(CHOST) | grep mingw32`" && echo Win32 || uname -s))
@@ -100,22 +108,29 @@ dist:
 ifdef KALL
 	unset KALL && echo -n $(CARCH) | tr ' ' "\n" | xargs -I % $(MAKE) CHOST=% $@
 else
-	@$(if $(shell sh -c 'test "`g++ -dumpversion | cut -d . -f1`" != "6" || echo 1'),,$(warning $(ERR));$(error $(HINT)))
+	@$(if $(shell sh -c 'test "`g++ -dumpversion | cut -d . -f1`" != $(V_CXX) || echo 1'),,$(warning $(ERR));$(error $(HINT)))
 	mkdir -p build-$(CHOST)
 	CHOST=$(CHOST) $(MAKE) zlib openssl curl sqlite ncurses json uws quickfix libuv
 	test -f /sbin/ldconfig && sudo ldconfig || :
 endif
 
-Linux: build-$(CHOST)
+docroot:
+ifdef KALL
+	unset KALL && echo -n $(CARCH) | tr ' ' "\n" | xargs -I % $(MAKE) CHOST=% $@
+else
+	cd $(KLOCAL) && $(CXX) -c ../../src/build/document_root.S -o lib/K-$(CHOST)-docroot.o
+endif
+
+Linux:
 	$(CXX) -o $(KLOCAL)/bin/K-$(CHOST) -DUWS_THREADSAFE -static-libstdc++ -static-libgcc -g -rdynamic $(KARGS) -ldl
 
-Darwin: build-$(CHOST)
+Darwin:
 	$(CXX) -o $(KLOCAL)/bin/K-$(CHOST) -DUSE_LIBUV $(KLOCAL)/lib/libuv.a -msse4.1 -maes -mpclmul -mmacosx-version-min=10.13 -nostartfiles -rdynamic $(KARGS) -ldl
 
-Win32: build-$(CHOST)
+Win32:
 	$(CXX)-posix -o $(KLOCAL)/bin/K-$(CHOST).exe -DUSE_LIBUV $(KARGS) $(KLOCAL)/lib/libuv.dll.a $(KLOCAL)/lib/libssl.dll.a $(KLOCAL)/lib/libcrypto.dll.a -DCURL_STATICLIB -static -lstdc++ -lgcc -lwldap32 -lws2_32
 
-zlib: build-$(CHOST)
+zlib:
 	test -d build-$(CHOST)/zlib-$(V_ZLIB) || (                                                  \
 	curl -L https://zlib.net/zlib-$(V_ZLIB).tar.gz | tar xz -C build-$(CHOST)                   \
 	&& cd build-$(CHOST)/zlib-$(V_ZLIB) && (test -n "`echo $(CHOST) | grep mingw32`" &&         \
@@ -124,15 +139,15 @@ zlib: build-$(CHOST)
 	LIBRARY_PATH=$(PWD)/$(KLOCAL)/lib make install -fwin32/Makefile.gcc)                        \
 	|| (CC=$(CC) ./configure --static --prefix=$(PWD)/$(KLOCAL) && make && make install))       )
 
-openssl: build-$(CHOST)
-	test -d build-$(CHOST)/openssl-$(V_SSL) || (                                              \
-	curl -L https://www.openssl.org/source/openssl-$(V_SSL).tar.gz | tar xz -C build-$(CHOST) \
-	&& cd build-$(CHOST)/openssl-$(V_SSL) && ./Configure                                      \
-	$(shell test -n "`echo $(CHOST) | grep mingw32`" && echo mingw64 || echo dist)            \
-	--cross-compile-prefix=$(CHOST)- -fPIC --prefix=$(PWD)/$(KLOCAL)                          \
-	--openssldir=$(PWD)/$(KLOCAL) && make && make install_sw install_ssldirs                  )
+openssl:
+	test -d build-$(CHOST)/openssl-$(V_SSL) || (                                               \
+	curl -L https://www.openssl.org/source/openssl-$(V_SSL).tar.gz | tar xz -C build-$(CHOST)  \
+	&& cd build-$(CHOST)/openssl-$(V_SSL) &&                                                   \
+	./Configure $(shell test -n "`echo $(CHOST) | grep mingw32`" && echo mingw64 || echo dist) \
+	--cross-compile-prefix=$(CHOST)- --prefix=$(PWD)/$(KLOCAL)                                 \
+	--openssldir=$(PWD)/$(KLOCAL) && make && make install_sw install_ssldirs                   )
 
-curl: build-$(CHOST)
+curl:
 	test -d build-$(CHOST)/curl-$(V_CURL) || (                                                  \
 	curl -L https://curl.haxx.se/download/curl-$(V_CURL).tar.gz | tar xz -C build-$(CHOST)      \
 	&& cd build-$(CHOST)/curl-$(V_CURL) && CC=$(CC) ./configure --with-ca-path=/etc/ssl/certs   \
@@ -143,13 +158,13 @@ curl: build-$(CHOST)
 	--disable-imap --disable-smtp --disable-gopher --disable-smb --without-libidn2              \
 	--with-zlib=$(PWD)/$(KLOCAL) --with-ssl=$(PWD)/$(KLOCAL) && make && make install            )
 
-sqlite: build-$(CHOST)
+sqlite:
 	test -d build-$(CHOST)/sqlite-autoconf-$(V_SQL) || (                                            \
 	curl -L https://sqlite.org/2017/sqlite-autoconf-$(V_SQL).tar.gz | tar xz -C build-$(CHOST)      \
 	&& cd build-$(CHOST)/sqlite-autoconf-$(V_SQL) && CC=$(CC) ./configure --prefix=$(PWD)/$(KLOCAL) \
 	--host=$(CHOST) --enable-static --disable-shared --enable-threadsafe && make && make install    )
 
-ncurses: build-$(CHOST)
+ncurses:
 	test -d build-$(CHOST)/ncurses-$(V_NCUR) || (                                                        \
 	curl -L http://ftp.gnu.org/pub/gnu/ncurses/ncurses-$(V_NCUR).tar.gz | tar xz -C build-$(CHOST)       \
 	&& cd build-$(CHOST)/ncurses-$(V_NCUR) && CC=$(CC) AR=$(CHOST)-ar CXX=$(CXX) CPPFLAGS=-P ./configure \
@@ -158,12 +173,12 @@ ncurses: build-$(CHOST)
 	--enable-sp-funcs --enable-term-driver --enable-interop || :)                                        \
 	--with-fallbacks=linux,screen,vt100,xterm,xterm-256color,putty-256color && make && make install      )
 
-json: build-$(CHOST)
+json:
 	test -f $(KLOCAL)/include/json.h || (mkdir -p $(KLOCAL)/include                  \
 	&& curl -L https://github.com/nlohmann/json/releases/download/$(V_JSON)/json.hpp \
 	-o $(KLOCAL)/include/json.h                                                      )
 
-uws: build-$(CHOST)
+uws:
 	test -d build-$(CHOST)/uWebSockets-$(V_UWS)                                    \
 	|| curl -L https://github.com/uNetworking/uWebSockets/archive/v$(V_UWS).tar.gz \
 	| tar xz -C build-$(CHOST) && mkdir -p $(KLOCAL)/include/uWS                   \
@@ -172,7 +187,7 @@ uws: build-$(CHOST)
 	(sed -i "s/W\(s2tcpip\)/w\1/" $(KLOCAL)/include/uWS/Networking.h &&            \
 	sed -i "s/WinSock2/winsock2/" $(KLOCAL)/include/uWS/Networking.h) ||          :)
 
-quickfix: build-$(CHOST)
+quickfix:
 	test -d build-$(CHOST)/quickfix-$(V_QF) || (                                                   \
 	curl -L https://github.com/quickfix/quickfix/archive/$(V_QF).tar.gz | tar xz -C build-$(CHOST) \
 	&& patch build-$(CHOST)/quickfix-$(V_QF)/m4/ax_lib_mysql.m4 < src/build/without_mysql.m4.patch \
@@ -187,7 +202,7 @@ quickfix: build-$(CHOST)
 	&& CXX=$(CXX) AR=$(CHOST)-ar ./configure --prefix=$(PWD)/$(KLOCAL) --enable-shared=no          \
 	--enable-static=yes --host=$(CHOST) && cd src/C++ && CXX=$(CXX) make && make install           )
 
-libuv: build-$(CHOST)
+libuv:
 	test -z "`echo $(CHOST) | grep darwin;echo $(CHOST) | grep mingw32`" || test -d build-$(CHOST)/libuv-$(V_UV) || ( \
 	curl -L https://github.com/libuv/libuv/archive/v$(V_UV).tar.gz | tar xz -C build-$(CHOST)                         \
 	&& cd build-$(CHOST)/libuv-$(V_UV) && sh autogen.sh && CC=$(CC) ./configure --host=$(CHOST)                       \
@@ -200,8 +215,8 @@ pvs:
 	&& chmod +x install.sh && sudo ./install.sh                                )
 
 build:
-	curl -L https://github.com/ctubio/Krypto-trading-bot/releases/download/$(KGIT)/$(KZIP)-$(CHOST).tar.gz \
-	| tar xz && chmod +x build-*/local/lib/K-$(CHOST).a build-*/local/bin/K-$(CHOST)
+	curl -L https://github.com/ctubio/Krypto-trading-bot/releases/download/$(MAJOR).$(MINOR).x/v$(MAJOR).$(MINOR).$(PATCH).$(BUILD)-$(CHOST).tar.gz \
+	| tar xz && chmod +x build-*/local/bin/K-$(CHOST)
 
 clean:
 ifdef KALL
@@ -236,10 +251,9 @@ docker:
 	sed -i "/Usage/,+113d" K.sh
 
 link:
-	cd app && ln -f -s \[\!`echo -n "0x46 0x52 0x45 0x45 0x44 0x4f 0x4d" | xxd -r`\ FOR\ `echo -n "0x43 0x41 0x54 0x41 0x4c 0x4f 0x4e 0x49 0x41" | xxd -r`\!\]\ btw\ K\ client\ is\ at\ ../$(KLOCAL)/var/www client
 	cd app/server && ln -f -s ../../$(KLOCAL)/bin/K-$(CHOST) K
 	test -n "`ls *.sh 2>/dev/null`" || (cp etc/K.sh.dist K.sh && chmod +x K.sh)
-	$(MAKE) gdax -s
+	@$(MAKE) gdax -s
 
 reinstall: src
 	test -d .git && ((test -n "`git diff`" && (echo && echo !!Local changes will be lost!! press CTRL-C to abort. && echo && sleep 4) || :) \
@@ -287,39 +301,41 @@ screen:
 	&& sleep 2 && screen -r $(K)) || screen -list || :
 
 cabundle:
-	curl --time-cond etc/K-cabundle.pem https://curl.haxx.se/ca/cacert.pem -o etc/K-cabundle.pem
+	curl --time-cond etc/cabundle.pem https://curl.haxx.se/ca/cacert.pem -o etc/cabundle.pem
 
 gdax:
-	openssl s_client -showcerts -connect fix.gdax.com:4198 -CApath /etc/ssl/certs < /dev/null \
+	@openssl s_client -showcerts -connect fix.gdax.com:4198 -CApath /etc/ssl/certs < /dev/null 2> /dev/null \
 	| openssl x509 -outform PEM > etc/sslcert/fix.gdax.com.pem
 
-client: src/client
+clients: src/client-2d
 	rm -rf $(KLOCAL)/var
 	mkdir -p $(KLOCAL)/var/www
-	@echo Building client dynamic files..
+	@echo Building clients dynamic files..
 	@npm install
-	./node_modules/.bin/tsc --alwaysStrict --experimentalDecorators -t ES2017 -m commonjs --outDir $(KLOCAL)/var/www/js src/client/*.ts
+	./node_modules/.bin/tsc --alwaysStrict --experimentalDecorators -t ES2017 -m commonjs --outDir $(KLOCAL)/var/www/js src/client-2d/*.ts
 	@echo DONE
 
-www: src/www $(KLOCAL)/var/www
-	@echo Building client static files..
+www: src/www
+	@echo Building clients static files..
 	cp -R src/www/* $(KLOCAL)/var/www/
 	@echo DONE
 
 css: src/www/sass
-	@echo Building client CSS files..
+	@echo Building clients CSS files..
 	rm -rf $(KLOCAL)/var/www/css
 	mkdir -p $(KLOCAL)/var/www/css
-	./node_modules/.bin/node-sass --output-style compressed --output $(KLOCAL)/var/www/css/ src/www/sass/ \
+	./node_modules/.bin/node-sass --output-style compressed --output $(KLOCAL)/var/www/css/ src/www/sass/                   \
+	&& cat $(KLOCAL)/var/www/css/ag-grid.css >> $(KLOCAL)/var/www/css/bootstrap.css && rm $(KLOCAL)/var/www/css/ag-grid.css \
 	&& ls -1 $$PWD/$(KLOCAL)/var/www/css/*[^\.min].css | sed -r 's/(.*)(\.css)$$/\1\2 \1\.min\2/' | xargs -I % sh -c 'mv %;'
 	@echo DONE
 
-bundle: client www css node_modules/.bin/browserify node_modules/.bin/uglifyjs $(KLOCAL)/var/www/js/main.js
-	@echo Building client bundle file..
+bundle: clients www css node_modules/.bin/browserify node_modules/.bin/uglifyjs
+	@echo Building clients bundle zip and docroot lib..
 	mkdir -p $(KLOCAL)/var/www/js/client
 	./node_modules/.bin/browserify -t [ babelify --presets [ babili env ] ] $(KLOCAL)/var/www/js/main.js $(KLOCAL)/var/www/js/lib/*.js | ./node_modules/.bin/uglifyjs | gzip > $(KLOCAL)/var/www/js/client/bundle.min.js
-	rm -rf $(KLOCAL)/var/www/js/*.js $(KLOCAL)/var/www/sass
+	rm -rf $(KLOCAL)/var/www/js/lib $(KLOCAL)/var/www/js/*.js $(KLOCAL)/var/www/sass
 	echo $(CARCH) | tr ' ' "\n" | xargs -I % echo % | grep -v $(CHOST) | xargs -I % sh -c 'if test -d build-%; then rm -rf build-%/local/var;mkdir -p build-%/local/var;cp -R $(KLOCAL)/var build-%/local; fi'
+	echo $(CARCH) | tr ' ' "\n" | xargs -I % echo % | xargs -I % sh -c 'if test -d build-%; then CHOST=% make docroot; fi'
 	@echo DONE
 
 diff: .git
@@ -370,25 +386,44 @@ png: etc/${PNG}.png etc/${PNG}.json
 png-check: etc/${PNG}.png
 	@test -n "`identify -verbose etc/${PNG}.png | grep 'K\.conf'`" && echo Configuration injected into etc/${PNG}.png OK, feel free to remove etc/${PNG}.json anytime. || echo nope, injection failed.
 
-check:
-	@echo $(KZIP)
-	@shasum $(KLOCAL)/bin/K-$(CHOST) | cut -d ' ' -f1
-
 checkOK:
-	@sed -i "s/^\(KZIP     = \).*$$/\1`shasum $(KLOCAL)/bin/K-$(CHOST) | cut -d ' ' -f1`/" Makefile
-	@$(MAKE) check -s
+	git diff && git status && read ctrl_c && KALL=1 $(MAKE) K release
+
+MAJORcheckOK:
+	@sed -i "s/^\(MAJOR    =\).*$$/\1 $(shell expr $(MAJOR) + 1)/" Makefile
+	@sed -i "s/^\(MINOR    =\).*$$/\1 0/" Makefile
+	@sed -i "s/^\(PATCH    =\).*$$/\1 0/" Makefile
+	@sed -i "s/^\(BUILD    =\).*$$/\1 0/" Makefile
+	$(MAKE) checkOK
+
+MINORcheckOK:
+	@sed -i "s/^\(MINOR    =\).*$$/\1 $(shell expr $(MINOR) + 1)/" Makefile
+	@sed -i "s/^\(PATCH    =\).*$$/\1 0/" Makefile
+	@sed -i "s/^\(BUILD    =\).*$$/\1 0/" Makefile
+	$(MAKE) checkOK
+
+PATCHcheckOK:
+	@sed -i "s/^\(PATCH    =\).*$$/\1 $(shell expr $(PATCH) + 1)/" Makefile
+	@sed -i "s/^\(BUILD    =\).*$$/\1 0/" Makefile
+	$(MAKE) checkOK
+
+BUILDcheckOK:
+	@sed -i "s/^\(BUILD    =\).*$$/\1 $(shell expr $(BUILD) + 1)/" Makefile
+	$(MAKE) checkOK
 
 release:
 ifdef KALL
 	unset KALL && echo -n $(CARCH) | tr ' ' "\n" | xargs -I % $(MAKE) CHOST=% $@
 else
-	@tar -cvzf $(KZIP)-$(CHOST).tar.gz $(KLOCAL)/bin/K-$(CHOST)* $(KLOCAL)/lib/K-$(CHOST).a                           \
-	$(shell test -n "`echo $(CHOST) | grep mingw32`" && echo $(KLOCAL)/bin/*dll || :)                                 \
-	$(KLOCAL)/var LICENSE COPYING THANKS README.md MANUAL.md src etc Makefile WHITE_* &&                              \
-	curl -s -n -H "Content-Type:application/octet-stream" -H "Authorization: token ${KRELEASE}"                       \
-	--data-binary "@$(PWD)/$(KZIP)-$(CHOST).tar.gz"                                                                   \
-	"https://uploads.github.com/repos/ctubio/Krypto-trading-bot/releases/$(KHUB)/assets?name=$(KZIP)-$(CHOST).tar.gz" \
-	&& rm $(KZIP)-$(CHOST).tar.gz && echo && echo DONE $(KZIP)-$(CHOST).tar.gz
+	@tar -cvzf v$(MAJOR).$(MINOR).$(PATCH).$(BUILD)-$(CHOST).tar.gz $(KLOCAL)/bin/K-$(CHOST)* $(KLOCAL)/lib/K-$(CHOST)*                   \
+	$(shell test -n "`echo $(CHOST) | grep mingw32`" && echo $(KLOCAL)/bin/*dll || :)                                                     \
+	LICENSE COPYING THANKS README.md MANUAL.md src etc Makefile WHITE_*                                                                   \
+	&& curl -s -n -H "Content-Type:application/octet-stream" -H "Authorization: token ${KRELEASE}"                                        \
+	--data-binary "@$(PWD)/v$(MAJOR).$(MINOR).$(PATCH).$(BUILD)-$(CHOST).tar.gz"                                                          \
+	"https://uploads.github.com/repos/ctubio/Krypto-trading-bot/releases/$(shell curl -s                                                  \
+	https://api.github.com/repos/ctubio/Krypto-trading-bot/releases/latest | grep id | head -n1 | cut -d ' ' -f4 | cut -d ',' -f1         \
+	)/assets?name=v$(MAJOR).$(MINOR).$(PATCH).$(BUILD)-$(CHOST).tar.gz"                                                                   \
+	&& rm v$(MAJOR).$(MINOR).$(PATCH).$(BUILD)-$(CHOST).tar.gz && echo && echo DONE v$(MAJOR).$(MINOR).$(PATCH).$(BUILD)-$(CHOST).tar.gz
 endif
 
 md5: src
@@ -397,4 +432,4 @@ md5: src
 asandwich:
 	@test `whoami` = 'root' && echo OK || echo make it yourself!
 
-.PHONY: K dist link Linux Darwin build zlib openssl curl ncurses quickfix uws json pvs clean cleandb list screen start stop restart startall stopall restartall gdax packages install docker travis reinstall client www bundle diff latest changelog test test-cov send-cov png png-check release md5 asandwich
+.PHONY: K chost dist link Linux Darwin Win32 build zlib openssl curl ncurses quickfix uws json pvs clean cleandb list screen start stop restart startall stopall restartall gdax packages install docker travis reinstall clients www bundle diff latest changelog test test-cov send-cov png png-check release md5 asandwich

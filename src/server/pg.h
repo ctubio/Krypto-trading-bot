@@ -33,9 +33,7 @@ namespace K {
           if (k.find("pDiv") != k.end()) positionDivergence = k.value("pDiv", 0.0);
           sideAPR = k.value("sideAPR", "");
         }
-        stringstream ss;
-        ss << setprecision(8) << fixed << targetBasePosition;
-        ((SH*)screen)->log("DB", string("loaded TBP = ") + ss.str() + " " + gw->base);
+        ((SH*)screen)->log("DB", string("loaded TBP = ") + FN::str8(targetBasePosition) + " " + gw->base);
       };
       void waitData() {
         gw->evDataWallet = [&](mWallets k) {                        _debugEvent_
@@ -93,11 +91,11 @@ namespace K {
         ((UI*)client)->send(mMatter::TargetBasePosition, k);
         ((DB*)memory)->insert(mMatter::TargetBasePosition, k);
         if (!((CF*)config)->argDebugWallet) return;
-        stringstream ss;
-        ss << (int)(targetBasePosition / baseValue * 1e+2) << "% = " << setprecision(8) << fixed << targetBasePosition;
-        stringstream ss_;
-        ss_ << (int)(positionDivergence  / baseValue * 1e+2) << "% = " << setprecision(8) << fixed << positionDivergence;
-        ((SH*)screen)->log("PG", string("TBP: ") + ss.str() + " " + gw->base + ", pDiv: " + ss_.str() + " " + gw->base);
+        ((SH*)screen)->log("PG", string("TBP: ")
+          + to_string((int)(targetBasePosition / baseValue * 1e+2)) + "% = " + FN::str8(targetBasePosition)
+          + " " + gw->base + ", pDiv: "
+          + to_string((int)(positionDivergence  / baseValue * 1e+2)) + "% = " + FN::str8(positionDivergence)
+          + " " + gw->base);
       };
     private:
       function<void(json*)> helloPosition = [&](json *welcome) {
@@ -125,7 +123,7 @@ namespace K {
         for (mTrade &it: ((OG*)broker)->tradesHistory) {
           (it.side == mSide::Bid ? tradesBuy : tradesSell)[it.price] = it;
           if (qp->safety == mQuotingSafety::PingPong)
-            (it.side == mSide::Bid ? buySize : sellSize) = it.quantity;
+            (it.side == mSide::Ask ? buySize : sellSize) = it.quantity;
         }
         mAmount totalBasePosition = position.baseAmount + position.baseHeldAmount;
         if (qp->aggressivePositionRebalancing != mAPR::Off) {
@@ -196,7 +194,7 @@ namespace K {
         ) {
           mAmount qty_ = qtyTrade;
           if (_near or _far)
-            mAmount qty_ = fmin(qtyMax - *qty, qty_);
+            qty_ = fmin(qtyMax - *qty, qty_);
           *ping += priceTrade * qty_;
           *qty += qty_;
         }
@@ -268,6 +266,7 @@ namespace K {
         position = pos;
         if (!eq) calcTargetBasePos();
         ((UI*)client)->send(mMatter::Position, pos);
+        ((SH*)screen)->log(pos);
       };
       void calcWalletAfterOrder(mOrder *k) {
         if (position.empty()) return;
@@ -276,8 +275,10 @@ namespace K {
           ? position.baseAmount + position.baseHeldAmount
           : position.quoteAmount + position.quoteHeldAmount;
         for (map<mRandId, mOrder>::value_type &it : ((OG*)broker)->orders)
-          if (it.second.side == k->side) {
-            mAmount held = it.second.quantity * (it.second.side == mSide::Bid ? it.second.price : 1);
+          if (it.second.side == k->side and it.second.orderStatus == mStatus::Working) {
+            mAmount held = it.second.quantity;
+            if (it.second.side == mSide::Bid)
+              held *= it.second.price;
             if (amount >= held) {
               amount -= held;
               heldAmount += held;

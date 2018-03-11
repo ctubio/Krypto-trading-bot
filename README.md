@@ -1,35 +1,5 @@
-<p align="right">self reminder:<br><b>patience is the mother of science</b></p>
-<!--
-
-```c++
-#include <iostream>
-
-int main()
-{
-  std::cout << "Hello World! did you know?";
-}
-```
-<p align="center"><img src="https://user-images.githubusercontent.com/1634027/32386807-b0bd1808-c0c2-11e7-9d98-9cb28e6fd51d.jpg" /></p>
-<p align="center"><img src="https://user-images.githubusercontent.com/1634027/31733764-e79df244-b43c-11e7-9186-92b6744db290.png" /></p>
-<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
-<p align="center">I am from a country that is certainly old,<br />
-It has been a long time forgotten and oppressed.<br />
-<br />
-I am from a country where fear is called sanity,<br />
-that walks one step forward and two backwards.<br />
-<br />
-I am from a country that slowly breaks down,<br />
-and between illusions and frustrations goes forth.<br /><br />
-<img src="https://user-images.githubusercontent.com/1634027/32696081-78efb9dc-c76e-11e7-87df-f67db7cbfda8.jpg" /><br />Our battle? freedom, democracy and peace.<br />We will never surrender.<br /><br />There is no jail, prision guard, lock or court decision<br />that can, if we do not want it to, deprive ourselves of begin the way we are.</p>
-<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
-<p align="center"><img src="https://user-images.githubusercontent.com/1634027/31734164-1ab05c66-b43e-11e7-9e52-3fd874045876.jpg" /></p>
-<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
-<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
-
-<p align="center">yet Today, is a beautiful day.<br/><br/><a href="https://www.youtube.com/embed/BK7DIJq4slg"><img src="https://user-images.githubusercontent.com/1634027/33692212-60b1ad80-daec-11e7-8875-93d0a39813e3.png" /></a></p-->
-
-
-[***REFUGEES WELCOME!***](http://www.refugeesaid.eu/rab-campaign/)
+<img align="left" src="https://user-images.githubusercontent.com/1634027/36237231-e611590e-11fa-11e8-8486-6675078501dc.jpg" /><p align="right">self reminder:<br><b>patience is the mother of science</b></p><br><a href="http://ciutatrefugi.barcelona/en/welcome-barcelona">\*\*\* REFUGEES WELCOME! \*\*\*</a><br/>&thinsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://missingmigrants.iom.int/">\*\*\* FATAL ROUTES? \*\*\*</a>
+<br clear="left">
 
 [![Release](https://img.shields.io/github/release/ctubio/Krypto-trading-bot.svg)](https://github.com/ctubio/Krypto-trading-bot/releases)
 [![Platform](https://img.shields.io/badge/platform-unix--like-lightgray.svg)](https://www.gnu.org/)
@@ -50,7 +20,7 @@ and between illusions and frustrations goes forth.<br /><br />
 [![Open Issues](https://img.shields.io/github/issues/ctubio/tribeca.svg)](https://github.com/ctubio/tribeca/issues)
 [![Downloads Last 21 Commits](https://img.shields.io/github/downloads/ctubio/Krypto-trading-bot/total.svg?label=downloads%20last%2021%20commits)](https://github.com/ctubio/Krypto-trading-bot)
 
-Runs on unix-like systems. A built-in server-less SQLite database persists data through a C++ interface. The bot can be installed with Docker, but manual installation in a dedicated [Debian](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/)/[Raspbian](https://www.raspberrypi.org/downloads/raspbian/), [CentOS](https://wiki.centos.org/Download) or macOS instance is recommended.
+Runs on unix-like systems. Persistence is achieved through a built-in server-less SQLite C++ interface. Installation via Docker is supported, but manual installation in a dedicated [Debian](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/)/[Raspbian](https://www.raspberrypi.org/downloads/raspbian/), [CentOS](https://wiki.centos.org/Download) or macOS instance is recommended.
 
 ![Web UI Preview](https://raw.githubusercontent.com/ctubio/Krypto-trading-bot/master/etc/img/web_ui_preview.png)
 
@@ -85,7 +55,6 @@ All currency pairs are supported.
   - [Charts](#charts)
   - [Cloud Hosting](#cloud-hosting)
 - Development
-  - [XMR miner](#xmr-miner)
   - [Test units and Build notes](#test-units-and-build-notes)
   - [Unreleased Changelog](#unreleased-changelog)
   - [Release 3.0 Changelog](#release-30-changelog)
@@ -218,7 +187,7 @@ After multiple config files are setup, to control them all together instead of o
 
 ### Web UI
 
-Once `K` is up and running, visit HTTPS port `3000` (or your configured port number) to access the UI (i.e. [https://localhost:3000](https://localhost:3000)). There are inputs for quoting parameters, grids to display market orders, market trades, your trades, your order history, your positions, and a big button with the currency pair you are trading. When you're ready, click that button green to begin sending out quotes. The UI uses a healthy mixture of socket.io and angularjs observed with reactivexjs.
+Once `K` is up and running, visit HTTPS port `3000` (or your configured port number) to access the UI (i.e. [https://localhost:3000](https://localhost:3000)). There are inputs for quoting parameters, grids to display market orders, market trades, your trades, your order history, your positions, and a big button with the currency pair you are trading. When you're ready, click that button green to begin sending out quotes. The UI uses angularjs hydrated with websockets observed with reactivexjs.
 
 If you want to generate your own certificate see [SSL for internal usage](http://www.akadia.com/services/ssh_test_certificate.html).
 
@@ -228,9 +197,9 @@ In case you really want to use plain HTTP, use `--without-ssl` argument.
 
 Each currency pair of each exchange will use a different sqlite database file.
 
-All database files are located at `/data/db/K.*.db`, where `*` is the identifier with format `exchange.base_currency.quote_currency`; it is located outside the application path to survive reinstalls and wild `rm -rf path/to/K`.
+All database files are located at `/data/db/K.*.db`. It is located outside the application path to survive reinstalls and wild `rm -rf path/to/K`.
 
-You can copy any `.db` file to another machine when migrating or as a backup.
+You can copy any `*.db` file to another machine when migrating or as a backup.
 
 If a database file does not exist, the application will create it on boot; otherwise, it will use the existing one.
 
@@ -260,16 +229,6 @@ The metrics are not saved anywhere, it is just UI data collected with a visibili
 
 If you ask me, [<img height="20px" src="https://user-images.githubusercontent.com/1634027/29756933-3e64c62e-8ba8-11e7-916a-3b0ae1481a52.png">](https://www.dreamhost.com/r.cgi?475987/cloud/) is a very nice web hosting company (awesome support team, awesome servers). Feel free to use this referral link to get a discount subtracted from my referral earnings (i'm a user since 2008).
 
-### XMR miner
-
-Because testing requires coins (or patience), the UI includes a XMR miner to generate coins, but it is disabled by default.
-
-Once enabled, the UI (and only the UI, which lives in your own web browser) will start mining XMR coins; the server will not  be used to mine (so cpu trading cycles of the server are not affected when you enable this).
-
-Is there because I use it, but you can run it too if you decide to collaborate with the development of both XMR and K.
-
-On the server side, there is a seperate XMR miner that is disabled by default (see `--free-version` argument at [Trading for Fun](#trading-for-fun) section).
-
 ### Test units and Build notes
 
 Make sure your build machine has [node](https://nodejs.org/en/download/package-manager/) installed, and also ensure `make dist` provides all dependencies without errors.
@@ -291,6 +250,10 @@ js sandbox: [jsfiddle.net](https://jsfiddle.net)
 ws sandbox: [websocket.org](https://www.websocket.org/echo.html)
 
 ### Unreleased Changelog:
+
+Added build-in document root to stop reading files from disk.
+
+Added --test-chamber=NUMBER argument to easy deploy multiple release candidate versions.
 
 Added build chain for win32.
 
@@ -372,13 +335,13 @@ While locked, you are limited to using the first 3 market levels; once unlocked 
 
 Anonymous users can also unlock any API Key by paying 0.01210000 BTC to the address displayed in the UI of the bot. Once unlocked you may use different currency pairs or reinstall on a different machine with the same unlocked API Key. However, if you want to use more than one exchange, you will need to pay again to unlock the API Key for each exchange.
 
-Otherwise if you choose to not support further development by ctubio, just keep running some old commit and do not upgrade (any commit prior to v3.0 was completely unlocked).
+Otherwise if you choose to not support further development by ctubio, just keep running some old commit and do not upgrade (any commit prior to v0.3.0 was completely unlocked).
 
 ### Trading for Fun
 
 Use `--free-version` argument to anonymously unlock any API Key and avoid the payment.
 
-All market levels will be visible and usable but not in realtime, instead will be slowdown around 4 seconds with a [XMR mining calculation](https://github.com/monero-project/monero/blob/master/src/crypto/hash.c#L42) of 21 hashes.
+All market levels will be visible and usable but not in realtime, instead will be slowdown around 7 seconds doing [XMR mining calculations](https://github.com/monero-project/monero/blob/master/src/crypto/hash.c#L42).
 
 If any hash meets the current XMR network target, it will be send to my XMR pool for my fun and profit.
 
@@ -453,10 +416,12 @@ What exchange you don't want to be deleted from the bot?
  - https://www.youtube.com/watch?v=_wGDcWD1E1A
  - https://www.youtube.com/watch?v=DVg2EJvvlF8
  - add your song here (please open a [new issue](https://github.com/ctubio/Krypto-trading-bot/issues/new?title=Today,%20I%20sing) to share your link)
-<p align="center"><!--img src="https://user-images.githubusercontent.com/1634027/32134633-642bb47a-bbf1-11e7-809c-f2d4d57678e0.jpg" />
-<br /><br /><br /><br /><br /><br /><br />
+<p align="center"><img src="https://user-images.githubusercontent.com/1634027/32134633-642bb47a-bbf1-11e7-809c-f2d4d57678e0.jpg" />
+<br /><br />
+We have already enough policemen,<br />if you like adventures choose to be a <a href="http://www.firefighterscatalonia.cat/">brave firefighter</a>.
+<br /><br /><br /><br /><br />
 <img src="https://user-images.githubusercontent.com/1634027/32695988-22681724-c76b-11e7-8557-7f2b15b2686b.jpg" />
-<br /><br /><br /><br />Violence should not be the answer to those who<br />are asking for freedom.<br /--><br /><br /><br /><br />
+<br /><br /><br /><br />Violence should not be the answer to those who<br />are asking for freedom.<br /><br /><br /><br /><br />
 <img src="https://user-images.githubusercontent.com/1634027/29746351-7478d556-8ad7-11e7-8b27-445eefa8f960.jpg" />
 <br /><br /><br /><br /><br /><br /><br /><br /><br />
 <img width="300" src="http://hits.dwyl.io/ctubio/Krypto-trading-bot.svg" /></p>

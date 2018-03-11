@@ -279,8 +279,8 @@ namespace K {
       amount(a), held(h), currency(c)
     {};
     void reset(mAmount a, mAmount h) {
-      if (currency.empty()) return;
-      amount =  a;
+      if (empty()) return;
+      amount = a;
       held = h;
     };
     bool empty() {
@@ -381,7 +381,14 @@ namespace K {
     {};
     mPosition(mAmount bA, mAmount qA, mAmount qAV, mAmount bH, mAmount qH, mAmount bT, mAmount qT, mAmount bV, mAmount qV, mAmount bP, mAmount qP, mPair p):
       baseAmount(bA), quoteAmount(qA), _quoteAmountValue(qAV), baseHeldAmount(bH), quoteHeldAmount(qH), _baseTotal(bT), _quoteTotal(qT), baseValue(bV), quoteValue(qV), profitBase(bP), profitQuote(qP), pair(p)
-    {};
+    {
+      _trunc8_(baseAmount)
+      _trunc8_(quoteAmount)
+      _trunc8_(baseHeldAmount)
+      _trunc8_(quoteHeldAmount)
+      _trunc8_(baseValue)
+      _trunc8_(quoteValue)
+    };
     bool empty() {
       return !baseValue;
     };
@@ -496,21 +503,6 @@ namespace K {
     mOrder(mRandId o, mPair P, mSide S, mAmount q, mOrderType t, bool i, mPrice p, mTimeInForce F, mStatus s, bool O):
       orderId(o), exchangeId(""), pair(P), side(S), quantity(q), type(t), isPong(i), price(p), timeInForce(F), orderStatus(s), preferPostOnly(O), tradeQuantity(0), time(0), _waitingCancel(0), latency(0)
     {};
-    string quantity2str() {
-      stringstream ss;
-      ss << setprecision(8) << fixed << quantity;
-      return ss.str();
-    };
-    string tradeQuantity2str() {
-      stringstream ss;
-      ss << setprecision(8) << fixed << tradeQuantity;
-      return ss.str();
-    };
-    string price2str() {
-      stringstream ss;
-      ss << setprecision(8) << fixed << price;
-      return ss.str();
-    };
   };
   static void to_json(json& j, const mOrder& k) {
     j = {
@@ -623,20 +615,12 @@ namespace K {
       {   "quotesInMemoryDone", k.quotesInMemoryDone   }
     };
   };
-  static char RBLACK[] = "\033[0;30m", RRED[]    = "\033[0;31m", RGREEN[] = "\033[0;32m", RYELLOW[] = "\033[0;33m",
-              RBLUE[]  = "\033[0;34m", RPURPLE[] = "\033[0;35m", RCYAN[]  = "\033[0;36m", RWHITE[]  = "\033[0;37m",
-              BBLACK[] = "\033[1;30m", BRED[]    = "\033[1;31m", BGREEN[] = "\033[1;32m", BYELLOW[] = "\033[1;33m",
-              BBLUE[]  = "\033[1;34m", BPURPLE[] = "\033[1;35m", BCYAN[]  = "\033[1;36m", BWHITE[]  = "\033[1;37m";
-  static ostringstream             THIS_WAS_A_TRIUMPH;
-  static vector<function<void()>*> gwEndings;
-  static function<void()>* shResize;
-  static void *screen = nullptr;
   class Gw {
     public:
       virtual string A() = 0;
       uWS::Hub                *hub     = nullptr;
       uWS::Group<uWS::CLIENT> *gwGroup = nullptr;
-      static Gw *config(mCoinId, mCoinId, string, int, string, string, string, string, string, string, int, int);
+      static Gw *config(mCoinId, mCoinId, string, int, string, string, string, string, string, string, int, int, int);
       function<void(string)>        log,
                                     reconnect;
       function<void(mOrder)>        evDataOrder;
@@ -647,7 +631,7 @@ namespace K {
                                     evConnectMarket;
       mExchange exchange = (mExchange)0;
             int version  = 0, maxLevel = 0,
-                debug    = 0;
+                debug    = 0, chamber  = 0;
          mPrice minTick  = 0;
         mAmount makeFee  = 0, takeFee  = 0,
                 minSize  = 0;
@@ -708,6 +692,7 @@ namespace K {
     protected:
       Gw             *gw = nullptr;
       mQuotingParams *qp = nullptr;
+      void           *screen = nullptr;
       Klass          *config = nullptr,
                      *events = nullptr,
                      *memory = nullptr,
@@ -723,35 +708,38 @@ namespace K {
       virtual void waitUser() {};
       virtual void run() {};
     public:
-      void main(int argc, char** argv) {
+      inline void main(int argc, char** argv) {
         load(argc, argv);
         run();
       };
-      void wait() {
+      inline void wait() {
         load();
         waitData();
         waitTime();
         waitUser();
         run();
       };
-      void gwLink(Gw *k) { gw = k; };
-      void qpLink(mQuotingParams *k) { qp = k; };
-      void cfLink(Klass &k) { config = &k; };
-      void evLink(Klass &k) { events = &k; };
-      void dbLink(Klass &k) { memory = &k; };
-      void uiLink(Klass &k) { client = &k; };
-      void ogLink(Klass &k) { broker = &k; };
-      void mgLink(Klass &k) { market = &k; };
-      void pgLink(Klass &k) { wallet = &k; };
-      void qeLink(Klass &k) { engine = &k; };
+      inline void gwLink(Gw *k) { gw = k; };
+      inline void qpLink(mQuotingParams *k) { qp = k; };
+      inline void shLink( void *k) { screen = k; };
+      inline void cfLink(Klass &k) { config = &k; };
+      inline void evLink(Klass &k) { events = &k; };
+      inline void dbLink(Klass &k) { memory = &k; };
+      inline void uiLink(Klass &k) { client = &k; };
+      inline void ogLink(Klass &k) { broker = &k; };
+      inline void mgLink(Klass &k) { market = &k; };
+      inline void pgLink(Klass &k) { wallet = &k; };
+      inline void qeLink(Klass &k) { engine = &k; };
   };
   class kLass: public Klass {
     private:
       mQuotingParams p;
     public:
-      void link(Klass &EV, Klass &DB, Klass &UI, Klass &QP, Klass &OG, Klass &MG, Klass &PG, Klass &QE, Klass &GW) {
+      inline void link(Klass &EV, Klass &DB, Klass &UI, Klass &QP, Klass &OG, Klass &MG, Klass &PG, Klass &QE, Klass &GW) {
         Klass &CF = *this;
+        void *SH = screen;
         EV.gwLink(gw);                UI.gwLink(gw);                OG.gwLink(gw); MG.gwLink(gw); PG.gwLink(gw); QE.gwLink(gw); GW.gwLink(gw);
+        EV.shLink(SH); DB.shLink(SH); UI.shLink(SH); QP.shLink(SH); OG.shLink(SH); MG.shLink(SH); PG.shLink(SH); QE.shLink(SH); GW.shLink(SH);
         EV.cfLink(CF); DB.cfLink(CF); UI.cfLink(CF);                OG.cfLink(CF); MG.cfLink(CF); PG.cfLink(CF); QE.cfLink(CF); GW.cfLink(CF);
                        DB.evLink(EV); UI.evLink(EV); QP.evLink(EV); OG.evLink(EV); MG.evLink(EV); PG.evLink(EV); QE.evLink(EV); GW.evLink(EV);
                                       UI.dbLink(DB); QP.dbLink(DB); OG.dbLink(DB); MG.dbLink(DB); PG.dbLink(DB);

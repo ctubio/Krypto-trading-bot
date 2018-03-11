@@ -1,42 +1,59 @@
 #ifndef K_SH_H_
 #define K_SH_H_
 
-#ifndef K_BUILD
-#define K_BUILD "0"
-#endif
-
-#ifndef K_STAMP
-#define K_STAMP "0"
-#endif
+#define _redAlert_ ((SH*)screen)->error
 
 namespace K {
+  vector<function<void()>*> endingFn;
+  char RBLACK[] = "\033[0;30m", RRED[]    = "\033[0;31m", RGREEN[] = "\033[0;32m", RYELLOW[] = "\033[0;33m",
+       RBLUE[]  = "\033[0;34m", RPURPLE[] = "\033[0;35m", RCYAN[]  = "\033[0;36m", RWHITE[]  = "\033[0;37m",
+       BBLACK[] = "\033[1;30m", BRED[]    = "\033[1;31m", BGREEN[] = "\033[1;32m", BYELLOW[] = "\033[1;33m",
+       BBLUE[]  = "\033[1;34m", BPURPLE[] = "\033[1;35m", BCYAN[]  = "\033[1;36m", BWHITE[]  = "\033[1;37m",
+       RRESET[] = "\033[0m";
   class SH {
     private:
       future<mHotkey> hotkey;
       map<mHotkey, function<void()>*> hotFn;
       WINDOW *wBorder = nullptr,
              *wLog    = nullptr;
-      int p = 0,
-          spin = 0;
-      string title = "?";
+      int cursor = 0,
+          spin = 0,
+          port = 0,
+          baseAmount = 0,
+          baseHeld = 0,
+          quoteAmount = 0,
+          quoteHeld = 0;
+      string title = "?",
+             base = "?",
+             quote = "?",
+             baseValue = "?",
+             quoteValue = "?",
+             fairValue = "?";
       multimap<mPrice, mOrder, greater<mPrice>> openOrders;
     public:
-      int port = 0;
-      string protocol = "?";
+      string protocol = "HTTP";
       mConnectivity gwConnectButton   = mConnectivity::Disconnected,
                     gwConnectExchange = mConnectivity::Disconnected;
     public:
       SH() {
-        cout << BGREEN << "K" << RGREEN << " build " << K_BUILD << " " << K_STAMP << "." << BRED << '\n';
-        gwEndings.push_back(&happyEnding);
+        cout << BGREEN << "K" << RGREEN << " build " << K_BUILD << ' ' << K_STAMP << '.' << BRED << '\n';
+        endingFn.push_back(&happyEnding);
+        if (access(".git", F_OK) != -1) {
+          system("git fetch");
+          string k = changelog();
+          logVer(k, count(k.begin(), k.end(), '\n'));
+        } else logVer("", -1);
+        cout << RRESET;
       };
-      void* config(int argNaked, int argColors, string argExchange, string argCurrency) {
-        if (argNaked) return this;
+      void config(string base_, string quote_, string argExchange, int argColors, int argPort) {
         if (!(wBorder = initscr())) {
           cout << "NCURSES" << RRED << " Errrror:" << BRED << " Unable to initialize ncurses, try to run in your terminal \"export TERM=xterm\", or use --naked argument." << '\n';
           exit(EXIT_SUCCESS);
         }
-        title = string(argExchange) + " " + argCurrency;
+        base = base_;
+        quote = quote_;
+        title = argExchange;
+        port = argPort;
         if (argColors) start_color();
         use_default_colors();
         cbreak();
@@ -49,19 +66,17 @@ namespace K {
         init_pair(COLOR_BLUE, COLOR_BLUE, COLOR_BLACK);
         init_pair(COLOR_MAGENTA, COLOR_MAGENTA, COLOR_BLACK);
         init_pair(COLOR_CYAN, COLOR_CYAN, COLOR_BLACK);
-        wLog = subwin(wBorder, getmaxy(wBorder)-4, getmaxx(wBorder)-2, 3, 2);
+        wLog = subwin(wBorder, getmaxy(wBorder)-4, getmaxx(wBorder)-2-6, 3, 2);
         scrollok(wLog, true);
         idlok(wLog, true);
 #if CAN_RESIZE
-        shResize = &resize;
-        signal(SIGWINCH, sigResize);
+        signal(SIGWINCH, resize);
 #endif
         refresh();
         hotkeys();
-        return this;
       };
-      static void sigResize(int sig) {
-        (*shResize)();
+      static string changelog() {
+        return FN::output("test -d .git && git --no-pager log --graph --oneline @..@{u}");
       };
       void pressme(mHotkey ch, function<void()> *fn) {
         if (!wBorder) return;
@@ -72,6 +87,12 @@ namespace K {
         beep();
         endwin();
         wBorder = nullptr;
+      };
+      int error(string k, string s, bool reboot = false) {
+        quit();
+        logErr(k, s);
+        cout << RRESET;
+        return reboot ? EXIT_FAILURE : EXIT_SUCCESS;
       };
       void waitForUser() {
         if (!hotkey.valid() or hotkey.wait_for(chrono::nanoseconds(0)) != future_status::ready) return;
@@ -99,13 +120,13 @@ namespace K {
         auto microseconds = chrono::duration_cast<chrono::microseconds>(t);
         stringstream T, T_;
         T << setfill('0')
-          << setw(2) << hours.count() << ":"
-          << setw(2) << minutes.count() << ":"
+          << setw(2) << hours.count() << ':'
+          << setw(2) << minutes.count() << ':'
           << setw(2) << seconds.count();
-        T_ << setfill('0') << "."
+        T_ << setfill('0') << '.'
            << setw(3) << milliseconds.count()
            << setw(3) << microseconds.count();
-        if (!wBorder) return string(BGREEN) + T.str() + RGREEN + T_.str() + BWHITE + " ";
+        if (!wBorder) return string(BGREEN) + T.str() + RGREEN + T_.str() + BWHITE + ' ';
         wattron(wLog, COLOR_PAIR(COLOR_GREEN));
         wattron(wLog, A_BOLD);
         wprintw(wLog, T.str().data());
@@ -214,25 +235,11 @@ namespace K {
         wrefresh(wLog);
       };
       void logVer(string k, int c) {
-        if (!wBorder) {
-          cout << BGREEN << "K" << RGREEN << string(" version ").append(c == -1 ? "unknown (zip install).\n" : (!c ? "0day.\n" : string("-").append(to_string(c)).append("commit").append(c > 1?"s..\n":"..\n"))) << RYELLOW << (c ? k : "") << RWHITE;
-          return;
-        }
-        wmove(wLog, getmaxy(wLog)-1, 0);
-        wattron(wLog, COLOR_PAIR(COLOR_GREEN));
-        wattron(wLog, A_BOLD);
-        wprintw(wLog, "K");
-        wattroff(wLog, A_BOLD);
-        wprintw(wLog, string(" version ").append(c == -1 ? "unknown (zip install).\n" : (!c ? "0day.\n" : string("-").append(to_string(c)).append("commit").append(c > 1?"s..\n":"..\n"))).data());
-        wattroff(wLog, COLOR_PAIR(COLOR_GREEN));
-        wattron(wLog, COLOR_PAIR(COLOR_YELLOW));
-        if (c) wprintw(wLog, k.data());
-        wattroff(wLog, COLOR_PAIR(COLOR_YELLOW));
-        wrefresh(wLog);
+        cout << BGREEN << K_0_DAY << RGREEN << string(c == -1 ? " (zip install).\n" : (!c ? " (0day).\n" : string(" -").append(to_string(c)).append("commit").append(c > 1?"s..\n":"..\n"))) << RYELLOW << (c ? k : "") << RWHITE;
       };
       void log(mTrade k, string e) {
         if (!wBorder) {
-          cout << stamp() << "GW " << (k.side == mSide::Bid ? RCYAN : RPURPLE) << e << " TRADE " << (k.side == mSide::Bid ? BCYAN : BPURPLE) << (k.side == mSide::Bid ? "BUY  " : "SELL ") << k.quantity << " " << k.pair.base << " at price " << k.price << " " << k.pair.quote << " (value " << k.value << " " << k.pair.quote << ").\n";
+          cout << stamp() << "GW " << (k.side == mSide::Bid ? RCYAN : RPURPLE) << e << " TRADE " << (k.side == mSide::Bid ? BCYAN : BPURPLE) << (k.side == mSide::Bid ? "BUY  " : "SELL ") << k.quantity << ' ' << k.pair.base << " at price " << k.price << ' ' << k.pair.quote << " (value " << k.value << ' ' << k.pair.quote << ").\n";
           return;
         }
         wmove(wLog, getmaxy(wLog)-1, 0);
@@ -244,16 +251,18 @@ namespace K {
         wattron(wLog, COLOR_PAIR(k.side == mSide::Bid ? COLOR_CYAN : COLOR_MAGENTA));
         wprintw(wLog, string(e).append(" TRADE ").data());
         wattroff(wLog, A_BOLD);
-        stringstream ss;
-        ss << setprecision(8) << fixed << (k.side == mSide::Bid ? "BUY " : "SELL ") << k.quantity << " " << k.pair.base << " at price " << k.price << " " << k.pair.quote << " (value " << k.value << " " << k.pair.quote << ")";
-        wprintw(wLog, ss.str().data());
+        wprintw(wLog, (string(k.side == mSide::Bid ? "BUY  " : "SELL ")
+          + FN::str8(k.quantity) + ' ' + k.pair.base + " at price "
+          + FN::str8(k.price) + ' ' + k.pair.quote + " (value "
+          + FN::str8(k.value) + ' ' + k.pair.quote + ")"
+        ).data());
         wprintw(wLog, ".\n");
         wattroff(wLog, COLOR_PAIR(k.side == mSide::Bid ? COLOR_CYAN : COLOR_MAGENTA));
         wrefresh(wLog);
       };
       void log(string k, string s, string v) {
         if (!wBorder) {
-          cout << stamp() << k << RWHITE << " " << s << " " << RYELLOW << v << RWHITE << ".\n";
+          cout << stamp() << k << RWHITE << ' ' << s << ' ' << RYELLOW << v << RWHITE << ".\n";
           return;
         }
         wmove(wLog, getmaxy(wLog)-1, 0);
@@ -274,7 +283,7 @@ namespace K {
       };
       void log(string k, string s) {
         if (!wBorder) {
-          cout << stamp() << k << RWHITE << " " << s << ".\n";
+          cout << stamp() << k << RWHITE << ' ' << s << ".\n";
           return;
         }
         wmove(wLog, getmaxy(wLog)-1, 0);
@@ -308,41 +317,64 @@ namespace K {
             openOrders.insert(pair<mPrice, mOrder>(it.second.price, it.second));
         refresh();
       };
+      void log(mPosition &pos) {
+        if (!wBorder) return;
+        baseAmount = round(pos.baseAmount * 10 / pos.baseValue);
+        baseHeld = round(pos.baseHeldAmount * 10 / pos.baseValue);
+        quoteAmount = round(pos.quoteAmount * 10 / pos.quoteValue);
+        quoteHeld = round(pos.quoteHeldAmount * 10 / pos.quoteValue);
+        _fixed8_(pos.baseValue, baseValue)
+        _fixed8_(pos.quoteValue, quoteValue)
+        refresh();
+      };
+      void log(double fv) {
+        if (!wBorder) return;
+        _fixed8_(fv, fairValue)
+        refresh();
+      };
       void refresh() {
         if (!wBorder) return;
-        int l = p,
+        int lastcursor = cursor,
             y = getmaxy(wBorder),
             x = getmaxx(wBorder),
-            k = y - openOrders.size() - 1,
-            P = k;
-        while (l<y) mvwhline(wBorder, l++, 1, ' ', x-1);
-        if (k!=p) {
-          if (k<p) wscrl(wLog, p-k);
-          wresize(wLog, k-3, x-2);
-          if (k>p) wscrl(wLog, p-k);
+            yMaxLog = y - max((int)openOrders.size(), !gwConnectButton ? 0 : 2) - 1,
+            yOrders = yMaxLog;
+        while (lastcursor<y) mvwhline(wBorder, lastcursor++, 1, ' ', x-1);
+        if (yMaxLog!=cursor) {
+          if (yMaxLog<cursor) wscrl(wLog, cursor-yMaxLog);
+          wresize(wLog, yMaxLog-3, x-2-6);
+          if (yMaxLog>cursor) wscrl(wLog, cursor-yMaxLog);
           wrefresh(wLog);
-          p = k;
+          cursor = yMaxLog;
         }
         mvwvline(wBorder, 1, 1, ' ', y-1);
-        mvwvline(wBorder, k-1, 1, ' ', y-1);
+        mvwvline(wBorder, yMaxLog-1, 1, ' ', y-1);
         for (map<mPrice, mOrder, greater<mPrice>>::value_type &it : openOrders) {
           wattron(wBorder, COLOR_PAIR(it.second.side == mSide::Bid ? COLOR_CYAN : COLOR_MAGENTA));
-          stringstream ss;
-          ss << setprecision(8) << fixed << (it.second.side == mSide::Bid ? "BID" : "ASK") << " > " << it.second.exchangeId << ": " << it.second.quantity << " " << it.second.pair.base << " at price " << it.second.price << " " << it.second.pair.quote;
-          mvwaddstr(wBorder, ++P, 1, ss.str().data());
+          mvwaddstr(wBorder, ++yOrders, 1, (string(it.second.side == mSide::Bid ? "BID" : "ASK") + " > "
+            + FN::str8(it.second.quantity) + ' ' + it.second.pair.base + " at price "
+            + FN::str8(it.second.price) + ' ' + it.second.pair.quote + " (value "
+            + FN::str8(abs(it.second.price * it.second.quantity)) + ' ' + it.second.pair.quote + ")"
+          ).data());
           wattroff(wBorder, COLOR_PAIR(it.second.side == mSide::Bid ? COLOR_CYAN : COLOR_MAGENTA));
         }
         mvwaddch(wBorder, 0, 0, ACS_ULCORNER);
         mvwhline(wBorder, 0, 1, ACS_HLINE, max(80, x));
-        mvwvline(wBorder, 1, 0, ACS_VLINE, k);
-        mvwvline(wBorder, k, 0, ACS_LTEE, y);
+        mvwhline(wBorder, 1, 14, ' ', max(80, x)-14);
+        mvwvline(wBorder, 1, 0, ACS_VLINE, yMaxLog);
+        mvwvline(wBorder, yMaxLog, 0, ACS_LTEE, y);
         mvwaddch(wBorder, y, 0, ACS_BTEE);
         mvwaddch(wBorder, 0, 12, ACS_RTEE);
         wattron(wBorder, COLOR_PAIR(COLOR_GREEN));
-        mvwaddstr(wBorder, 0, 13, (string("   ") + K_BUILD + " " + K_STAMP + " ").data());
+        string title1 = string("   ") + title;
+        string title2 = string(" ") + (port ? "UI on " + protocol + " port " + to_string(port) : "headless")  + ' ';
+        wattron(wBorder, A_BOLD);
+        mvwaddstr(wBorder, 0, 13, title1.data());
+        wattroff(wBorder, A_BOLD);
+        mvwaddstr(wBorder, 0, 13+title1.length(), title2.data());
         mvwaddch(wBorder, 0, 14, 'K' | A_BOLD);
         wattroff(wBorder, COLOR_PAIR(COLOR_GREEN));
-        mvwaddch(wBorder, 0, 18+string(K_BUILD).length()+string(K_STAMP).length(), ACS_LTEE);
+        mvwaddch(wBorder, 0, 13+title1.length()+title2.length(), ACS_LTEE);
         mvwaddch(wBorder, 0, x-26, ACS_RTEE);
         mvwaddstr(wBorder, 0, x-25, (string(" [   ]: ") + (!gwConnectButton ? "Start" : "Stop?") + ", [ ]: Quit!").data());
         mvwaddch(wBorder, 0, x-9, 'q' | A_BOLD);
@@ -353,70 +385,114 @@ namespace K {
         mvwaddch(wBorder, 1, 7, ACS_LLCORNER);
         mvwhline(wBorder, 1, 8, ACS_HLINE, 4);
         mvwaddch(wBorder, 1, 12, ACS_RTEE);
-        wattron(wBorder, COLOR_PAIR(COLOR_GREEN));
+        wattron(wBorder, COLOR_PAIR(COLOR_MAGENTA));
         wattron(wBorder, A_BOLD);
-        mvwaddstr(wBorder, 1, 14, title.data());
+        waddstr(wBorder, (string(" ") + baseValue + ' ').data());
         wattroff(wBorder, A_BOLD);
-        waddstr(wBorder, (port ? " UI on " + protocol + " port " + to_string(port) : " headless").data());
+        waddstr(wBorder, base.data());
+        wattroff(wBorder, COLOR_PAIR(COLOR_MAGENTA));
+        wattron(wBorder, COLOR_PAIR(COLOR_GREEN));
+        waddstr(wBorder, " or ");
         wattroff(wBorder, COLOR_PAIR(COLOR_GREEN));
-        mvwaddch(wBorder, k, 0, ACS_LTEE);
-        mvwhline(wBorder, k, 1, ACS_HLINE, 3);
-        mvwaddch(wBorder, k, 4, ACS_RTEE);
-        mvwaddstr(wBorder, k, 5, "< (");
+        wattron(wBorder, COLOR_PAIR(COLOR_CYAN));
+        wattron(wBorder, A_BOLD);
+        waddstr(wBorder, quoteValue.data());
+        wattroff(wBorder, A_BOLD);
+        waddstr(wBorder, (string(" ") + quote + ' ').data());
+        wattroff(wBorder, COLOR_PAIR(COLOR_CYAN));
+        size_t xLenValue = 14+baseValue.length()+quoteValue.length()+base.length()+quote.length()+7,
+               xMaxValue = max(xLenValue+1, 18+title1.length()+title2.length());
+        mvwaddch(wBorder, 0, xMaxValue, ACS_TTEE);
+        mvwaddch(wBorder, 1, xMaxValue, ACS_LRCORNER);
+        mvwhline(wBorder, 1, xLenValue, ACS_HLINE, xMaxValue - xLenValue);
+        mvwaddch(wBorder, 1, xLenValue, ACS_LTEE);
+        int yPos = max(1, (y / 2) - 6);
+        mvwvline(wBorder, yPos+1, x-3, ' ', 10);
+        mvwvline(wBorder, yPos+1, x-4, ' ', 10);
+        wattron(wBorder, COLOR_PAIR(COLOR_CYAN));
+        mvwvline(wBorder, yPos+11-quoteAmount-quoteHeld, x-4, ACS_CKBOARD, quoteHeld);
+        wattron(wBorder, A_BOLD);
+        mvwvline(wBorder, yPos+11-quoteAmount, x-4, ' ' | A_REVERSE, quoteAmount);
+        wattroff(wBorder, A_BOLD);
+        wattroff(wBorder, COLOR_PAIR(COLOR_CYAN));
+        wattron(wBorder, COLOR_PAIR(COLOR_MAGENTA));
+        mvwvline(wBorder, yPos+11-baseAmount-baseHeld, x-3, ACS_CKBOARD, baseHeld);
+        wattron(wBorder, A_BOLD);
+        mvwvline(wBorder, yPos+11-baseAmount, x-3, ' ' | A_REVERSE, baseAmount);
+        wattroff(wBorder, A_BOLD);
+        wattroff(wBorder, COLOR_PAIR(COLOR_MAGENTA));
+        mvwaddch(wBorder, yPos, x-2, ACS_URCORNER);
+        mvwaddch(wBorder, yPos+11, x-2, ACS_LRCORNER);
+        mvwaddch(wBorder, yPos, x-5, ACS_ULCORNER);
+        mvwaddch(wBorder, yPos+11, x-5, ACS_LLCORNER);
+        mvwhline(wBorder, yPos, x-4, ACS_HLINE, 2);
+        mvwhline(wBorder, yPos+11, x-4, ACS_HLINE, 2);
+        mvwaddch(wBorder, yMaxLog, 0, ACS_LTEE);
+        mvwhline(wBorder, yMaxLog, 1, ACS_HLINE, 3);
+        mvwaddch(wBorder, yMaxLog, 4, ACS_RTEE);
+        mvwaddstr(wBorder, yMaxLog, 5, "< (");
         if (!gwConnectExchange) {
           wattron(wBorder, COLOR_PAIR(COLOR_RED));
           wattron(wBorder, A_BOLD);
           waddstr(wBorder, "DISCONNECTED");
           wattroff(wBorder, A_BOLD);
           wattroff(wBorder, COLOR_PAIR(COLOR_RED));
-        } else if (!gwConnectButton) {
-          wattron(wBorder, COLOR_PAIR(COLOR_YELLOW));
-          wattron(wBorder, A_BLINK);
-          waddstr(wBorder, "press START to trade");
-          wattroff(wBorder, A_BLINK);
-          wattroff(wBorder, COLOR_PAIR(COLOR_YELLOW));
+          waddch(wBorder, ')');
         } else {
-          wattron(wBorder, COLOR_PAIR(COLOR_YELLOW));
-          waddstr(wBorder, to_string(openOrders.size()).data());
-          wattroff(wBorder, COLOR_PAIR(COLOR_YELLOW));
+          if (!gwConnectButton) {
+            wattron(wBorder, COLOR_PAIR(COLOR_YELLOW));
+            wattron(wBorder, A_BLINK);
+            waddstr(wBorder, "press START to trade");
+            wattroff(wBorder, A_BLINK);
+            wattroff(wBorder, COLOR_PAIR(COLOR_YELLOW));
+            waddch(wBorder, ')');
+          } else {
+            wattron(wBorder, COLOR_PAIR(COLOR_YELLOW));
+            waddstr(wBorder, to_string(openOrders.size()).data());
+            wattroff(wBorder, COLOR_PAIR(COLOR_YELLOW));
+            waddstr(wBorder, ") Open Orders");
+          }
+          waddstr(wBorder, " while");
+          wattron(wBorder, COLOR_PAIR(COLOR_GREEN));
+          waddstr(wBorder, (string(" 1 ") + base + " = ").data());
+          wattron(wBorder, A_BOLD);
+          waddstr(wBorder, fairValue.data());
+          wattroff(wBorder, A_BOLD);
+          waddstr(wBorder, (string(" ") + quote).data());
+          wattroff(wBorder, COLOR_PAIR(COLOR_GREEN));
+          waddch(wBorder, !gwConnectButton ? ' ' : ':');
         }
-        waddstr(wBorder, ") Open Orders..");
         mvwaddch(wBorder, y-1, 0, ACS_LLCORNER);
         mvwaddstr(wBorder, 1, 2, string("|/-\\").substr(++spin, 1).data());
         if (spin==3) spin = -1;
-        move(k-1, 2);
+        move(yMaxLog-1, 2);
         wrefresh(wBorder);
         wrefresh(wLog);
       };
     private:
       function<void()> happyEnding = [&]() {
         quit();
-        cout << '\n' << stamp() << THIS_WAS_A_TRIUMPH.str();
+        cout << '\n' << stamp();
       };
       void hotkeys() {
         hotkey = ::async(launch::async, [&] { return (mHotkey)wgetch(wBorder); });
       };
-      function<void()> resize = [&]() {
 #if CAN_RESIZE
+      function<void()> resize = [&]() {
         struct winsize ws;
-        if (
-#ifdef _WIN32
-        ioctlsocket(0, TIOCGWINSZ, &( ( unsigned long& )ws)) < 0
-#else
-        ioctl(0, TIOCGWINSZ, &ws) < 0
-#endif
-        or (ws.ws_row == getmaxy(wBorder) and ws.ws_col == getmaxx(wBorder))) return;
-#endif
+        if (ioctl(0, TIOCGWINSZ, &ws) < 0
+          or (ws.ws_row == getmaxy(wBorder)
+          and ws.ws_col == getmaxx(wBorder))
+        ) return;
         werase(wBorder);
         werase(wLog);
-#if CAN_RESIZE
         if (ws.ws_row < 10) ws.ws_row = 10;
         if (ws.ws_col < 30) ws.ws_col = 30;
         wresize(wBorder, ws.ws_row, ws.ws_col);
         resizeterm(ws.ws_row, ws.ws_col);
-#endif
         refresh();
       };
+#endif
   };
 }
 
