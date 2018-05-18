@@ -62,6 +62,7 @@ All currency pairs are supported.
   - [Trading for Fun](#trading-for-fun)
   - [Donations](#donations)
   - [Very Special Thanks](#very-special-thanks-to)
+  - [General Discussion](#general-discussion)
   - [Help](#help)
   - [Issues](#issues)
   - [Votes](#votes)
@@ -244,7 +245,7 @@ js sandbox: [jsfiddle.net](https://jsfiddle.net)
 
 ws sandbox: [websocket.org](https://www.websocket.org/echo.html)
 
-### Unreleased Changelog:
+### Unreleased v0.4.x Changelog:
 
 Added Ethfinex API.
 
@@ -258,7 +259,7 @@ Updated OKEx websocket to binary data.
 
 Added build chain for OSX v10.13.
 
-### Release 4.0 Changelog:
+### Release v0.4.0 Changelog:
 
 Updated HitBTC API v2.
 
@@ -282,7 +283,7 @@ Added built-in SQLite C++ interface to replace external mongodb server.
 
 Added Poloniex API.
 
-### Release 3.0 Changelog:
+### Release v0.3.0 Changelog:
 
 Updated application name to K because of Kira.
 
@@ -308,7 +309,7 @@ Added GDAX FIX API with stunnel.
 
 Added Korbit API.
 
-### Release 2.0 Changelog:
+### Release v0.2.0 Changelog:
 
 Added new quoting styles PingPong, Boomerang, AK-47.
 
@@ -320,7 +321,7 @@ Added https, dark theme and new UI elements.
 
 Added a bit of love to Kira.
 
-### Release 1.0 Changelog:
+### Release v0.1.0 Changelog:
 
 see the upstream project [michaelgrosner/tribeca](https://github.com/michaelgrosner/tribeca).
 
@@ -366,6 +367,10 @@ or donate your time with programming or financial suggestions in the IRC channel
 - https://www.sqlite.org
 - https://github.com/michaelgrosner/tribeca (https://github.com/michaelgrosner)
 - but Most Special Thanks goes to [your mother](https://youtu.be/YDafHsyyTNk).
+
+### General Discussion
+
+[IRC](https://kiwiirc.com/client/irc.freenode.net:6697/?theme=cli#tradingBot) is awesome!<br/>but if you dislike it, there is an unofficial Discord channel at https://discord.gg/QK7WsH (with nice users but without me).
 
 ### Help
 
@@ -422,7 +427,3 @@ We have already enough policemen,<br />if you like adventures choose to be a <a 
 <img src="https://user-images.githubusercontent.com/1634027/29746351-7478d556-8ad7-11e7-8b27-445eefa8f960.jpg" />
 <br /><br /><br /><br /><br /><br /><br /><br /><br />
 <img width="300" src="http://hits.dwyl.io/ctubio/Krypto-trading-bot.svg" /></p>
-
-### discord for general discussion, issues and enhancements
-
-https://discord.gg/QK7WsH
