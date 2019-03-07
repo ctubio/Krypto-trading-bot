@@ -10,7 +10,9 @@ CARCH    = x86_64-linux-gnu      \
            x86_64-apple-darwin17 \
            x86_64-w64-mingw32
 
-CHOST   ?= $(shell test -n "`command -v g++`" && g++ -dumpmachine \
+LHOST   := $(shell test -n "`command -v g++`" && g++ -dumpmachine)
+
+CHOST   ?= $(shell test -n "$(LHOST)" && echo "$(LHOST)" \
              || echo $(subst build-,,$(firstword $(wildcard build-*))))
 
 KHOST   := $(shell echo $(CHOST) | sed 's/\([a-z_0-9]*\)-\([a-z_0-9]*\)-.*/\2-\1/' | sed 's/^w64/win64/')
@@ -85,7 +87,7 @@ ifdef KALL
 	unset KALL $(foreach chost,$(CARCH),&& $(MAKE) $@ CHOST=$(chost))
 else
 	$(if $(subst 8,,$(subst 7,,$(shell $(CHOST)-g++ -dumpversion | cut -d. -f1))),$(warning $(ERR));$(error $(HINT)))
-	@$(MAKE) -C src/lib $@ CHOST=$(CHOST) KHOST=$(KHOST)
+	@$(MAKE) -C src/lib $@ CHOST=$(CHOST) KHOST=$(KHOST) LHOST=$(LHOST)
 endif
 
 $(SOURCE):

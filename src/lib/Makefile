@@ -39,7 +39,8 @@ openssl:
 	curl -L https://www.openssl.org/source/openssl-$(V_SSL).tar.gz | tar xz -C $(KBUILD)       \
 	&& cd $(KBUILD)/openssl-$(V_SSL) && CC=gcc                                                 \
 	./Configure $(shell test -n "`echo $(CHOST) | grep mingw32`" && echo mingw64 || echo dist) \
-	--cross-compile-prefix=$(CHOST)- --prefix=$(KBUILD)/local --openssldir=$(KBUILD)/local     \
+	--cross-compile-prefix=`test $(LHOST) != $(CHOST) && echo $(CHOST)-`                       \
+	--prefix=$(KBUILD)/local --openssldir=$(KBUILD)/local                                      \
 	&& make all install_sw install_ssldirs                                                     )
 
 ares:
