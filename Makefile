@@ -15,7 +15,7 @@ LHOST   := $(shell test -n "`command -v g++`" && g++ -dumpmachine)
 CHOST   ?= $(shell test -n "$(LHOST)" && echo "$(LHOST)" \
              || echo $(subst build-,,$(firstword $(wildcard build-*))))
 
-KHOST   := $(shell echo $(CHOST) | sed 's/\([a-z_0-9]*\)-\([a-z_0-9]*\)-.*/\2-\1/' | sed 's/^w64/win64/')
+KHOST   := $(shell echo $(CHOST) | sed 's/-\([a-z_0-9]*\)-linux$$/-linux-\1/' | sed 's/\([a-z_0-9]*\)-\([a-z_0-9]*\)-.*/\2-\1/' | sed 's/^w64/win64/' | sed 's/^redhat/linux/')
 KLOCAL  := build-$(KHOST)/local
 
 ERR      = *** K require g++ v7 or greater, but it was not found.
@@ -98,7 +98,7 @@ assets: src/bin/$(KSRC)/Makefile
 	$(info $(call STEP,$(KSRC) $@))
 	$(MAKE) -C src/bin/$(KSRC) KASSETS=$(abspath $(KLOCAL)/assets)
 	$(foreach chost,$(subst $(CHOST),,$(CARCH)) $(CHOST), \
-	  assets=build-$(shell echo $(chost) | sed 's/\([a-z_0-9]*\)-\([a-z_0-9]*\)-.*/\2-\1/' | sed 's/^w64/win64/')/local/assets  \
+	  assets=build-$(shell echo $(chost) | sed 's/-\([a-z_0-9]*\)-linux$$/-linux-\1/' | sed 's/\([a-z_0-9]*\)-\([a-z_0-9]*\)-.*/\2-\1/' | sed 's/^w64/win64/')/local/assets  \
 	  && ! test -d $(abspath $${assets}/../..) || ((test -d $${assets} \
 	  || cp -R $(KLOCAL)/assets $${assets})                            \
 	  && $(MAKE) assets.o CHOST=$(chost) && rm -rf $${assets})         \
