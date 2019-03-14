@@ -129,6 +129,7 @@ quickfix:
 	&& sed -i "s/\(ifdef\) _MSC_VER/\1 _WIN32/" src/C++/SocketMonitor.h src/C++/Mutex.h          \
 	&& sed -i "s/\(ifndef\) _MSC_VER/\1 _WIN32/" src/C++/SocketConnector.cpp                     \
 	src/C++/SocketServer.cpp) || :) &&                                                           \
+	CPPFLAGS=-D_GLIBCXX_USE_CXX11_ABI=0                                                          \
 	./configure --prefix=$(KBUILD)/local --host=$(CHOST) --with-openssl=$(KBUILD)/local          \
 	--enable-shared=no --enable-static=yes && cd src/C++ && make all install                     )
 

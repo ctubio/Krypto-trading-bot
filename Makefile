@@ -30,6 +30,7 @@ KARGS   := -std=c++17 -O3 -pthread -DK_0_GIT='"$(shell         \
   -DK_STAMP='"$(shell date "+%Y-%m-%d %H:%M:%S")"'             \
   -DK_0_DAY='"v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)"'           \
   -DK_BUILD='"$(KHOST)"'      -DK_SOURCE='"K-$(KSRC)"'         \
+  -D_GLIBCXX_USE_CXX11_ABI=0                                   \
   -I$(KLOCAL)/include         -I$(realpath src/lib)            \
   $(KLOCAL)/include/uWS/*.cpp $(KLOCAL)/lib/K-$(KHOST)$(ABI).a \
   $(KLOCAL)/lib/libsqlite3.a  $(KLOCAL)/lib/libncurses.a       \
