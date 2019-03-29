@@ -990,21 +990,31 @@ namespace ₿ {
   };
 
   struct mProfit {
-    Amount baseValue,
-           quoteValue;
+    Amount baseBalance,
+           quoteBalance;
+     Price fairValue;
      Clock time;
+    public:
+      Amount baseValue() const {
+        return (quoteBalance / fairValue) + baseBalance;
+      }
+      Amount quoteValue() const {
+        return (baseBalance * fairValue) + quoteBalance;
+      }
   };
   static void to_json(json &j, const mProfit &k) {
     j = {
-      { "baseValue", k.baseValue },
-      {"quoteValue", k.quoteValue},
-      {      "time", k.time      }
+      { "baseBalance", k.baseBalance },
+      {"quoteBalance", k.quoteBalance},
+      {   "fairValue", k.fairValue   },
+      {        "time", k.time        }
      };
   };
   static void from_json(const json &j, mProfit &k) {
-    k.baseValue  = j.value("baseValue",  0.0);
-    k.quoteValue = j.value("quoteValue", 0.0);
-    k.time       = j.value("time",  (Clock)0);
+    k.baseBalance  = j.value("baseBalance",  0.0);
+    k.quoteBalance = j.value("quoteBalance", 0.0);
+    k.fairValue    = j.value("fairValue",    0.0);
+    k.time         = j.value("time",    (Clock)0);
   };
   struct mProfits: public Sqlite::VectorBackup<mProfit> {
     private_ref:
@@ -1021,14 +1031,14 @@ namespace ₿ {
       };
       const double calcBaseDiff() const {
         return calcDiffPercent(
-          cbegin()->baseValue,
-          crbegin()->baseValue
+          cbegin()->baseValue(),
+          crbegin()->baseValue()
         );
       };
       const double calcQuoteDiff() const {
         return calcDiffPercent(
-          cbegin()->quoteValue,
-          crbegin()->quoteValue
+          cbegin()->quoteValue(),
+          crbegin()->quoteValue()
         );
       };
       const double calcDiffPercent(Amount older, Amount newer) const {
@@ -1812,7 +1822,7 @@ namespace ₿ {
       };
       void calcProfits() {
         if (!profits.ratelimit())
-          profits.push_back({base.value, quote.value, Tstamp});
+          profits.push_back({base.total, quote.total, fairValue, Tstamp});
         base.profit  = profits.calcBaseDiff();
         quote.profit = profits.calcQuoteDiff();
       };
