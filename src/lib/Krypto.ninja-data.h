@@ -1066,6 +1066,10 @@ namespace ₿ {
       Clock Ktime;
        bool isPong,
             loadedFromDB;
+     Amount wBase,
+            wQuote,
+            KwBase,
+            KwQuote;
   };
   static void to_json(json &j, const mOrderFilled &k) {
     j = {
@@ -1081,6 +1085,10 @@ namespace ₿ {
       {      "Kvalue", k.Kvalue      },
       {       "Kdiff", k.Kdiff       },
       {  "feeCharged", k.feeCharged  },
+      {       "wBase", k.wBase       },
+      {      "wQuote", k.wQuote      },
+      {      "KwBase", k.KwBase      },
+      {     "KwQuote", k.KwQuote     },
       {      "isPong", k.isPong      },
       {"loadedFromDB", k.loadedFromDB}
     };
@@ -1098,6 +1106,10 @@ namespace ₿ {
     k.Kvalue       = j.value("Kvalue",     0.0);
     k.Kdiff        = j.value("Kdiff",      0.0);
     k.feeCharged   = j.value("feeCharged", 0.0);
+    k.wBase        = j.value("wBase",      0.0);
+    k.wQuote       = j.value("wQuote",     0.0);
+    k.KwBase       = j.value("KwBase",     0.0);
+    k.KwQuote      = j.value("KwQuote",    0.0);
     k.isPong       = j.value("isPong",   false);
     k.loadedFromDB = true;
   };
@@ -1256,7 +1268,7 @@ namespace ₿ {
         , K(bot)
         , qp(q)
       {};
-      void insert(const mLastOrder &order) {
+      void insert(const mLastOrder &order, const mWallets &w) {
         const Amount fee = 0;
         const Clock time = Tstamp;
         mOrderFilled filled = {
@@ -1269,7 +1281,10 @@ namespace ₿ {
           fee,
           0, 0, 0, 0, 0,
           order.isPong,
-          false
+          false,
+          w.base.total,
+          w.quote.total,
+          0, 0
         };
         Print::log("GW " + K.gateway->exchange, string(filled.isPong?"PONG":"PING") + " TRADE "
           + (filled.side == Side::Bid ? "BUY  " : "SELL ")
@@ -1373,6 +1388,8 @@ namespace ₿ {
             it->value = it->value + pong.value;
             it->isPong = false;
             it->loadedFromDB = false;
+            it->wBase = pong.wBase;
+            it->wQuote = pong.wQuote;
             it = send_push_erase(it);
             break;
           }
@@ -1391,6 +1408,8 @@ namespace ₿ {
           pong->value = abs(pong->price*pong->quantity);
           if (it->quantity<=it->Kqty)
             it->Kdiff = abs(it->quantity * it->price - it->Kqty * it->Kprice);
+          it->KwBase = pong->wBase;
+          it->KwQuote = pong->wQuote;
           it->isPong = true;
           it->loadedFromDB = false;
           it = send_push_erase(it);
@@ -1500,16 +1519,18 @@ namespace ₿ {
        mRecentTrades recentTrades;
     private_ref:
       const mQuotingParams &qp;
+      const mWallets       &w;
       const Price          &fairValue;
       const Amount         &baseValue,
                            &baseTotal,
                            &targetBasePosition;
     public:
-      mSafety(const KryptoNinja &bot, const mQuotingParams &q, const mButtons &b, const Price &f, const Amount &v, const Amount &t, const Amount &p)
+      mSafety(const KryptoNinja &bot, const mQuotingParams &q, const mWallets &w, const mButtons &b, const Price &f, const Amount &v, const Amount &t, const Amount &p)
         : Broadcast(bot)
         , trades(bot, q, b)
         , recentTrades(q)
         , qp(q)
+        , w(w)
         , fairValue(f)
         , baseValue(v)
         , baseTotal(t)
@@ -1520,7 +1541,7 @@ namespace ₿ {
       };
       void insertTrade(const mLastOrder &order) {
         recentTrades.insert(order);
-        trades.insert(order);
+        trades.insert(order, w);
         calc();
       };
       void calc() {
@@ -1751,7 +1772,7 @@ namespace ₿ {
       mWalletPosition(const KryptoNinja &bot, const mQuotingParams &q, const mOrders &o, const mButtons &b, const mMarketLevels &l)
         : Broadcast(bot)
         , target(bot, q, l.stats.ewma.targetPositionAutoPercentage, base.value)
-        , safety(bot, q, b, l.fairValue, base.value, base.total, target.targetBasePosition)
+        , safety(bot, q, *this, b, l.fairValue, base.value, base.total, target.targetBasePosition)
         , profits(bot, q)
         , K(bot)
         , orders(o)
