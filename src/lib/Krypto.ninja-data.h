@@ -108,6 +108,7 @@ namespace ₿ {
     bool              cancelOrdersAuto                = false;
     double            cleanPongsAuto                  = 0.0;
     double            profitHourInterval              = 0.5;
+    bool              localBalance                    = false;
     bool              audio                           = false;
     unsigned int      delayUI                         = 3;
     int               _diffEwma                       = -1;
@@ -186,6 +187,7 @@ namespace ₿ {
         cancelOrdersAuto                =                          j.value("cancelOrdersAuto", cancelOrdersAuto);
         cleanPongsAuto                  =                          j.value("cleanPongsAuto", cleanPongsAuto);
         profitHourInterval              =                          j.value("profitHourInterval", profitHourInterval);
+        localBalance                    =                          j.value("localBalance", localBalance);
         audio                           =                          j.value("audio", audio);
         delayUI                         = fmax(0,                  j.value("delayUI", delayUI));
         if (mode == mQuotingMode::Depth)
@@ -280,6 +282,7 @@ namespace ₿ {
       {               "cancelOrdersAuto", k.cancelOrdersAuto               },
       {                 "cleanPongsAuto", k.cleanPongsAuto                 },
       {             "profitHourInterval", k.profitHourInterval             },
+      {                   "localBalance", k.localBalance                   },
       {                          "audio", k.audio                          },
       {                        "delayUI", k.delayUI                        }
     };
@@ -1765,16 +1768,18 @@ namespace ₿ {
      mSafety safety;
     mProfits profits;
     private_ref:
-      const KryptoNinja &K;
-      const mOrders     &orders;
-      const Price       &fairValue;
+      const KryptoNinja    &K;
+            mQuotingParams &qp;
+      const mOrders        &orders;
+      const Price          &fairValue;
     public:
-      mWalletPosition(const KryptoNinja &bot, const mQuotingParams &q, const mOrders &o, const mButtons &b, const mMarketLevels &l)
+      mWalletPosition(const KryptoNinja &bot, mQuotingParams &q, const mOrders &o, const mButtons &b, const mMarketLevels &l)
         : Broadcast(bot)
         , target(bot, q, l.stats.ewma.targetPositionAutoPercentage, base.value)
         , safety(bot, q, *this, b, l.fairValue, base.value, base.total, target.targetBasePosition)
         , profits(bot, q)
         , K(bot)
+        , qp(q)
         , orders(o)
         , fairValue(l.fairValue)
       {};
@@ -1783,9 +1788,9 @@ namespace ₿ {
       };
       void read_from_gw(const mWallets &raw) {
         if (raw.base.currency.empty() or raw.quote.currency.empty() or !fairValue) return;
+        calcMaxFunds(raw, K.arg<double>("wallet-limit-base"), K.arg<double>("wallet-limit-quote"));
         base.currency = raw.base.currency;
         quote.currency = raw.quote.currency;
-        calcMaxFunds(raw, K.arg<double>("wallet-limit"));
         calcFunds();
       };
       void calcFunds() {
@@ -1797,6 +1802,7 @@ namespace ₿ {
         calcHeldAmount(order.side);
         calcFundsSilently();
         if (order.tradeQuantity) {
+          calcLocalBalance(order);
           safety.insertTrade(order);
           *askForFees = true;
         }
@@ -1827,6 +1833,20 @@ namespace ₿ {
         else if (side == Side::Bid and !quote.currency.empty())
           mWallet::reset(quote.total - heldSide, heldSide, &quote);
       };
+      void calcLocalBalance(const mLastOrder &order) {
+          if (!qp.localBalance) return;
+          Amount baseAdjust = 0,
+                 quoteAdjust = 0;
+          if (order.side == Side::Ask) {
+            baseAdjust = -order.tradeQuantity;
+            quoteAdjust = order.tradeQuantity * order.price;
+          } else if (order.side == Side::Bid) {
+            baseAdjust = order.tradeQuantity;
+            quoteAdjust = -order.tradeQuantity * order.price;
+          }
+          mWallet::reset(base.amount + baseAdjust, base.held, &base);
+          mWallet::reset(quote.amount + quoteAdjust, quote.held, &quote);
+      }
       void calcValues() {
         base.value  = (quote.total / fairValue) + base.total;
         quote.value = (base.total * fairValue) + quote.total;
@@ -1837,19 +1857,45 @@ namespace ₿ {
         base.profit  = profits.calcBaseDiff();
         quote.profit = profits.calcQuoteDiff();
       };
-      void calcMaxFunds(mWallets raw, Amount limit) {
-        if (limit) {
-          limit -= raw.quote.held / fairValue;
-          if (limit > 0 and raw.quote.amount / fairValue > limit) {
-            raw.quote.amount = limit * fairValue;
-            raw.base.amount = limit = 0;
-          } else limit -= raw.quote.amount / fairValue;
-          limit -= raw.base.held;
-          if (limit > 0 and raw.base.amount > limit)
-            raw.base.amount = limit;
+      void calcMaxFunds(mWallets raw, Amount limitBase, Amount limitQuote) {
+        if (base.currency.empty() or quote.currency.empty()) {
+          if (qp.localBalance) {
+            if (limitBase || limitQuote) {
+              Print::logWar("DB", "Already tracking local balance: commandline limit ignored.");
+            }
+
+            auto & lastTrade = safety.trades.back();
+            if (lastTrade.Ktime > lastTrade.time) {
+              mWallet::reset(lastTrade.KwBase, 0, &base);
+              mWallet::reset(lastTrade.KwQuote, 0, &quote);
+            } else {
+              mWallet::reset(lastTrade.wBase, 0, &base);
+              mWallet::reset(lastTrade.wQuote, 0, &quote);
+            }
+            Print::log("DB", "Loaded local balance: " + K.gateway->decimal.amount.str(base.total) + " " + raw.base.currency + " and " + K.gateway->decimal.amount.str(quote.total) + " " + raw.quote.currency);
+          } else if (limitBase || limitQuote) {
+            mWallet::reset(limitBase, 0, &base);
+            mWallet::reset(limitQuote, 0, &quote);
+
+            qp.localBalance = true;
+            qp.backup();
+            qp.broadcast();
+          }
+        } else if (!qp.localBalance) {
+          mWallet::reset(raw.base.amount, raw.base.held, &base);
+          mWallet::reset(raw.quote.amount, raw.quote.held, &quote);
         }
-        mWallet::reset(raw.base.amount, raw.base.held, &base);
-        mWallet::reset(raw.quote.amount, raw.quote.held, &quote);
+
+        if (qp.localBalance) {
+          if (raw.base.amount < base.amount) {
+            Print::logWar("GW " + K.gateway->exchange, "AVAILABLE " + raw.base.currency + " DEPLETED BELOW " + K.gateway->decimal.amount.str(base.total));
+            mWallet::reset(raw.base.amount, base.held, &base);
+          }
+          if (raw.quote.amount < quote.amount) {
+            Print::logWar("GW " + K.gateway->exchange, "AVAILABLE " + raw.quote.currency + " DEPLETED BELOW " + K.gateway->decimal.amount.str(quote.total));
+            mWallet::reset(raw.quote.amount, quote.held, &quote);
+          }
+        }
       };
   };
 

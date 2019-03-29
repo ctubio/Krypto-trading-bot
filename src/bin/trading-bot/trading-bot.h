@@ -29,8 +29,10 @@ class TradingBot: public KryptoNinja {
         {"/audio/1.mp3",                      {&_www_mp3_audio_1, _www_mp3_audio_1_len}}
       };
       arguments = { {
-        {"wallet-limit", "AMOUNT", "0",                    "set AMOUNT in base currency to limit the balance,"
-                                                           "\n" "otherwise the full available balance can be used"},
+        {"wallet-limit-base", "AMOUNT", "0",               "set AMOUNT in base currency as initial limited balance,"
+                                                           "\n" "if no limits set, full available balance is used"},
+        {"wallet-limit-quote", "AMOUNT", "0",              "set AMOUNT in quote currency as initial limited balance,"
+                                                           "\n" "if no limits set, full available balance is used"},
         {"lifetime",     "NUMBER", "0",                    "set NUMBER of minimum milliseconds to keep orders open,"
                                                            "\n" "otherwise open orders can be replaced anytime required"},
         {"matryoshka",   "URL",    "https://example.com/", "set Matryoshka link URL of the next UI"},
