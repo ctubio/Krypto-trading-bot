@@ -15,6 +15,8 @@ export class TradesComponent implements OnInit {
 
   private fireCxl: Subscribe.IFire<object>;
 
+  public localBalance: boolean;
+
   public audio: boolean;
 
   public hasPongs: boolean;
@@ -26,6 +28,7 @@ export class TradesComponent implements OnInit {
   @Input() product: Models.ProductState;
 
   @Input() set setQuotingParameters(o: Models.QuotingParameters) {
+    this.localBalance = o.localBalance;
     this.audio = o.audio;
     if (!this.gridOptions.api) return;
     this.hasPongs = (o.safety === Models.QuotingSafety.Boomerang || o.safety === Models.QuotingSafety.AK47);
