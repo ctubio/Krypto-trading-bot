@@ -395,7 +395,8 @@ class DisplayOrder {
                                         <th title="Timeframe in hours to calculate the display of Profit (under wallet values) and also interval in hour to remove data points from the Stats.">profit</th>
                                         <th title="Timeout in days for Pings (yet unmatched trades) and/or Pongs (K trades) to remain in memory, a value of 0 keeps the history in memory forever; a positive value remove only Pongs after Kmemory days; but a negative value remove both Pings and Pongs after Kmemory days.">Kmemory</th>
                                         <th title="Relax the display of UI data by delayUI seconds. Set a value of 0 (zero) to display UI data in realtime, but this may penalize the communication with the exchange if you end up sending too much frequent UI data.">delayUI</th>
-                                        <th title="Plays a sound for each new trade (ping-pong modes have 2 sounds for each type of trade).">audio?</th>
+                                        <th title="Track a local wallet sub-balance rather than querying total exchange balance.  Also set by --wal-lim-*.">lcB?</th>
+                                        <th title="Plays a sound for each new trade (ping-pong modes have 2 sounds for each type of trade).">aud?</th>
                                         <th colspan="2">
                                             <span *ngIf="!pair.quotingParameters.pending" class="text-success">
                                                 Applied
@@ -506,6 +507,10 @@ class DisplayOrder {
                                                type="number" step="1" min="0"
                                                onClick="this.select()"
                                                [(ngModel)]="pair.quotingParameters.display.delayUI">
+                                        </td>
+                                        <td style="text-align: center;border-bottom: 3px solid #A0A0A0;">
+                                            <input type="checkbox"
+                                               [(ngModel)]="pair.quotingParameters.display.localBalance">
                                         </td>
                                         <td style="text-align: center;border-bottom: 3px solid #A0A0A0;">
                                             <input type="checkbox"

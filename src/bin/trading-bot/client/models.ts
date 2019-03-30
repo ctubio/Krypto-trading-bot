@@ -218,6 +218,7 @@ export interface QuotingParameters {
     quotingEwmaTrendThreshold?: number;
     quotingStdevProtection?: STDEV;
     quotingStdevBollingerBands?: boolean;
+    localBalance?: boolean;
     audio?: boolean;
     bullets?: number;
     range?: number;
