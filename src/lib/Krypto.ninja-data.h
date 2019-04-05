@@ -3,7 +3,7 @@
 //! \file
 //! \brief Internal data objects.
 
-namespace ₿ {
+namespace \u20BF {
   enum class mQuotingMode: unsigned int {
     Top, Mid, Join, InverseJoin, InverseTop, HamelinRat, Depth
   };
@@ -313,7 +313,9 @@ namespace ₿ {
           : &orders.at(orderId);
       };
       mOrder *const findsert(const mOrder &raw) {
-        if (raw.status == Status::Waiting and !raw.orderId.empty())
+        if ((raw.status == Status::WaitingToWork or
+             raw.status == Status::WaitingToTerminate)
+            and !raw.orderId.empty())
           return &(orders[raw.orderId] = raw);
         if (raw.orderId.empty() and !raw.exchangeId.empty()) {
           auto it = find_if(
@@ -385,6 +387,8 @@ namespace ₿ {
           report(order, " saved ");
           report_size();
         }
+        if (order && order->status == Status::Rejected)
+          Print::logWar("GW", string("Order ") + order->orderId + " rejected");
         return order;
       };
       const bool replace(const Price &price, const bool &isPong, mOrder *const order) {
@@ -415,7 +419,8 @@ namespace ₿ {
           order->side,
           order->isPong
         };
-        if (order->status == Status::Terminated)
+        if (order->status == Status::Terminated
+          or order->status == Status::Rejected)
           purge(order);
         broadcast();
         Print::repaint();
@@ -2151,7 +2156,8 @@ namespace ₿ {
         if (stillAlive(order)) {
           if (abs(order.price - quote.price) < K.gateway->minTick)
             quote.skip();
-          else if (order.status == Status::Waiting) {
+          else if (order.status == Status::WaitingToWork
+              or order.status == Status::WaitingToTerminate) {
             if (qp.safety != mQuotingSafety::AK47
               or !--bullets
             ) quote.skip();
@@ -2180,7 +2186,8 @@ namespace ₿ {
         quotes.ask.state = state;
       };
       const bool stillAlive(const mOrder &order) {
-        if (order.status == Status::Waiting) {
+        if (order.status == Status::WaitingToWork
+            or order.status == Status::WaitingToTerminate) {
           if (Tstamp - 10e+3 > order.time) {
             zombies.push_back(&order);
             return false;
