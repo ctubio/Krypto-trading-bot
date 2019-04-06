@@ -3,7 +3,7 @@
 //! \file
 //! \brief Internal data objects.
 
-namespace \u20BF {
+namespace ₿ {
   enum class mQuotingMode: unsigned int {
     Top, Mid, Join, InverseJoin, InverseTop, HamelinRat, Depth
   };
@@ -387,8 +387,11 @@ namespace \u20BF {
           report(order, " saved ");
           report_size();
         }
-        if (order && order->status == Status::Rejected)
-          Print::logWar("GW", string("Order ") + order->orderId + " rejected");
+        if (order && order->status == Status::Rejected) {
+          json orderJson;
+          to_json(orderJson, *static_cast<mTrade *>(order));
+          Print::logWar("GW", string("Order ") + order->orderId + " rejected: " + orderJson.dump());
+        }
         return order;
       };
       const bool replace(const Price &price, const bool &isPong, mOrder *const order) {
