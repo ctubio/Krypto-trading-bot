@@ -2407,10 +2407,10 @@ namespace ₿ {
       void applyDepleted() {
         const double epsilon = pow(10, -1 * K.gateway->decimal.amount.stream.precision());
         if (!quotes.bid.empty()
-          and quotes.bid.size > wallet.quote.amount / quotes.bid.price - epsilon
+          and quotes.bid.size > wallet.quote.amount * (1 - K.gateway->makeFee) / quotes.bid.price - epsilon
         ) quotes.bid.clear(mQuoteState::DepletedFunds);
         if (!quotes.ask.empty()
-          and quotes.ask.size > wallet.base.amount - epsilon
+          and quotes.ask.size > wallet.base.amount * (1 - K.gateay->makeFee) - epsilon
         ) quotes.ask.clear(mQuoteState::DepletedFunds);
       };
       void applyWaitingPing() {
