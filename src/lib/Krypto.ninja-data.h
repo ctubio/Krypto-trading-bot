@@ -2393,14 +2393,14 @@ namespace ₿ {
           quotes.bid.size = K.gateway->decimal.amount.truncate(
             fmax(K.gateway->minSize, fmin(
               quotes.bid.size,
-              (K.gateway->decimal.price.truncate(wallet.quote.total) * (1 - K.gateway->takeFee)) / quotes.bid.price
+              (K.gateway->decimal.price.truncate(wallet.quote.amount) * (1 - K.gateway->makeFee)) / quotes.bid.price
             ))
           );
         if (!quotes.ask.empty())
           quotes.ask.size = K.gateway->decimal.amount.truncate(
             fmax(K.gateway->minSize, fmin(
               quotes.ask.size,
-              wallet.base.total
+              wallet.base.amount * (1 - K.gateway->makeFee)
             ))
           );
       };
