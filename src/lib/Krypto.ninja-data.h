@@ -2410,7 +2410,7 @@ namespace ₿ {
           and quotes.bid.size > wallet.quote.amount * (1 - K.gateway->makeFee) / quotes.bid.price - epsilon
         ) quotes.bid.clear(mQuoteState::DepletedFunds);
         if (!quotes.ask.empty()
-          and quotes.ask.size > wallet.base.amount * (1 - K.gateay->makeFee) - epsilon
+          and quotes.ask.size > wallet.base.amount * (1 - K.gateway->makeFee) - epsilon
         ) quotes.ask.clear(mQuoteState::DepletedFunds);
       };
       void applyWaitingPing() {
