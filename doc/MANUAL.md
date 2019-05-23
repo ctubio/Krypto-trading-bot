@@ -263,8 +263,6 @@ Time     | Side | Price | Size | BuyTS | SellTS | Notes
 
 # How can I save and reuse a configuration of the above parameters?
 
-Note: This typically will need to be done when upgrading to the latest commit. 
-
 Upon identifying a satisfactory set of parameters, click the "Backup" button located in the top-right corner of the UI. Save this somewhere. When you'd like to upload them, again click the "Backup" button and paste in your saved parameters. Then click "save" to apply them. 
 
 
