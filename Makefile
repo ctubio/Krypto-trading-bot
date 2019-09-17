@@ -2,7 +2,7 @@ K         ?= K.sh
 MAJOR      = 0
 MINOR      = 5
 PATCH      = 4
-BUILD      = 21
+BUILD      = 24
 
 OBLIGATORY = DISCLAIMER: This is strict non-violent software: \
            \nif you hurt other living creatures, please stop; \
@@ -61,16 +61,14 @@ KARGS     := -std=c++17 -O3 -pthread -DK_HEAD='"$(shell  \
          apis                                            \
          bots                                            \
        )                                                 \
-  ) $(addprefix -include ,$(wildcard                     \
-    src/usr/*.h                                          \
-  )) -DDEBUG_FRAMEWORK='"Krypto.ninja-test.h"'           \
-     -DDEBUG_SCENARIOS='"$(or                            \
-       $(realpath src/bin/$(KSRC)/$(KSRC).test.h),       \
-       /dev/null                                         \
-     )"'                                                 \
-     -Dusing_Makefile='"$(abspath                        \
-       src/bin/$(KSRC)/$(KSRC).h                         \
-     )"'                                                 \
+  ) -DDEBUG_FRAMEWORK='"Krypto.ninja-test.h"'            \
+    -DDEBUG_SCENARIOS='"$(or                             \
+      $(realpath src/bin/$(KSRC)/$(KSRC).test.h),        \
+      /dev/null                                          \
+    )"'                                                  \
+    -Dusing_Makefile='<$(abspath src/bin/$(KSRC))/'      \
+    -Dsrc_data_h='$(KSRC).data.h>'                       \
+    -Dsrc_main_h='$(KSRC).main.h>'                       \
 -DOBLIGATORY_analpaper_SOFTWARE_LICENSE='"$(OBLIGATORY)"'\
 -DPERMISSIVE_analpaper_SOFTWARE_LICENSE='"$(PERMISSIVE)"'\
 
@@ -142,11 +140,11 @@ assets: src/bin/$(KSRC)/Makefile
 	;)
 	rm -rf /var/lib/K/assets
 
-assets.o: src/bin/$(KSRC)/$(KSRC).S
+assets.o: src/bin/$(KSRC)/$(KSRC).disk.S
 	$(chost)g++ -Wa,-I,$(KLOCAL)/assets,-I,src/bin/$(KSRC) -c $^ \
-	  -o $(KLOCAL)/lib/K-$(notdir $(basename $^))-$@
+	  -o $(KLOCAL)/lib/K-$(notdir $(basename $(basename $^)))-$@
 
-src: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).h
+src: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
 ifdef KALL
 	unset KALL $(foreach chost,$(CARCH),&& $(MAKE) $@ CHOST=$(chost))
 else
@@ -161,7 +159,7 @@ else
 	@$(MAKE) system_install -s
 endif
 
-Linux: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).h
+Linux: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
 ifdef TRAVIS_OS_NAME
 	@unset TRAVIS_OS_NAME && $(MAKE) KCOV="--coverage" $@
 else ifdef KUNITS
@@ -174,14 +172,14 @@ else
 	  $< $(KARGS) -ldl -Wall -Wextra
 endif
 
-Darwin: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).h
+Darwin: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
 	-@egrep \\u20BF src -lR | xargs -r sed -i 's/\\\(u20BF\)/\1/g'
 	$(CHOST)-g++ -s -DNDEBUG -o $(KLOCAL)/bin/K-$(KSRC)                          \
 	  -msse4.1 -maes -mpclmul -mmacosx-version-min=10.13 -nostartfiles -rdynamic \
 	  $< $(KARGS) -ldl
 	-@egrep u20BF src -lR | xargs -r sed -i 's/\(u20BF\)/\\\1/g'
 
-Win32: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).h
+Win32: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
 	$(CHOST)-g++-posix -s -DNDEBUG -o $(KLOCAL)/bin/K-$(KSRC).exe \
 	  -D_POSIX -DCURL_STATICLIB -DSIGUSR1=SIGABRT                 \
 	  $< $(KARGS)                                                 \
