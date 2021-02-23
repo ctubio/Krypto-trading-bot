@@ -29,7 +29,7 @@ ABI       ?= $(shell echo '\#include <string>'             \
                | grep '_GLIBCXX_USE_CXX11_ABI 1'           \
                | wc -l | tr -d ' '                         )
 
-KHOST     := $(shell echo $(CHOST)                               \
+KHOST     ?= $(shell echo $(CHOST)                               \
                | sed 's/-\([a-z_0-9]*\)-\(linux\)$$/-\2-\1/'     \
                | sed 's/\([a-z_0-9]*\)-\([a-z_0-9]*\)-.*/\2-\1/' \
                | sed 's/^w64/win64/'                             )
