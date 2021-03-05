@@ -58,7 +58,7 @@ namespace analpaper {
         if (last.filled) K.gateway->askForFees = true;
         if (order->isPong or last.filled)
           K.log("GW " + K.gateway->exchange, string(order->isPong?"PONG":"PING") + " TRADE "
-            + (order->side == Side::Bid ? "BUY  " : "SELL ")
+            + (order->side == Side::Bid ? "BUY " : "SELL ")
             + K.gateway->decimal.amount.str(order->isPong ? order->quantity : last.filled)
             + " " + K.gateway->base + " at "
             + K.gateway->decimal.price.str(order->price)
