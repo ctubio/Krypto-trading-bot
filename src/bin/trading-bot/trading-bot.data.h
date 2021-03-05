@@ -1301,7 +1301,7 @@ namespace tribeca {
         };
         const bool is_bid = order.side == Side::Bid;
         K.log("GW " + K.gateway->exchange, string(order.isPong?"PONG":"PING") + " TRADE "
-          + (is_bid ? "BUY  " : "SELL ")
+          + (is_bid ? "BUY " : "SELL ")
           + K.gateway->decimal.amount.str(filled.quantity) + ' '
           + (K.gateway->margin == Future::Spot ? K.gateway->base : "Contracts") + " at price "
           + K.gateway->decimal.price.str(filled.price) + ' ' + K.gateway->quote + " (value "
