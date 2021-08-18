@@ -100,7 +100,14 @@ To upgrade anytime see [Upgrade to the latest commit](#upgrade-to-the-latest-com
 
 1. Ensure your target machine has `curl` and `make` installed.
 
-2. Download it wherever you want (feel free to customize the suggested folder name K) and execute the installer:
+2. For Ubuntu Server 21.04 (non GUI based) installations make sure 'nodejs current' and 'npm build essentials' are installed:
+```
+ $ curl -fsSL https://deb.nodesource.com/setup_current.x | sudo -E bash -
+ $ sudo apt-get install -y nodejs
+ $ apt-get install -y build-essential
+ ```
+
+3. Download it wherever you want (feel free to customize the suggested folder name K) and execute the installer:
 ```
  $ mkdir K
  $ cd K
@@ -108,7 +115,7 @@ To upgrade anytime see [Upgrade to the latest commit](#upgrade-to-the-latest-com
  $ make install
 ```
 
-3. Open and edit the config file `K.sh` in your favorite text editor:
+4. Open and edit the config file `K.sh` in your favorite text editor:
 ```
  $ vim K.sh
 ```
