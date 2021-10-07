@@ -11,8 +11,8 @@ env:
   SSH_USER: ubuntu
 
 jobs:
-  deploy:
-    name: Deploy
+  deploy-app:
+    name: Deploy App
     runs-on: ubuntu-latest
     steps:
       - name: Extract branch name
@@ -41,7 +41,11 @@ jobs:
             git clone --branch $(echo $BRANCH) $(echo $GITREPO) $(echo $IMAGE_NAME)
             cd $(echo $IMAGE_NAME)/etc
 
-            for env in $DOT_ENV; do echo "$env" >> .env; done
+            for env in $DOT_ENV
+            do
+              echo "$env" >> .env
+            done
+
             export BIND_DOT_ENV="--env-file .env"
 
             # remove container completely if exists

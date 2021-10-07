@@ -15,6 +15,7 @@ RUN make docker && rm -rf /var/lib/apt/lists/
 # following variables at etc/K.sh.dist.
 
 ENV OPTIONAL_ARGUMENTS --colors --port 3000
+
 ENV K_BINARY_FILE K-trading-bot
 
-CMD ["./K.sh", "--naked", "--without-ssl"]
+#CMD ["./K.sh", "--naked", "--without-ssl"]
