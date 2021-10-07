@@ -50,8 +50,6 @@ jobs:
             done
             echo $BUILD_ARGS
 
-            export BIND_DOT_ENV="--env-file .env"
-
             # remove container completely if exists
             [ "$(docker ps -q -a -f name=$(echo $IMAGE_NAME))" ] && \
             docker stop $(echo $IMAGE_NAME) && docker rm $(echo $IMAGE_NAME) && \
@@ -63,7 +61,6 @@ jobs:
             ! [ "$(docker network ls | grep $NETWORK)" ] && \
             docker network create --driver bridge $(echo $NETWORK)
             docker run -d \
-              $BIND_DOT_ENV \
               --restart always \
               --network $(echo $NETWORK) \
               --mount type=bind,source=/home/${{ env.SSH_USER }}/data,target=/data \
