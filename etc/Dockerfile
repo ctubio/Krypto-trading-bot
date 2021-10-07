@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM debian:bullseye-slim
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y git sudo make ca-certificates curl g++
