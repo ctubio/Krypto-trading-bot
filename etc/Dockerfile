@@ -31,7 +31,4 @@ ENV API_PASSPHRASE "${API_PASSPHRASE}"
 
 ENV K_BINARY_FILE K-trading-bot
 
-RUN echo $API_EXCHANGE
-RUN echo $API_CURRENCY
-
-CMD ["./K.sh", "--naked", "--without-ssl"]
+CMD ["./K.sh"]
