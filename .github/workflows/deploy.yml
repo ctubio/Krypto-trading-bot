@@ -65,7 +65,7 @@ jobs:
               --network $(echo $NETWORK) \
               --mount type=bind,source=/home/${{ env.SSH_USER }}/data,target=/data \
               --mount type=bind,source=/home/${{ env.SSH_USER }}/db,target=/var/lib/K/db \
-              -p 127.0.0.1:3000:3000 \
+              -p 127.0.0.0:3000:3000 \
               --name $(echo $IMAGE_NAME) \
               $IMAGE_NAME
 
@@ -92,10 +92,11 @@ jobs:
           SERVER_NAME: crypto.leantrace.ch
           SSH_HOST: ${{ secrets.SSH_HOST }}
           NETWORK: ${{ env.NETWORK }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           IMAGE_NAME: kryptobot-px
         uses: appleboy/ssh-action@master
         with:
-          envs: SERVER_NAME, NETWORK, IMAGE_NAME, SSH_HOST
+          envs: SERVER_NAME, NETWORK, IMAGE_NAME, SSH_HOST, ADMIN_PASSWORD
           host: ${{ secrets.SSH_HOST }}
           username: ${{ env.SSH_USER }}
           port: ${{ env.SSH_PORT }}
@@ -112,6 +113,7 @@ jobs:
             -addext "subjectAltName=DNS:$CN" \
             -newkey rsa:2048 -keyout nginx/certs/cert.key -out nginx/certs/cert.crt
             sed -i "s/%SERVER_NAME%/$SERVER_NAME/g" nginx/conf.d/default.conf
+            htpasswd -bc /home/${{ env.SSH_USER }}/nginx/conf.d/.htpasswd admin $ADMIN_PASSWORD
             # remove container completely if exists
             [ "$(docker ps -q -a -f name=$(echo $IMAGE_NAME))" ] && \
             docker stop $(echo $IMAGE_NAME) && docker rm $(echo $IMAGE_NAME) && \
