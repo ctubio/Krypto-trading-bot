@@ -15,16 +15,22 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     steps:
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+
       - name: Deploy Backend PROD - Executing remote command
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           NETWORK: ${{ env.NETWORK }}
           IMAGE_NAME: kryptobot-app
           DOT_ENV: ${{ secrets.DOT_ENV_BE }}
-          REPOSITORY: git@github.com:leantrace/Krypto-trading-bot.git
+          BRANCH: ${{ steps.extract_branch.outputs.branch }}
+          GITREPO: git@github.com:leantrace/${{ github.event.repository.name }}.git
         uses: appleboy/ssh-action@master
         with:
-          envs: SSH_HOST,NETWORK,IMAGE_NAME,DOT_ENV
+          envs: SSH_HOST,NETWORK,IMAGE_NAME,DOT_ENV,BRANCH,GITREPO
           host: ${{ secrets.SSH_HOST }}
           username: ${{ env.SSH_USER }}
           port: ${{ env.SSH_PORT }}
@@ -32,7 +38,7 @@ jobs:
           script: |
             # clone project
             rm -rf $(echo $IMAGE_NAME)
-            git clone --branch $(echo $BRANCH) $(echo $REPOSITORY) $(echo $IMAGE_NAME)
+            git clone --branch $(echo $BRANCH) $(echo $GITREPO) $(echo $IMAGE_NAME)
             cd $(echo $IMAGE_NAME)/etc
 
             for env in $DOT_ENV; do echo "$env" >> .env; done
@@ -43,7 +49,7 @@ jobs:
             docker stop $(echo $IMAGE_NAME) && docker rm $(echo $IMAGE_NAME) && \
             docker image rm $(echo $IMAGE_NAME)
 
-            docker build --no-cache -t ksh .
+            docker build --no-cache --file proxy/Dockerfile --tag $(echo $IMAGE_NAME) .
 
             # create nep network if not exists
             ! [ "$(docker network ls | grep $NETWORK)" ] && \
