@@ -89,7 +89,7 @@ jobs:
 
       - name: Build and Deploy Proxy Remote
         env:
-          SERVER_NAME: kryptobot.leantrace.ch
+          SERVER_NAME: crypto.leantrace.ch
           SSH_HOST: ${{ secrets.SSH_HOST }}
           NETWORK: ${{ env.NETWORK }}
           IMAGE_NAME: kryptobot-px
