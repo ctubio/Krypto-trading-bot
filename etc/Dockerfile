@@ -31,4 +31,4 @@ ENV API_PASSPHRASE "${API_PASSPHRASE}"
 
 ENV K_BINARY_FILE K-trading-bot
 
-CMD ["./K.sh"]
+CMD ["./K.sh", "--naked", "--without-ssl"]
