@@ -10,6 +10,8 @@ WORKDIR /K
 
 RUN make docker && rm -rf /var/lib/apt/lists/
 
+EXPOSE 3000 5000
+
 # See examples and descriptions of the
 # following variables at etc/K.sh.dist.
 
@@ -32,4 +34,4 @@ ENV K_BINARY_FILE K-trading-bot
 RUN echo $API_EXCHANGE
 RUN echo $API_CURRENCY
 
-CMD ["./K.sh", "--naked", "--without-ssl"]
+CMD ["./K.sh"]
