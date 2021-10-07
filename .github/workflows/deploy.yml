@@ -65,12 +65,11 @@ jobs:
               --network $(echo $NETWORK) \
               --mount type=bind,source=/home/${{ env.SSH_USER }}/data,target=/data \
               --mount type=bind,source=/home/${{ env.SSH_USER }}/db,target=/var/lib/K/db \
-              -p 3000:443 \
+              -p 3000:3000 \
               --name $(echo $IMAGE_NAME) \
               $IMAGE_NAME
 
   deploy-proxy:
-    if: 1 == 2
     name: Deploy Proxy
     runs-on: ubuntu-latest
     needs: [ deploy-app ]
