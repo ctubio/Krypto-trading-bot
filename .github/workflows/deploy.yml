@@ -64,7 +64,7 @@ jobs:
               --restart always \
               --network $(echo $NETWORK) \
               --mount type=bind,source=/home/${{ env.SSH_USER }}/data,target=/data \
-              -p 127.0.0.1:3000:5000 \
+              -p 127.0.0.1:3000:3000 \
               --name $(echo $IMAGE_NAME) \
               $IMAGE_NAME
 
