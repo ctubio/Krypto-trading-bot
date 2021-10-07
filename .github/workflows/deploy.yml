@@ -1,0 +1,117 @@
+
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  NETWORK: "leantrace-net"
+  SSH_PORT: 22
+  SSH_USER: ubuntu
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Backend PROD - Executing remote command
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          NETWORK: ${{ env.NETWORK }}
+          IMAGE_NAME: kryptobot-app
+          DOT_ENV: ${{ secrets.DOT_ENV_BE }}
+          REPOSITORY: git@github.com:leantrace/Krypto-trading-bot.git
+        uses: appleboy/ssh-action@master
+        with:
+          envs: SSH_HOST,NETWORK,IMAGE_NAME,DOT_ENV
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          port: ${{ env.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # clone project
+            rm -rf $(echo $IMAGE_NAME)
+            git clone --branch $(echo $BRANCH) $(echo $REPOSITORY) $(echo $IMAGE_NAME)
+            cd $(echo $IMAGE_NAME)/etc
+
+            for env in $DOT_ENV; do echo "$env" >> .env; done
+            export BIND_DOT_ENV="--env-file .env"
+
+            # remove container completely if exists
+            [ "$(docker ps -q -a -f name=$(echo $IMAGE_NAME))" ] && \
+            docker stop $(echo $IMAGE_NAME) && docker rm $(echo $IMAGE_NAME) && \
+            docker image rm $(echo $IMAGE_NAME)
+
+            docker build --no-cache -t ksh .
+
+            # create nep network if not exists
+            ! [ "$(docker network ls | grep $NETWORK)" ] && \
+            docker network create --driver bridge $(echo $NETWORK)
+            docker run -d \
+              $BIND_DOT_ENV \
+              --restart always \
+              --network $(echo $NETWORK) \
+              --mount type=bind,source=/home/${{ env.SSH_USER }}/data,target=/data \
+              -p 127.0.0.1:3000:5000 \
+              --name $(echo $IMAGE_NAME) \
+              $IMAGE_NAME
+
+  deploy-proxy:
+    name: Deploy Proxy
+    runs-on: ubuntu-latest
+    needs: [ deploy ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Copy Proxy Settings
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          port: ${{ env.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          source: proxy/*
+          target: .
+
+      - name: Build and Deploy Proxy Remote
+        env:
+          SERVER_NAME: kryptobot.leantrace.ch
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          NETWORK: ${{ env.NETWORK }}
+          IMAGE_NAME: kryptobot-px
+        uses: appleboy/ssh-action@master
+        with:
+          envs: SERVER_NAME, NETWORK, IMAGE_NAME, SSH_HOST
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          port: ${{ env.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            rm -rf nginx
+            mkdir -p nginx/conf.d
+            mkdir -p nginx/certs
+            cp proxy/default.conf nginx/conf.d
+            echo "Configure proxy with SSL selfsigned"
+            export CN=ec2-$(echo $SSH_HOST | sed 's/\./-/g').eu-central-1.compute.amazonaws.com
+            echo $CN
+            openssl req -x509 -nodes -days 3650 -subj "/C=CA/ST=QC/O=Apiable, Inc./CN=$CN" \
+            -addext "subjectAltName=DNS:$CN" \
+            -newkey rsa:2048 -keyout nginx/certs/cert.key -out nginx/certs/cert.crt
+            sed -i "s/%SERVER_NAME%/$SERVER_NAME/g" nginx/conf.d/default.conf
+            # remove container completely if exists
+            [ "$(docker ps -q -a -f name=$(echo $IMAGE_NAME))" ] && \
+            docker stop $(echo $IMAGE_NAME) && docker rm $(echo $IMAGE_NAME) && \
+            docker image rm $(echo $IMAGE_NAME)
+            docker build --no-cache --file proxy/Dockerfile --tag $(echo $IMAGE_NAME) .
+            rm -rf proxy
+            ! [ "$(docker network ls | grep $NETWORK)" ] && docker network create --driver bridge $(echo $NETWORK)
+            docker run -d \
+              --restart always \
+              --network $(echo $NETWORK) \
+              --mount type=bind,source=/home/${{ env.SSH_USER }}/nginx/conf.d,target=/etc/nginx/conf.d \
+              --mount type=bind,source=/home/${{ env.SSH_USER }}/nginx/certs,target=/etc/nginx/certs \
+              -p 80:80 -p 443:443 \
+              --name $(echo $IMAGE_NAME) \
+              $IMAGE_NAME
