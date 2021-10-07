@@ -71,7 +71,7 @@ jobs:
   deploy-proxy:
     name: Deploy Proxy
     runs-on: ubuntu-latest
-    needs: [ deploy ]
+    needs: [ deploy-app ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
