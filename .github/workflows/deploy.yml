@@ -49,7 +49,7 @@ jobs:
             docker stop $(echo $IMAGE_NAME) && docker rm $(echo $IMAGE_NAME) && \
             docker image rm $(echo $IMAGE_NAME)
 
-            docker build --no-cache --file proxy/Dockerfile --tag $(echo $IMAGE_NAME) .
+            docker build --no-cache --file Dockerfile --tag $(echo $IMAGE_NAME) .
 
             # create nep network if not exists
             ! [ "$(docker network ls | grep $NETWORK)" ] && \
