@@ -1,8 +1,8 @@
-FROM debian:buster-slim
+FROM ubuntu:20.04
 
 
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y git sudo make ca-certificates curl g++
+RUN sudo apt update \
+    && sudo apt --assume-yes install git sudo make ca-certificates curl g++
 
 # Feel free to choose the branch you want to build:
 RUN git clone -b master https://github.com/ctubio/Krypto-trading-bot.git /K
