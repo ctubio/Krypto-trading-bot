@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
+echo $API_EXCHANGE
+echo $API_CURRENCY
 #  █▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
 #  ▓ ████ ███ Usage? use current filename of THIS file: █
 #  ▒ ████ ███    $ ./K.sh --help                        █

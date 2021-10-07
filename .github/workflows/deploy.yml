@@ -42,10 +42,13 @@ jobs:
             git clone --branch $(echo $BRANCH) $(echo $GITREPO) $(echo $IMAGE_NAME)
             cd $(echo $IMAGE_NAME)/etc
 
+            export BUILD_ARGS=""
             for env in $DOT_ENV
             do
               echo "$env" >> .env
+              export BUILD_ARGS="$BUILD_ARGS --build-arg $env"
             done
+            echo $BUILD_ARGS
 
             export BIND_DOT_ENV="--env-file .env"
 
@@ -54,7 +57,7 @@ jobs:
             docker stop $(echo $IMAGE_NAME) && docker rm $(echo $IMAGE_NAME) && \
             docker image rm $(echo $IMAGE_NAME)
 
-            docker build --no-cache --file Dockerfile --tag $(echo $IMAGE_NAME) .
+            docker build $BUILD_ARGS --no-cache --file Dockerfile --tag $(echo $IMAGE_NAME) .
 
             # create nep network if not exists
             ! [ "$(docker network ls | grep $NETWORK)" ] && \

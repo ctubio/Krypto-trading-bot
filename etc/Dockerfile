@@ -14,8 +14,20 @@ RUN make docker && rm -rf /var/lib/apt/lists/
 # See examples and descriptions of the
 # following variables at etc/K.sh.dist.
 
+ARG API_EXCHANGE
+ARG API_CURRENCY
+ARG API_KEY
+ARG API_SECRET
+ARG API_PASSPHRASE
+
 ENV OPTIONAL_ARGUMENTS --colors --port 3000
+
+ENV API_EXCHANGE "$API_EXCHANGE"
+ENV API_CURRENCY "$API_CURRENCY"
+ENV API_KEY "$API_KEY"
+ENV API_SECRET "$API_SECRET"
+ENV API_PASSPHRASE "$API_PASSPHRASE"
 
 ENV K_BINARY_FILE K-trading-bot
 
-#CMD ["./K.sh", "--naked", "--without-ssl"]
+CMD ["./K.sh", "--naked", "--without-ssl"]
