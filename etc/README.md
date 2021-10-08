@@ -8,6 +8,7 @@ Used by `--whitelist` argument to attempt to crash UI clients from alien IPs not
 To run K.sh with Docker, please make use of the [Dockerfile](https://raw.githubusercontent.com/ctubio/Krypto-trading-bot/master/etc/Dockerfile):
 
 1. Install [docker](https://www.docker.com/) for your system before proceeding. Requires at least Docker 1.7.1. Mac/Windows only: Ensure boot2docker or docker-machine is set up, depending on Docker version. See [the docs](https://docs.docker.com/installation/mac/) for more help. 
+
 2. Set the following environment variables. For further information of the variables, look into K.sh.dist 
 ```
 API_EXCHANGE=BINANCE
@@ -16,6 +17,7 @@ API_KEY=MyAPIKey
 API_SECRET=MyAPISecret
 API_PASSPHRASE=
 ```
+
 3. Build and run the docker 
 ```
  $ cd path/to/Dockerfile
@@ -31,8 +33,11 @@ If you run `docker ps`, you should see K container running.
 
 ### Github CI/CD on any *nix Server
 Tested on AWS with Ubuntu 20.04, but should work on other *nix server with ssh as well
+
 1. Fork the repository 
+
 2. Edit the .github/workflows/deploy.yml by removing 'x' in front of xmaster, which will trigger the deployment on master after push 
+
 3. Add following Secrets to Github 
 ```
 SSH_HOST=192.168.0.1
