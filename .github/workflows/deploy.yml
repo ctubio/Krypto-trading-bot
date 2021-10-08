@@ -6,13 +6,14 @@ on:
       - master
 
 env:
-  NETWORK: "leantrace-net"
+  NETWORK: "krypto-net"
   SSH_PORT: 22
   SSH_USER: ubuntu
 
 
 jobs:
   deploy-app:
+    if: ${{ secrets.SSH_HOSTT }}
     name: Deploy App
     runs-on: ubuntu-latest
     steps:
