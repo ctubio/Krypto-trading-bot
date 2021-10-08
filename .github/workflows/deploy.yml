@@ -3,7 +3,7 @@
 on:
   push:
     branches:
-      - xmaster
+      - master
 
 env:
   NETWORK: "krypto-net"
@@ -67,4 +67,3 @@ jobs:
               -p 3000:3000 \
               --name $(echo $IMAGE_NAME) \
               $IMAGE_NAME
-            
