@@ -3,7 +3,7 @@
 on:
   push:
     branches:
-      - master
+      - xmaster
 
 env:
   NETWORK: "krypto-net"
