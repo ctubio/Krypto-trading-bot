@@ -67,3 +67,4 @@ jobs:
               -p 3000:3000 \
               --name $(echo $IMAGE_NAME) \
               $IMAGE_NAME
+            
