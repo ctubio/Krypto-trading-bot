@@ -3,7 +3,7 @@
 on:
   push:
     branches:
-      - xmaster
+      - master
 
 env:
   NETWORK: "krypto-net"
@@ -49,12 +49,12 @@ jobs:
             done
             echo $BUILD_ARGS
 
+            docker build $BUILD_ARGS --no-cache --file Dockerfile --tag $(echo $IMAGE_NAME) .
+
             # remove container completely if exists
             [ "$(docker ps -q -a -f name=$(echo $IMAGE_NAME))" ] && \
             docker stop $(echo $IMAGE_NAME) && docker rm $(echo $IMAGE_NAME) && \
             docker image rm $(echo $IMAGE_NAME)
-
-            docker build $BUILD_ARGS --no-cache --file Dockerfile --tag $(echo $IMAGE_NAME) .
 
             # create nep network if not exists
             ! [ "$(docker network ls | grep $NETWORK)" ] && \
