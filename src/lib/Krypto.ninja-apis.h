@@ -931,7 +931,7 @@ namespace ₿ {
           {   "symbol", base + "-" + quote                       },
           {"tickPrice", stod(reply.value("quote_increment", "0"))},
           { "tickSize", stod(reply.value("base_increment", "0")) },
-          {  "minSize", stod(reply.value("base_min_size", "0"))  },
+          {  "minSize", stod(reply.value("min_market_funds", "0"))  },
           {    "reply", reply                                    }
         };
       };
