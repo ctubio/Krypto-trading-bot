@@ -897,9 +897,9 @@ namespace ₿ {
       GwCoinbase()
         : GwApiWsFix("Coinbase")
       {
-        http   = "https://api.pro.coinbase.com";
-        ws     = "wss://ws-feed.pro.coinbase.com";
-        fix    = "fix.pro.coinbase.com:4198";
+        http   = "https://api.exchange.coinbase.com";
+        ws     = "wss://ws-feed.exchange.coinbase.com";
+        fix    = "fix.exchange.coinbase.com:4198";
         randId = Random::uuid36Id;
         webMarket = "https://pro.coinbase.com/trade/";
         webOrders = "https://pro.coinbase.com/orders/";
@@ -931,7 +931,7 @@ namespace ₿ {
           {   "symbol", base + "-" + quote                       },
           {"tickPrice", stod(reply.value("quote_increment", "0"))},
           { "tickSize", stod(reply.value("base_increment", "0")) },
-          {  "minSize", stod(reply.value("base_min_size", "0"))  },
+          {  "minSize", stod(reply.value("min_market_funds", "0"))  },
           {    "reply", reply                                    }
         };
       };
