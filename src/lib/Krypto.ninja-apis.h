@@ -897,9 +897,9 @@ namespace ₿ {
       GwCoinbase()
         : GwApiWsFix("Coinbase")
       {
-        http   = "https://api.pro.coinbase.com";
-        ws     = "wss://ws-feed.pro.coinbase.com";
-        fix    = "fix.pro.coinbase.com:4198";
+        http   = "https://api.exchange.coinbase.com";
+        ws     = "wss://ws-feed.exchange.coinbase.com";
+        fix    = "fix.exchange.coinbase.com:4198";
         randId = Random::uuid36Id;
         webMarket = "https://pro.coinbase.com/trade/";
         webOrders = "https://pro.coinbase.com/orders/";
