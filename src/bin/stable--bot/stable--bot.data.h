@@ -32,13 +32,13 @@ namespace analpaper {
         , K(bot)
       {};
       void read_from_gw(const Order &order) {
-        if (!order.orderId.empty() and order.justFilled)
+        if (!order.orderId.empty() and order.qtyFilled == order.quantity and order.status == Status::Terminated)
           K.log("GW " + K.gateway->exchange,
             string(order.side == Side::Bid
               ? ANSI_HIGH_CYAN    + "TRADE BUY  "
               : ANSI_PUKE_MAGENTA + "TRADE SELL "
             )
-            + K.gateway->decimal.amount.str(order.justFilled)
+            + K.gateway->decimal.amount.str(order.quantity)
             + " " + K.gateway->base + " at "
             + K.gateway->decimal.price.str(order.price)
             + " " + K.gateway->quote);
@@ -304,10 +304,10 @@ namespace analpaper {
           K.log("QE", "Canceled " + to_string(n) + " open order" + string(n != 1, 's') + " before quit");
       };
     private:
-      bool abandon(const Order &order, System::Quote &quote) {
+      bool abandon(const Order &order, const Price &currentPrice, System::Quote &quote) {
         if (orders.zombies.stillAlive(order)) {
           if (order.status == Status::Waiting
-            or abs(order.price - quote.price) < K.gateway->tickPrice
+            or abs(order.price - currentPrice) < K.gateway->tickPrice
             or (K.arg<int>("lifetime") and order.time + K.arg<int>("lifetime") > Tstamp)
           ) quote.skip();
           else return true;
@@ -316,9 +316,9 @@ namespace analpaper {
       };
       vector<Order*> abandon(System::Quote &quote) {
         vector<Order*> abandoned;
-        const bool all = quote.state != QuoteState::Live;
+        const Price currentPrice = quote.price;
         for (Order *const it : orders.at(quote.side))
-          if (all or abandon(*it, quote))
+          if (!currentPrice or abandon(*it, currentPrice, quote))
             abandoned.push_back(it);
         return abandoned;
       };

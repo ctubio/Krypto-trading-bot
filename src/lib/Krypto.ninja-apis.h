@@ -132,8 +132,7 @@ namespace ₿ {
          string orderId     = "",
                 exchangeId  = "";
          Status status      = (Status)0;
-         Amount justFilled  = 0;
-         Amount totalFilled = 0;
+         Amount qtyFilled   = 0;
       OrderType type        = (OrderType)0;
     TimeInForce timeInForce = (TimeInForce)0;
            bool manual      = false;
@@ -143,11 +142,10 @@ namespace ₿ {
         if (Status::Working == (     order->status     = raw.status
         ) and !order->latency)       order->latency    = raw.time - order->time;
         order->time         = raw.time;
-        order->justFilled   = raw.justFilled;
-        order->totalFilled += raw.justFilled;
         if (!raw.exchangeId.empty()) order->exchangeId = raw.exchangeId;
         if (raw.price)               order->price      = raw.price;
         if (raw.quantity)            order->quantity   = raw.quantity;
+        if (raw.qtyFilled)           order->qtyFilled  = raw.qtyFilled;
       }
       return order;
     };
@@ -298,9 +296,9 @@ namespace ₿ {
   class GwExchange: public GwExchangeData {
     public:
       using Report = vector<pair<string, string>>;
-      string exchange, apikey, secret, pass,
+      string exchange, apikey, secret, apikeyid,
              base,     quote,  symbol,
-             http,     ws,     fix,
+             http,     ws,
              unlock;
        Price tickPrice = 0;
       Amount tickSize  = 0,
@@ -578,12 +576,15 @@ namespace ₿ {
         while (accept_msg(WebSocketTwin::unframe()));
       };
   };
-  class GwApiWsFix: public GwApiWs,
-                    public Curl::FixSocket {
+
+class GwApiWsFix: public GwApiWs,
+                  public Curl::FixSocket {
     public:
       GwApiWsFix(const string &t)
         : FixSocket(t, apikey, guard)
       {};
+    private:
+       string fix;
     protected:
       bool connected() const override {
         return GwApiWs::connected()
@@ -786,7 +787,7 @@ namespace ₿ {
       };
     protected:
       string nonce() const override {
-        return to_string((Clock)(Tstamp / 1e+3));
+        return to_string(Tstamp / 1e+3);
       };
       void pairs(string &report) const override {
         const json reply = Curl::Web::xfer(*guard, http + "/spot/currency_pairs");
@@ -892,39 +893,43 @@ namespace ₿ {
         webOrders = "https://bequant.io/reports/orders";
       };
   };
-  class GwCoinbase: public GwApiWsFix {
+  class GwCoinbase: public GwApiWsWs {
     public:
       GwCoinbase()
-        : GwApiWsFix("Coinbase")
       {
-        http   = "https://api.pro.coinbase.com";
-        ws     = "wss://ws-feed.pro.coinbase.com";
-        fix    = "fix.pro.coinbase.com:4198";
+        http   = "https://api.coinbase.com/api/v3/brokerage";
+        ws     = "wss://advanced-trade-ws.coinbase.com";
         randId = Random::uuid36Id;
-        webMarket = "https://pro.coinbase.com/trade/";
-        webOrders = "https://pro.coinbase.com/orders/";
+        webMarket = "https://www.coinbase.com/advanced-trade/spot/";
+        webOrders = "https://www.coinbase.com/orders/";
       };
       string web(const string &base, const string &quote) const {
         return webMarket + base + "-" + quote;
       };
     protected:
+//BO non-free Gw class member functions from lib build-*/lib/K-*.a (it just redefines all virtual gateway functions below).
+/**/  virtual string token(const string &crud = "", const string &url = "") const = 0;             // return logon message.
+//EO non-free Gw class member functions from lib build-*/lib/K-*.a (it just redefines all virtual gateway functions above).
       string nonce() const override {
-        return to_string(Tstamp / 1e+3);
+        return Random::char16Id();
       };
       void pairs(string &report) const override {
-        const json reply = Curl::Web::xfer(*guard, http + "/products");
-        if (!reply.is_array()
+        const json reply = xfer(http + "/products");
+        if (!reply.is_object()
           or reply.empty()
-          or !reply.at(0).is_object()
-          or !reply.at(0).contains("base_currency")
-          or !reply.at(0).contains("quote_currency")
+          or !reply.contains("products")
+          or !reply.at("products").is_array()
+          or reply.at("products").empty()
+          or !reply.at("products").at(0).is_object()
+          or !reply.at("products").at(0).contains("base_currency_id")
+          or !reply.at("products").at(0).contains("quote_currency_id")
         ) print("Error while reading pairs: " + reply.dump());
-        else for (const json &it : reply)
+        else for (const json &it : reply.at("products"))
           if (!it.value("trading_disabled", true) and it.value("status", "") == "online")
-          report += it.value("base_currency", "") + "/" + it.value("quote_currency", "") + ANSI_NEW_LINE;
+            report += it.value("base_currency_id", "") + "/" + it.value("quote_currency_id", "") + ANSI_NEW_LINE;
       };
       json handshake() const override {
-        const json reply = Curl::Web::xfer(*guard, http + "/products/" + base + "-" + quote);
+        const json reply = xfer(http + "/products/" + base + "-" + quote);
         return {
           {     "base", base                                     },
           {    "quote", quote                                    },
@@ -935,14 +940,15 @@ namespace ₿ {
           {    "reply", reply                                    }
         };
       };
-      json xfer(const string &url, const string &h1, const string &h2, const string &h3, const string &h4, const string &crud) const {
-        return Curl::Web::xfer(*guard, url, crud, "", {
-          "CB-ACCESS-KEY: "        + h1,
-          "CB-ACCESS-SIGN: "       + h2,
-          "CB-ACCESS-TIMESTAMP: "  + h3,
-          "CB-ACCESS-PASSPHRASE: " + h4
-        });
+      string twin(const string &ws) const override {
+        return string(ws).insert(ws.find("ws.") + 2, "-user");
       };
+      json xfer(const string &url, const string &post = "", const string &crud = "GET") const {
+        return Curl::Web::xfer(*guard, url, crud, post, {
+          "Content-Type: application/json",
+          "Authorization: Bearer " + token(crud, url)
+        });
+    };
   };
   class GwBitfinex: public GwApiWs {
     protected:
@@ -1105,7 +1111,7 @@ namespace ₿ {
                      time = nonce(),
                      hash = time + crud + path,
                      sign = Text::B64(Text::HMAC256(hash, secret, true)),
-                     code = Text::B64(Text::HMAC256(pass, secret, true));
+                     code = Text::B64(Text::HMAC256(apikeyid, secret, true));
         const json reply = xfer(http + path, apikey, sign, code, time, crud);
         if (!reply.contains("code")
           or !reply.at("code").is_string()

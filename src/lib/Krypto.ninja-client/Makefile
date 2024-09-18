@@ -24,14 +24,14 @@ STEP_4    := $(call STEP,4,css files)
 all $(KSRC): js css
 
 npm: package.json
-	@echo $(STEP_1)
+	$(info $(STEP_1))
 	@cd $(KHOME) && $@ install
 ifndef GITHUB_ACTIONS
 	@rm $(KHOME)/$(basename $<)*
 endif
 
 lib: www/js npm
-	@echo $(STEP_2)
+	$(info $(STEP_2))
 	cp -R $< $(NODE_PATH)/$@
 	ls -1 $< | cut -d . -f1 | xargs -I % echo "export * as % from './%';" > $(NODE_PATH)/$@/K.ts
 	$(TSC) $(NODE_PATH)/$@/*.ts
@@ -47,11 +47,11 @@ $(KCLIENT)/.main.ts: $(KCLIENT)
 js: $(KCLIENT)/.main.ts lib
 	$(TSC) --outDir $(KASSETS)/$@ $<
 	@rm -v $<
-	@echo $(STEP_3)
+	$(info $(STEP_3))
 	$(BROWSERIFY) $(KASSETS)/$@/$(notdir $(basename $<)).$@ | uglifyjs | gzip > $(KASSETS)/$@/client.min.$@
 
 css: www/css beacons
-	@echo $(STEP_4)
+	$(info $(STEP_4))
 	$(foreach x,$(wildcard $</*.scss),$(SASS) $(realpath $(x)):$(KASSETS)/$@/$(notdir $(basename $(x))).min.$@;)
 	cp -R $(NODE_PATH)/beacons $(KASSETS)/font
 	cat $(NODE_PATH)/@ag-grid-community/all-modules/dist/styles/ag-grid.$@ $(NODE_PATH)/@ag-grid-community/all-modules/dist/styles/ag-theme-bootstrap.min.$@ $(KASSETS)/font/beacons.$@ >> $(KASSETS)/$@/bootstrap.min.$@

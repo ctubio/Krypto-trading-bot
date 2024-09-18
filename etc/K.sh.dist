@@ -20,11 +20,11 @@
 #  █ K_BINARY_FILE                                      .
 #  ██ - Allows one executable file available on any PATH.
 #  ██                                                   .
-#K_BINARY_FILE=K-+portfolios (under development)
-#K_BINARY_FILE=K-hello-world
-#K_BINARY_FILE=K-scaling-bot
-#K_BINARY_FILE=K-stable--bot
-K_BINARY_FILE=K-trading-bot
+#K_BINARY_FILE="K-+portfolios"
+#K_BINARY_FILE="K-hello-world"
+#K_BINARY_FILE="K-scaling-bot"
+#K_BINARY_FILE="K-stable--bot"
+K_BINARY_FILE="K-trading-bot"
 #  ██                                                   .
 #  ██▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 #  ▌____                                                .
@@ -44,45 +44,50 @@ OPTIONAL_ARGUMENTS="--colors --naked --heartbeat"
 #  █ API_EXCHANGE                                       .
 #  ██ - Allows only one of the following exchanges below.
 #  ██                                                   .
-#API_EXCHANGE=COINBASE
-#API_EXCHANGE=BINANCE
-#API_EXCHANGE=KRAKEN
-#API_EXCHANGE=BITMEX
-#API_EXCHANGE=KUCOIN
-#API_EXCHANGE=BITFINEX
-#API_EXCHANGE=BITFINEX_MARGIN
-#API_EXCHANGE=ETHFINEX
-#API_EXCHANGE=ETHFINEX_MARGIN
-#API_EXCHANGE=GATEIO
-#API_EXCHANGE=HITBTC
-#API_EXCHANGE=BEQUANT
-#API_EXCHANGE=POLONIEX
+#API_EXCHANGE="COINBASE"
+#API_EXCHANGE="BINANCE"
+#API_EXCHANGE="KRAKEN"
+#API_EXCHANGE="BITMEX"
+#API_EXCHANGE="KUCOIN"
+#API_EXCHANGE="BITFINEX"
+#API_EXCHANGE="BITFINEX_MARGIN"
+#API_EXCHANGE="ETHFINEX"
+#API_EXCHANGE="ETHFINEX_MARGIN"
+#API_EXCHANGE="GATEIO"
+#API_EXCHANGE="HITBTC"
+#API_EXCHANGE="BEQUANT"
+#API_EXCHANGE="POLONIEX"
 #  ▌____________________________________________________.
 #  █ API_CURRENCY                                       .
 #  ██ - Allows any currency pair (with format "AAA/ZZZ").
 #  ██  (see the website of the exchange for all symbols).
 #  ██                                                   .
-#API_CURRENCY=BTC/EUR
+#API_CURRENCY="BTC/EUR"
 #  ▌____________________________________________________.
 #  █ API_KEY                                            .
 #  ██ - Allows any valid API KEY (never share!)         .
 #  ██  (see the website of the exchange please)         .
+#  ██  (on COINBASE is called API KEY NAME, and         .
+#  ██  is only visible while creating the keys)         .
 #  ██                                                   .
-#API_KEY=exampleapikey
+#API_KEY="cdp_exampleapikey"
 #  ▌____________________________________________________.
 #  █ API_SECRET                                         .
 #  ██ - Allows any valid API SECRET (never share!)      .
 #  ██  (see the website of the exchange thank you)      .
+#  ██  (must be one line, as UUID or EC PKEY cert)      .
 #  ██                                                   .
-#API_SECRET=exampleapisecret
+#API_SECRET="-----BEGIN EC PRIVATE KEY-----\nexampleapisecret\n-----END EC PRIVATE KEY-----\n"
 #  ▌____________________________________________________.
-#  █ API_PASSPHRASE                                     .
-#  ██ - Allows any valid API PASSPHRASE (never share!)  .
-#  ██  (only COINBASE/KUCOIN must have API PASSPHRASE)  .
+#  █ API_KEY_ID                                         .
+#  ██ - Allows any valid API KEY ID (never share!)      .
+#  ██  (only COINBASE/KUCOIN must have API_KEY_ID)      .
 #  ██  (can be safely ignored for all other exchanges)  .
 #  ██  (see the website of COINBASE/KUCOIN for + info)  .
+#  ██  (from COINBASE it can be copy&pasted anytime, but.
+#  ██  on KUCOIN is named PASSPHRASE because of reasons).
 #  ██                                                   .
-#API_PASSPHRASE=exampleapipassphrase
+#API_KEY_ID="exampleapikeyid"
 #  ██                                                   .
 #  ██▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 #  ▌____                                                .
@@ -94,8 +99,8 @@ OPTIONAL_ARGUMENTS="--colors --naked --heartbeat"
         --exchange   ${API_EXCHANGE:-""}                \
         --currency   ${API_CURRENCY:-""}                \
         --apikey     ${API_KEY:-""}                     \
-        --secret     ${API_SECRET:-""}                  \
-        --passphrase ${API_PASSPHRASE:-""}              \
+        --secret     "${API_SECRET:-""}"                \
+        --apikeyid   ${API_KEY_ID:-""}                  \
                      $OPTIONAL_ARGUMENTS "$@"           ;
 #  ▌ ___________________________________________________.
 #  █ ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯.

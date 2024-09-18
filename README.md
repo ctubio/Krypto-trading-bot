@@ -10,9 +10,10 @@
 
 [`K`](https://github.com/ctubio/Krypto-trading-bot) is a family of (very customizable) very low latency [market making](https://github.com/ctubio/Krypto-trading-bot/blob/master/doc/MANUAL.md#what-is-market-making) trading bots with a fully featured [web interface](https://github.com/ctubio/Krypto-trading-bot#web-ui).<br />It can place and cancel orders on one of the several [compatible exchanges](https://github.com/ctubio/Krypto-trading-bot#compatible-exchanges) in less than a few milliseconds per order on a decent machine.
 
-If you don't want to configure or hardcode your own trading strategies in your own machine,<br />you can run strategies from someone else at [kryll.io](https://kryll.io/) (or at any other trading community out there).
-
-If you don't want to run a bot at all,<br />you can fund liquidity pools at [tinyman.org](https://tinyman.org/) (or at any other defi out there).
+If you don't want to configure or hardcode your own trading strategies in your own machine, or if you don't want to run a bot at all,<br />
+you can fund liquidity pools of automated market makers at [tinyman.org](https://tinyman.org/) (or at any other defi out there), just remember:
+- <b><ins>never write on any defi website your private keys</ins></b> (you have to sign transactions, not to share the keys of your wallet)
+- <b><ins>never tell anyone on any chat your private keys</ins></b> (if you have questions, use a public forum and ignore private messages)
 
 ### <img src="https://github.githubassets.com/images/icons/emoji/unicode/1f4be.png" height="64" width="64"  align="middle" /> Latest version at https://github.com/ctubio/Krypto-trading-bot <img src="https://github.githubassets.com/images/icons/emoji/unicode/1f51e.png" height="64" width="64" align="middle" /> <img src="https://github.githubassets.com/images/icons/emoji/unicode/1f4b8.png" height="64" width="64" align="middle" />
 
@@ -23,7 +24,7 @@ If you don't want to run a bot at all,<br />you can fund liquidity pools at [tin
 [![Last Commit](https://img.shields.io/github/last-commit/ctubio/Krypto-trading-bot.svg)](https://github.com/ctubio/Krypto-trading-bot)
 [![Downloads Last Releases](https://img.shields.io/github/downloads/ctubio/Krypto-trading-bot/total.svg?label=downloads%20last%20releases)](https://github.com/ctubio/Krypto-trading-bot)
 
-Our bots run on unix-like systems. Persistence is achieved through a built-in server-less SQLite C++ interface.<br>Data transfers are directly done from your machine to the exchange using the latest CURL and OpenSSL versions.<br>Installation in a dedicated [Debian](https://cdimage.debian.org/cdimage/release/current/), [Raspberry](https://www.raspberrypi.org/software/), [Red Hat](https://developers.redhat.com/products/rhel/download), [CentOS](https://wiki.centos.org/Download) or macOS instance without Docker is recommended.
+Our bots run on unix-like systems. Persistence is achieved through a built-in server-less SQLite C++ interface.<br>Data transfers are directly done from your machine to the exchange using the latest CURL and OpenSSL versions.<br>Installation in a dedicated [Debian](https://cdimage.debian.org/cdimage/release/current/), [Raspberry](https://www.raspberrypi.com/software/), [Red Hat](https://developers.redhat.com/products/rhel/download), [CentOS](https://www.centos.org/download/) or macOS instance without Docker is recommended.
 
 ![Web UI Preview](https://user-images.githubusercontent.com/1634027/44740469-d5c7ff00-aafa-11e8-9252-73b9c1283adb.png)
 
@@ -31,10 +32,11 @@ The web UI is compatible with most web browsers/resolutions, but Brave or Firefo
 
 ### Compatible Exchanges
 
-||with Post-Only Orders support|without Post-Only|
-|---|---|---|
-|**with Maker and Taker fees**|[Coinbase](https://pro.coinbase.com/) <sub>([fees](https://pro.coinbase.com/orders/fees))</sub><br> &#10239; _REST + WebSocket + FIX_<br><br>[Binance](https://www.binance.com/) <sub>([fees](https://www.binance.com/en/fee/schedule))</sub><br> &#10239; _REST + WebSocket_<br><br>[Kraken](https://www.kraken.com/) <sub>([fees](https://www.kraken.com/features/fee-schedule))</sub><br> &#10239; _REST + WebSocket²_<br><br>[KuCoin](https://www.kucoin.com/) <sub>([fees](https://www.kucoin.com/vip/level))</sub><br> &#10239; _REST + WebSocket_<br><br>[Bitfinex](https://www.bitfinex.com/) <sub>([fees](https://www.bitfinex.com/fees))</sub><br>[Ethfinex](https://www.ethfinex.com/) <sub>([fees](https://www.ethfinex.com/fees))</sub><br> &#10239; _REST + WebSocket_<br><br>[Gate.io](https://www.gate.io/) <sub>([fees](https://www.gate.io/fee))</sub><br> &#10239; _REST + WebSocket_<br><br>[HitBTC](https://hitbtc.com/) <sub>([fees](https://hitbtc.com/fee-tier))</sub><br>[Bequant](https://bequant.io/) <sub>([fees](https://bequant.io/fees-and-limits))</sub><br> &#10239; _REST + WebSocket²_<br><br>[Poloniex](https://www.poloniex.com/) <sub>([fees](https://poloniex.com/fees/))</sub><br> &#10239; _REST + WebSocket_|*none*|
-|**without Maker fees**|[BitMEX](https://www.bitmex.com/) <sub>([fees](https://www.bitmex.com/app/fees))</sub><br> &#10239; _REST + WebSocket_|*none*|
+If you ask me, <img height="20px" src="https://github.com/user-attachments/assets/e84f2708-d29a-423d-a702-42c87a8ffe5b"> is the best and most secure exchange by far, so here is my [referral link](https://advanced.coinbase.com/join/KAME9XG) for both of us to enjoy.
+
+In case you are looking for referral links to other exchanges, feel free to post a [new issue](https://github.com/ctubio/Krypto-trading-bot/issues/new?title=Referral%20link%20for%20%5Bexchange%5D) asking to other active users.
+
+<table><thead><tr><td></td><td><b>fully operational</b></td><td colspan="2"><b>miraculously working (with known issues to be updated soon)</b></td></tr></thead><tbody><tr><td><b>with Maker and Taker fees</b></td><td><a href="https://www.coinbase.com/en-es/advanced-trade">Coinbase</a> <sub>(<a href="https://help.coinbase.com/en/coinbase/trading-and-funding/advanced-trade/advanced-trade-fees">fees</a>)</sub><br> &#10239; _REST + 2 WebSockets_</td><td><a href="https://www.binance.com/">Binance</a> <sub>(<a href="https://www.binance.com/en/fee/schedule">fees</a>)</sub><br> &#10239; _REST + 1 WebSocket_<br><br><a href="https://www.kraken.com/">Kraken</a> <sub>(<a href="https://www.kraken.com/features/fee-schedule">fees</a>)</sub><br> &#10239; _REST + 2 WebSockets_<br><br><a href="https://www.kucoin.com/">KuCoin</a> <sub>(<a href="https://www.kucoin.com/vip/level">fees</a>)</sub><br> &#10239; _REST + 1 WebSocket_</td><td><a href="https://www.bitfinex.com/">Bitfinex</a> <sub>(<a href="https://www.bitfinex.com/fees">fees</a>)</sub><br><a href="https://www.ethfinex.com/">Ethfinex</a> <sub>(<a href="">fees</a>)</sub><br> &#10239; _REST + 1 WebSocket_<br><br><a href="https://www.gate.io/">Gate.io</a> <sub>(<a href="https://www.gate.io/fee">fees</a>)</sub><br> &#10239; _REST + 1 WebSocket_<br><br><a href="https://hitbtc.com/">HitBTC</a> <sub>(<a href="https://hitbtc.com/fee-tier">fees</a>)</sub><br><a href="https://bequant.io/">Bequant</a> <sub>(<a href="https://bequant.io/fees-and-limits">fees</a>)</sub><br> &#10239; _REST + 2 WebSockets_<br><br><a href="https://www.poloniex.com/">Poloniex</a> <sub>(<a href="https://poloniex.com/fees/">fees</a>)</sub><br> &#10239; _REST + 1 WebSocket_</td></tr><tr><td><b>without Maker fees</b></td><td><i>none</i></td><td colspan="2"><a href="https://www.bitmex.com/">BitMEX</a> <sub>(<a href="https://www.bitmex.com/app/fees">fees</a>)</sub><br> &#10239; _REST + 1 WebSocket_</td></tr></tbody></table>
 
 All currency pairs are supported (use `--list` argument to see all currently tradable pairs on a given exchange).
 
@@ -59,7 +61,7 @@ All currency pairs are supported (use `--list` argument to see all currently tra
   - [Cloud Hosting](#cloud-hosting)
 - Development
   - [Build notes](#build-notes)
-  - [Changelogs](#unreleased-changelog)
+  - [Changelogs](#changelog)
 - Humans and Milk Mammals
   - [Unlock](#unlock)
   - [Donations](#donations)
@@ -76,7 +78,7 @@ See [etc/Dockerfile](https://github.com/ctubio/Krypto-trading-bot/tree/master/et
 
 Before starting with a manual installation, ensure your target machine has Windows 7 or greater and [MSYS2](https://www.msys2.org/) installed.
 
-Use MSYS2 Terminal to install `make` (with command `pacman -S make`), and then proceed as usual with the installation.
+Use MSYS2 Terminal to install `make` (with command `pacman -S make`), then proceed as usual with the installation.
 
 ### Manual GIT Installation
 
@@ -254,7 +256,13 @@ js sandbox: [jsfiddle.net](https://jsfiddle.net)
 
 ws sandbox: [app.gosandy.io](https://app.gosandy.io/)
 
-<details><summary><a id="unreleased-changelog"><b>Release v0.6.x Changelog</b></a></summary>
+<details><summary><a id="changelog"><b>Release v0.7.x Changelog</b></a></summary>
+
+Updated Coinbase integration to Advanced Trade API.
+
+</details>
+
+<details><summary><b>Release v0.6.x Changelog</b></summary>
 
 Added Hello World bot, Portfolios bot, Scaling bot and Stable bot.
 
@@ -380,7 +388,9 @@ or donate your time with programming or financial suggestions in the IRC channel
 
 [IRC](https://kiwiirc.com/client/irc.libera.chat:6697/?theme=cli#krypto.ninja) is awesome!
 
-but if you dislike it, consider to create a [new discussion](https://github.com/ctubio/Krypto-trading-bot/discussions) permanently readable by everybody.
+But if you dislike it.. consider to join the [discord server](https://discord.gg/jAX7GEzcWD). Or you can DM [ctubio on reddit](https://www.reddit.com/user/ctubio) privately.
+
+Otherwise, here on GitHub, just create a [new discussion](https://github.com/ctubio/Krypto-trading-bot/discussions) permanently readable by everybody.
 
 ### Very Special Thanks to:
 
@@ -438,7 +448,6 @@ Pull Requests are welcome, but adhere to the Contributor License Agreement:
  - https://youtu.be/1iZdJNH3Z1o
  - https://youtu.be/_e5hvHL2WTg
  - https://youtu.be/jQhtEYfax5c
- - https://youtu.be/nmYOayNiv1A
  - add your song here (please open a [new issue](https://github.com/ctubio/Krypto-trading-bot/issues/new?title=Today,%20I%20sing) to share your link)
 <p align="center"><img src="https://user-images.githubusercontent.com/1634027/32134633-642bb47a-bbf1-11e7-809c-f2d4d57678e0.jpg" />
 <br /><br />
@@ -448,4 +457,4 @@ We have already enough policemen,<br />if you like adventures choose to be a <a 
 <br /><br /><br /><br />Violence <a href="https://www.cnvc.org/learn-nvc/what-is-nvc">should not</a> be the answer to those who<br />are <a href="https://novact.org/about-us/activities/?lang=en">asking for</a> freedom.<br /><br /><br /><br /><br />
 <img src="https://user-images.githubusercontent.com/1634027/29746351-7478d556-8ad7-11e7-8b27-445eefa8f960.jpg" />
 <br /><br /><br /><br /><br /><br /><br /><br /><br />
-<img width="300" src="http://hits.dwyl.io/ctubio/Krypto-trading-bot.svg" /> + 99999</p>
+<a href="https://hits.seeyoufarm.com"><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fctubio%2FKrypto-trading-bot%2FREADME.md&count_bg=%2379C83D&title_bg=%23555555&icon=known.svg&icon_color=%2306FF18&title=page+views&edge_flat=false"/></a></p>

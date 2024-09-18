@@ -2,13 +2,13 @@ ERR      = *** Unexpected MAKELEVEL = 0.
 HINT     = This Makefile can't be used directly, consider cd ../.. before try again
 $(if $(subst 0,,${MAKELEVEL}),,$(warning $(ERR));$(error $(HINT)))
 
-V_ZLIB  = 1.2.12
-V_SSL   = 3.0.0
-V_CURL  = 7.80.0
-V_SQL   = 3370000
-V_JSON  = 3.10.4
+V_ZLIB  = 1.3.1
+V_SSL   = 3.3.2
+V_CURL  = 8.10.0
+V_SQL   = 3460100
+V_JSON  = 3.11.3
 V_CATCH = 2.13.7
-V_UV    = 1.42.0
+V_UV    = 1.48.0
 
 KBUILD := $(abspath ../../build-$(KHOST))
 
@@ -37,8 +37,8 @@ clean:
 	@rm -vrf $(KBUILD)
 
 check:
-	# zlib    | $(V_ZLIB)  | $(shell  curl -s https://www.zlib.net/ChangeLog.txt                    | grep "Changes in " | head -n1 | cut -d' ' -f3)
-	# openssl | $(V_SSL)   | $(shell  curl -s https://www.openssl.org/news/cl$(shell curl -s https://www.openssl.org/source/ | grep "The latest stable version is " | cut -d' ' -f12  | tr -d '.').txt | grep "Changes between " | head -n1 | cut -d' ' -f4)
+	# zlib    | $(V_ZLIB)   | $(shell  curl -s https://www.zlib.net/ChangeLog.txt                    | grep "Changes in " | head -n1 | cut -d' ' -f3)
+	# openssl | $(V_SSL)   | $(shell  curl -s https://api.github.com/repos/openssl/openssl/releases | grep "tag_name" | grep $(shell curl -s https://openssl-library.org/source/ | grep "The latest stable version is " | cut -d' ' -f8) | head -n1 | cut -d'o' -f2 | cut -d'-' -f2 | cut -d'"' -f1)
 	# curl    | $(V_CURL)  | $(shell  curl -s https://curl.se/changes.html                          | grep "Fixed in " | head -n1 | cut -d' ' -f4)
 	# sqlite  | $(V_SQL) | $(shell    curl -s https://www.sqlite.org/download.html                  | grep "sqlite-amalgamation-" | head -n1 | cut -d'-' -f3 | cut -d'.' -f1)
 	# json    | $(V_JSON)  | $(shell  curl -s https://api.github.com/repos/nlohmann/json/releases   | grep "tag_name" | head -n1 | cut -d'v' -f2 | cut -d'"' -f1)
@@ -54,11 +54,12 @@ zlib:
 	./configure --static --prefix=$(KBUILD) && make all install)               )
 
 openssl:
-	test -d $(KBUILD)/var/openssl-$(V_SSL) || (                                               \
-	curl -L https://www.openssl.org/source/openssl-$(V_SSL).tar.gz | tar xz -C $(KBUILD)/var  \
-	&& cd $(KBUILD)/var/openssl-$(V_SSL) && CC=gcc ./Configure no-asm --openssldir=$(KBUILD)  \
-	$(if $(findstring mingw32,$(CHOST)),mingw64 -static --libdir=lib,gcc)                     \
-	--prefix=$(KBUILD) --cross-compile-prefix=$(CHOST)- && make install_dev                   )
+	test -d $(KBUILD)/var/openssl-$(V_SSL) || (                                                           \
+	curl -L https://github.com/openssl/openssl/releases/download/openssl-$(V_SSL)/openssl-$(V_SSL).tar.gz \
+	| tar xz -C $(KBUILD)/var && cd $(KBUILD)/var/openssl-$(V_SSL)                                        \
+	&& CC=gcc ./Configure no-asm --openssldir=$(KBUILD)                                                   \
+	$(if $(findstring mingw32,$(CHOST)),mingw64 -static --libdir=lib,gcc)                                 \
+	--prefix=$(KBUILD) --cross-compile-prefix=$(CHOST)- && make install_dev                               )
 
 curl:
 	test -d $(KBUILD)/var/curl-$(V_CURL) || (                                               \
@@ -76,7 +77,7 @@ curl:
 
 sqlite:
 	test -d $(KBUILD)/var/sqlite-autoconf-$(V_SQL) || (                                       \
-	curl -L https://sqlite.org/2021/sqlite-autoconf-$(V_SQL).tar.gz | tar xz -C $(KBUILD)/var \
+	curl -L https://sqlite.org/2024/sqlite-autoconf-$(V_SQL).tar.gz | tar xz -C $(KBUILD)/var \
 	&& cd $(KBUILD)/var/sqlite-autoconf-$(V_SQL) && ./configure --prefix=$(KBUILD)            \
 	--host=$(CHOST) --enable-static --disable-dynamic-extensions --disable-shared             \
 	--enable-threadsafe && make install-libLTLIBRARIES install-includeHEADERS                 )
@@ -85,9 +86,7 @@ json:
 	test -f $(KBUILD)/include/json.h || (mkdir -p $(KBUILD)/include                   \
 	&& curl -L https://github.com/nlohmann/json/releases/download/v$(V_JSON)/json.hpp \
 	-o $(KBUILD)/include/json.h &&                                                    \
-	sed -i '$$iusing namespace nlohmann;' $(KBUILD)/include/json.h                    \
-	$(if $(findstring mingw32,$(CHOST)),                                              \
-	&& sed -i "s/\(#include <cstddef>\)/\/\/\1/" $(KBUILD)/include/json.h)            )
+	sed -i '$$iusing namespace nlohmann;' $(KBUILD)/include/json.h                    )
 
 catch:
 	test -f $(KBUILD)/include/catch.h || (mkdir -p $(KBUILD)/include                      \
@@ -99,7 +98,9 @@ uv:
 	test -d $(KBUILD)/var/libuv-$(V_UV) || (                                                          \
 	curl -L https://github.com/libuv/libuv/archive/v$(V_UV).tar.gz | tar xz -C $(KBUILD)/var          \
 	&& cd $(KBUILD)/var/libuv-$(V_UV) && sh autogen.sh && CC=$(CHOST)-gcc ./configure --host=$(CHOST) \
-	--prefix=$(KBUILD) --disable-shared --enable-static && make all install)                          )
+	--prefix=$(KBUILD) --disable-shared --enable-static && make all install                           \
+	$(if $(findstring mingw32,$(CHOST)),                                                              \
+	&& sed -i "s/\(#define SIGQUIT\)/\/\/\1/" $(KBUILD)/include/uv/win.h))                            )
 
 pvs:
 ifndef V_PVS

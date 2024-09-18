@@ -143,21 +143,21 @@ SCENARIO_METHOD(TradingBot, "ANY BTC/EUR") {
     WHEN("assigned") {
       Order order;
       REQUIRE_NOTHROW(order.price = 1234.57);
-      REQUIRE_NOTHROW(order.justFilled = 0.01234566);
+      REQUIRE_NOTHROW(order.qtyFilled = 0.01234566);
       REQUIRE_NOTHROW(order.side = Side::Ask);
       REQUIRE_NOTHROW(engine.wallet.safety.recentTrades.insert(order));
       REQUIRE_NOTHROW(order.price = 1234.58);
-      REQUIRE_NOTHROW(order.justFilled = 0.01234567);
+      REQUIRE_NOTHROW(order.qtyFilled = 0.01234567);
       REQUIRE_NOTHROW(engine.wallet.safety.recentTrades.insert(order));
       REQUIRE_NOTHROW(order.price = 1234.56);
-      REQUIRE_NOTHROW(order.justFilled = 0.12345678);
+      REQUIRE_NOTHROW(order.qtyFilled = 0.12345678);
       REQUIRE_NOTHROW(order.side = Side::Bid);
       REQUIRE_NOTHROW(engine.wallet.safety.recentTrades.insert(order));
       REQUIRE_NOTHROW(order.price = 1234.50);
-      REQUIRE_NOTHROW(order.justFilled = 0.12345679);
+      REQUIRE_NOTHROW(order.qtyFilled = 0.12345679);
       REQUIRE_NOTHROW(engine.wallet.safety.recentTrades.insert(order));
       REQUIRE_NOTHROW(order.price = 1234.60);
-      REQUIRE_NOTHROW(order.justFilled = 0.12345678);
+      REQUIRE_NOTHROW(order.qtyFilled = 0.12345678);
       REQUIRE_NOTHROW(order.side = Side::Ask);
       REQUIRE_NOTHROW(engine.wallet.safety.recentTrades.insert(order));
       THEN("values") {
@@ -457,8 +457,8 @@ SCENARIO_METHOD(TradingBot, "ANY BTC/EUR") {
       REQUIRE_NOTHROW(engine.broker.semaphore.click({
         {"agree", 0}
       }));
-      REQUIRE_NOTHROW(engine.broker.quotes.bid.skip(QuoteState::MissingData));
-      REQUIRE_NOTHROW(engine.broker.quotes.ask.skip(QuoteState::MissingData));
+      REQUIRE_NOTHROW(engine.broker.quotes.bid.skip(QuoteState::UnknownReason));
+      REQUIRE_NOTHROW(engine.broker.quotes.ask.skip(QuoteState::UnknownReason));
       REQUIRE(engine.broker.quotes.bid.empty());
       REQUIRE(engine.broker.quotes.ask.empty());
       REQUIRE_FALSE(engine.broker.ready());
@@ -593,7 +593,7 @@ SCENARIO_METHOD(TradingBot, "ANY BTC/EUR") {
       stringstream ss(line);
       string _, pingpong, side;
       Order order;
-      ss >> _ >> _ >> _ >> _ >> pingpong >> _ >> side >> order.justFilled >> _ >> _ >> _ >> order.price;
+      ss >> _ >> _ >> _ >> _ >> pingpong >> _ >> side >> order.qtyFilled >> _ >> _ >> _ >> order.price;
       order.side = (side == "BUY" ? Side::Bid : Side::Ask);
       order.isPong = (pingpong == "PONG");
       return order;
@@ -617,8 +617,8 @@ SCENARIO_METHOD(TradingBot, "ANY BTC/EUR") {
     WHEN("cumulated cross pongs") {
       for (const auto &order : loglines) {
         baseSign = (order.side == Side::Bid) ? 1 : -1;
-        expectedBaseDelta += baseSign * order.justFilled;
-        expectedQuoteDelta -= baseSign * order.justFilled * order.price;
+        expectedBaseDelta += baseSign * order.qtyFilled;
+        expectedQuoteDelta -= baseSign * order.qtyFilled * order.price;
         this_thread::sleep_for(chrono::milliseconds(2));
         engine.wallet.safety.trades.insert(order);
         Amount actualBaseDelta = 0;

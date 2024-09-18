@@ -609,6 +609,7 @@ namespace ₿ {
               curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write);
               curl_easy_setopt(curl, CURLOPT_WRITEDATA, &reply);
               curl_easy_setopt(curl, CURLOPT_TIMEOUT, 21L);
+              // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
               rc = curl_easy_perform(curl);
               curl_easy_cleanup(curl);
               if (slist) curl_slist_free_all(slist);
@@ -616,7 +617,7 @@ namespace ₿ {
             return rc == CURLE_OK
               ? (json::accept(reply)
                   ? json::parse(reply)
-                  : json::object()
+                  : (json){ {"error", "CURL unexpected server reply: " + reply} }
                 )
               : (json){ {"error", string("CURL Request Error: ") + curl_easy_strerror(rc)} };
           };
@@ -668,8 +669,8 @@ namespace ₿ {
                   }
                 }
               }
+              curl_url_cleanup(url);
             }
-            curl_url_cleanup(url);
             return rc == CURLE_OK
               ? Easy::connect(
                   "http" + uri.substr(2),
@@ -734,7 +735,7 @@ namespace ₿ {
           };
       };
   };
-
+  
   class Text {
     public:
       static string strL(string input) {
@@ -748,7 +749,9 @@ namespace ₿ {
       static string CRC32(const string &input) {
         return to_string(crc32(0, (const Bytef*)input.data(), input.length()));
       };
-      static string B64(const string &input) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+      static string B64(const string &input, const bool &urlsafe = false) {
         BIO *bio, *b64;
         BUF_MEM *bufferPtr;
         b64 = BIO_new(BIO_f_base64());
@@ -759,22 +762,44 @@ namespace ₿ {
         BIO_write(bio, input.data(), input.length());
         if (BIO_flush(bio)) {}
         BIO_get_mem_ptr(bio, &bufferPtr);
-        const string output(bufferPtr->data, bufferPtr->length);
+        string output(bufferPtr->data, bufferPtr->length);
         BIO_free_all(bio);
+        if (urlsafe) {
+          string::size_type n = 0;
+          while ((n = output.find("+", n)) != string::npos)
+            output.replace(n++, 1, "-");
+          n = 0;
+          while ((n = output.find("/", n)) != string::npos)
+            output.replace(n++, 1, "_");
+          while (output.back() == '=')
+            output.erase(output.length() - 1);
+        }
         return output;
       };
-      static string B64_decode(const string &input) {
+      static string B64_decode(const string &input, const bool &urlsafe = false) {
+        if (urlsafe) {
+          string output = input;
+          string::size_type n = 0;
+          while ((n = output.find("-", n)) != string::npos)
+            output.replace(n++, 1, "+");
+          n = 0;
+          while ((n = output.find("_", n)) != string::npos)
+            output.replace(n++, 1, "/");
+          output += string(4 - (output.length() % 4), '=');
+          return B64_decode(output + string(4 - (output.length() % 4), '='));
+        }
         BIO *bio, *b64;
-        char output[input.length()];
+        char out[input.length()];
         b64 = BIO_new(BIO_f_base64());
         bio = BIO_new_mem_buf(input.data(), input.length());
         bio = BIO_push(b64, bio);
         if (BIO_set_close(bio, BIO_CLOSE)) {}
         BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
-        int len = BIO_read(bio, output, input.length());
+        int len = BIO_read(bio, out, input.length());
         BIO_free_all(bio);
-        return string(output, len);
+        return string(out, len);
       };
+#pragma GCC diagnostic pop 
       static string SHA1  (const string &input, const bool &rawbin = false) {
         return SHA(input, rawbin, ::SHA1,   SHA_DIGEST_LENGTH);
       };
@@ -1262,10 +1287,10 @@ namespace ₿ {
       static string char16Id() {
         string id = string(16, ' ');
         for (auto &it : id) {
-         const int offset = int64() % (26 + 26 + 10);
-         if      (offset < 26)      it = 'a' + offset;
-         else if (offset < 26 + 26) it = 'A' + offset - 26;
-         else                       it = '0' + offset - 26 - 26;
+          const int offset = int64() % (26 + 26 + 10);
+          if      (offset < 26)      it = 'a' + offset;
+          else if (offset < 26 + 26) it = 'A' + offset - 26;
+          else                       it = '0' + offset - 26 - 26;
         }
         return id;
       };

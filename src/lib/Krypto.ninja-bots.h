@@ -350,13 +350,12 @@ namespace ₿ {
           {"exchange",     "NAME",   "",       "set exchange NAME for trading, mandatory"},
           {"currency",     "PAIR",   "",       "set currency PAIR for trading, use format ISO 4217-A3"
                                                ANSI_NEW_LINE "with '/' separator, like 'BTC/EUR', mandatory"},
-          {"apikey",       "WORD",   "",       "set (never share!) WORD as api key for trading, mandatory"},
+          {"apikey",       "WORD",   "",       "set (never share!) WORD as api key name for trading, mandatory"},
           {"secret",       "WORD",   "",       "set (never share!) WORD as api secret for trading, mandatory"},
-          {"passphrase",   "WORD",   "",       "set (never share!) WORD as api passphrase for trading"},
+          {"apikeyid",     "WORD",   "",       "set (never share!) WORD as api key id for trading"},
           {"ENDPOINTS",    "",       nullptr,  ""},
           {"http",         "URL",    "",       "set URL of alernative HTTPS api endpoint for trading"},
           {"wss",          "URL",    "",       "set URL of alernative WSS api endpoint for trading"},
-          {"fix",          "URL",    "",       "set URL of alernative FIX api endpoint for trading"},
           {"NETWORK",      "",       nullptr,  ""},
           {"nocache",      "1",      nullptr,  "do not cache handshakes 7 hours at " K_HOME "/cache"},
           {"interface",    "IP",     "",       "set IP to bind as outgoing network interface"},
@@ -503,6 +502,14 @@ namespace ₿ {
         args["currency"] = Text::strU(arg<string>("currency"));
         args["base"]  = arg<string>("currency").substr(0, arg<string>("currency").find("/"));
         args["quote"] = arg<string>("currency").substr(1+ arg<string>("currency").find("/"));
+        if (arg<string>("secret").find("EC PRIVATE KEY") != string::npos && arg<string>("secret").find(ANSI_NEW_LINE) == string::npos) {
+          string::size_type n = 0;
+          while ((n = arg<string>("secret").find("\\r", n)) != string::npos)
+            args["secret"] = string(arg<string>("secret")).erase(n, 2);
+          n = 0;
+          while ((n = arg<string>("secret").find("\\n", n + 4)) != string::npos)
+            args["secret"] = string(arg<string>("secret")).replace(n, 2, ANSI_NEW_LINE);
+        }
         if (!args.contains("leverage"))  args["leverage"]  = 1.0;
         if (!args.contains("min-size"))  args["min-size"]  = 0.0;
         if (!args.contains("maker-fee")) args["maker-fee"] = 0.0;
@@ -1156,10 +1163,10 @@ namespace ₿ {
 
   enum class QuoteState: unsigned int {
     Disconnected,  Live,             Crossed,
-    MissingData,   UnknownHeld,      WidthTooHigh,
-    DepletedFunds, DisabledQuotes,   WaitingFunds,
+    UnknownReason, DisabledQuotes,   DepletedFunds,
+    WidthTooHigh,  WaitingPing,      WaitingFunds,
     UpTrendHeld,   DownTrendHeld,
-    TBPHeld,       MaxTradesSeconds, WaitingPing,
+    TBPHeld,       MaxTradesSeconds,
     ScaleSided,    ScalationLimit,   DeviationLimit
   };
 
@@ -1168,35 +1175,34 @@ namespace ₿ {
       class Quote: public Level {
         public:
           const Side       side   = (Side)0;
-                QuoteState state  = QuoteState::MissingData;
+                QuoteState state  = QuoteState::UnknownReason;
                 bool       isPong = false;
         public:
           Quote(const Side &s)
             : side(s)
           {};
           bool empty() const {
-            return !size or !price;
+            return !price or !size;
           };
           void skip() {
-            size = 0;
+            price = size = 0;
           };
           void skip(const QuoteState &reason) {
-            price = size = 0;
+            skip();
             state = reason;
           };
-          bool deprecates(const Price &otherPrice) const {
+          bool deprecates(const Price &otherPrice, Price currentPrice = 0) const {
+            if (!currentPrice) currentPrice = price;
             return side == Side::Bid
-                     ? price < otherPrice
-                     : price > otherPrice;
+                     ? currentPrice < otherPrice
+                     : currentPrice > otherPrice;
           };
-          bool checkCrossed(const Quote &otherSide) {
-            if (empty()) return false;
-            if (otherSide.empty() or deprecates(otherSide.price)) {
-              state = QuoteState::Live;
-              return false;
-            }
-            state = QuoteState::Crossed;
-            return true;
+          void checkCrossed(const Quote &otherSide) {
+            if (!empty())
+              state = (
+                otherSide.empty() or deprecates(otherSide.price)
+              ) ? QuoteState::Live
+                : QuoteState::Crossed;
           };
       };
       class Quotes {
@@ -1204,8 +1210,8 @@ namespace ₿ {
           Quote bid,
                 ask;
         private:
-          QuoteState prevBidState = QuoteState::MissingData,
-                     prevAskState = QuoteState::MissingData;
+          QuoteState prevBidState = QuoteState::UnknownReason,
+                     prevAskState = QuoteState::UnknownReason;
         private_ref:
           const Option &K;
         public:
@@ -1259,7 +1265,7 @@ namespace ₿ {
           void reset() {
             bid.isPong =
             ask.isPong = false;
-            states(QuoteState::UnknownHeld);
+            states(QuoteState::UnknownReason);
           };
           void unset() {
             if (bid.price <= 0 or ask.price <= 0) {
@@ -1269,8 +1275,11 @@ namespace ₿ {
             }
           };
           void upset() {
-            if (bid.checkCrossed(ask) or ask.checkCrossed(bid))
-              K.warn("QE", "Crossed bid/ask quotes detected, that is.. unexpected", 3e+3);
+            bid.checkCrossed(ask);
+            ask.checkCrossed(bid);
+            if (bid.state == QuoteState::Crossed
+             or ask.state == QuoteState::Crossed
+            ) K.warn("QE", "Crossed bid/ask quotes detected, that is.. unexpected", 3e+3);
           };
           void log() {
             logState(bid, &prevBidState);
@@ -1485,8 +1494,6 @@ namespace ₿ {
           gateway->http    = K->arg<string>("http");
         if (!gateway->ws.empty() and !K->arg<string>("wss").empty())
           gateway->ws      = K->arg<string>("wss");
-        if (!gateway->fix.empty() and !K->arg<string>("fix").empty())
-          gateway->fix     = K->arg<string>("fix");
         if (K->arg<double>("taker-fee"))
           gateway->takeFee = K->arg<double>("taker-fee") / 1e+2;
         if (K->arg<double>("maker-fee"))
@@ -1496,7 +1503,7 @@ namespace ₿ {
         gateway->leverage  = K->arg<double>("leverage");
         gateway->apikey    = K->arg<string>("apikey");
         gateway->secret    = K->arg<string>("secret");
-        gateway->pass      = K->arg<string>("passphrase");
+        gateway->apikeyid  = K->arg<string>("apikeyid");
         gateway->maxLevel  = K->arg<int>("market-limit");
         gateway->debug     = K->arg<int>("debug-secret");
         gateway->guard     = &lock;
@@ -1546,9 +1553,8 @@ namespace ₿ {
               if (orders->last) {
                 if (orders->purgeable(*orders->last))
                   orders->purge(orders->last);
-                else orders->last->justFilled = 0;
               }
-              if (raw.justFilled) {
+              if (raw.qtyFilled == raw.quantity && raw.status == Status::Terminated) {
                 gateway->askForBalance = true;
                 make_computer_go->beep();
               }
@@ -1607,7 +1613,6 @@ namespace ₿ {
           handshake({
             {"gateway", gateway->http      },
             {"gateway", gateway->ws        },
-            {"gateway", gateway->fix       },
             {"autoBot", arg<int>("autobot")
                           ? "yes"
                           : "no"           }

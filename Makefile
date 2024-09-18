@@ -1,8 +1,8 @@
 K         ?= K.sh
 MAJOR      = 0
-MINOR      = 6
-PATCH      = 6
-BUILD      = 6
+MINOR      = 7
+PATCH      = 0
+BUILD      = 0
 
 OBLIGATORY = DISCLAIMER: This is strict non-violent software: \n$\
              if you hurt other living creatures, please stop; \n$\
@@ -18,7 +18,7 @@ SOURCE    := $(filter-out trading-bot,$(notdir $(wildcard src/bin/*))) trading-b
 CARCH      = x86_64-linux-gnu        \
              arm-linux-gnueabihf     \
              aarch64-linux-gnu       \
-             x86_64-apple-darwin20.4 \
+             x86_64-apple-darwin23.5 \
              x86_64-w64-mingw32
 
 CHOST     ?= $(or $(findstring $(shell test -n "`command -v g++`" && g++ -dumpmachine), \
@@ -33,12 +33,12 @@ KBUILD    := build-$(KHOST)
 KHOME     := $(if ${SYSTEMROOT},$(word 1,$(subst :, ,${SYSTEMROOT})):/,$(if \
                $(findstring $(CHOST),$(lastword $(CARCH))),C:/,/var/lib/))K
 
-ERR        = *** K require g++ v10 or greater, but it was not found.
+ERR        = *** K require g++ v12 or greater, but it was not found.
 HINT      := consider a symlink at /usr/bin/$(CHOST)-g++ pointing to your g++ executable
 STEP       = $(shell tput setaf 2;tput setab 0)Building $(1)..$(shell tput sgr0)
 SUDO       = $(shell test -n "`command -v sudo`" && echo sudo)
 
-KARGS     := -std=c++20 -O3 -pthread                     \
+KARGS     := -std=c++23 -O3 -pthread                     \
   -D'K_HOME="$(KHOME)"' -D'K_HEAD="$(shell               \
     git rev-parse HEAD 2>/dev/null || echo HEAD          \
   )"' -D'K_CHOST="$(KHOST)"' -D'K_SOURCE="K-$(KSRC)"'    \
@@ -127,7 +127,7 @@ clean check lib:
 ifdef KALL
 	unset KALL $(foreach chost,$(CARCH),&& $(MAKE) $@ CHOST=$(chost))
 else
-	$(if $(shell ver="`$(CHOST)-g++ -dumpversion`" && test $${ver%%.*} -lt 10 && echo 1),$(warning $(ERR));$(error $(HINT)))
+	$(if $(shell ver="`$(CHOST)-g++ -dumpversion | cut -d'-' -f1`" && test $${ver%%.*} -lt 12 && echo 1),$(warning $(ERR));$(error $(HINT)))
 	@$(MAKE) -C src/lib $@ CHOST=$(CHOST) KHOST=$(KHOST) KHOME=$(KHOME)
 endif
 
@@ -155,27 +155,13 @@ ifdef KALL
 	unset KALL $(foreach chost,$(CARCH),&& $(MAKE) $@ CHOST=$(chost))
 else
 	$(info $(call STEP,$(KSRC) $@ $(CHOST)))
-	$(if $(shell ver="`$(CHOST)-g++ -dumpversion`" && test $${ver%%.*} -lt 10 && echo 1),$(warning $(ERR));$(error $(HINT)))
+	$(if $(shell ver="`$(CHOST)-g++ -dumpversion | cut -d'-' -f1`" && test $${ver%%.*} -lt 12 && echo 1),$(warning $(ERR));$(error $(HINT)))
 	@$(CHOST)-g++ --version
 	@mkdir -p $(KBUILD)/bin
-	@$(MAKE) symbol_encode_$@ -s
 	$(MAKE) $(if $(findstring darwin,$(CHOST)),Darwin,$(if $(findstring mingw32,$(CHOST)),Win32,$(shell uname -s))) CHOST=$(CHOST)
-	@$(MAKE) symbol_decode_$@ -s
 	@chmod +x $(KBUILD)/bin/K-$(KSRC)*
 	@$(if $(findstring $(CHOST),$(firstword $(CARCH))),$(MAKE) system_install -s)
 endif
-
-symbol_encode_src:
-	-@egrep ₿       src test -lR | xargs -r sed -i 's/₿/\\u20BF/g'
-
-symbol_decode_src:
-	-@egrep \\u20BF src test -lR | xargs -r sed -i 's/\\u20BF/₿/g'
-
-symbol_encode_Darwin:
-	-@egrep \\u20BF src      -lR | xargs -r sed -i 's/\\\(u20BF\)/\1/g'
-
-symbol_decode_Darwin:
-	-@egrep u20BF   src      -lR | xargs -r sed -i 's/\(u20BF\)/\\\1/g'
 
 Linux: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
 ifdef GITHUB_ACTIONS
@@ -191,18 +177,15 @@ else
 endif
 
 Darwin: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
-	-@$(MAKE) symbol_encode_$@ -s
 	$(CHOST)-g++ -s -DNDEBUG -o $(KBUILD)/bin/K-$(KSRC) -fvisibility=hidden -fvisibility-inlines-hidden \
-	  -msse4.1 -maes -mpclmul -mmacosx-version-min=10.13 -nostartfiles -rdynamic \
+	  -msse4.1 -maes -mpclmul -mmacosx-version-min=10.13 -nostartfiles -rdynamic                        \
 	  $< $(KARGS) -ldl -framework SystemConfiguration -framework CoreFoundation
-	-@$(MAKE) symbol_decode_$@ -s
 
 Win32: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
-	$(CHOST)-g++-posix -s -DNDEBUG -o $(KBUILD)/bin/K-$(KSRC).exe \
-	  -DCURL_STATICLIB                                            \
-	  -DSIGUSR1=SIGABRT -DSIGPIPE=SIGABRT -DSIGQUIT=SIGBREAK      \
-	  $< $(KARGS) -static -lstdc++ -lgcc                          \
-	  -lcrypt32 -lpsapi -luserenv -liphlpapi -lwldap32 -lws2_32
+	$(CHOST)-g++-posix -s -DNDEBUG -o $(KBUILD)/bin/K-$(KSRC).exe             \
+	  -DCURL_STATICLIB -DSIGUSR1=SIGABRT -DSIGPIPE=SIGABRT -DSIGQUIT=SIGBREAK \
+	  $< $(KARGS) -static -lstdc++ -lgcc -lole32 -lbcrypt -lcrypt32           \
+	   -lpsapi -luserenv -liphlpapi -lwldap32 -lws2_32 -ldbghelp
 
 download:
 	curl -L https://github.com/ctubio/Krypto-trading-bot/releases/download/$(MAJOR).$(MINOR).x/K-$(MAJOR).$(MINOR).$(PATCH).$(BUILD)-$(KHOST).tar.gz | tar xz
@@ -359,4 +342,4 @@ md5: src
 asandwich:
 	@test "`whoami`" = "root" && echo OK || echo make it yourself!
 
-.PHONY: all K $(SOURCE) hlep hepl help doc test src client client.o clean check lib download cleandb screen-help list screen start stop restart startall stopall restartall packages system_install uninstall install docker reinstall diff upgrade changelog test-c push MAJOR MINOR PATCH BUILD release md5 symbol_encode_src symbol_decode_src symbol_encode_Darwin symbol_decode_Darwin asandwich
+.PHONY: all K $(SOURCE) hlep hepl help doc test src client client.o clean check lib download cleandb screen-help list screen start stop restart startall stopall restartall packages system_install uninstall install docker reinstall diff upgrade changelog test-c push MAJOR MINOR PATCH BUILD release md5 asandwich

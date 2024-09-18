@@ -1147,12 +1147,12 @@ namespace tribeca {
         OrderFilled filled = {
           last.side,
           last.price,
-          last.justFilled,
+          last.qtyFilled,
           time,
           to_string(time),
           K.gateway->margin == Future::Spot
-            ? abs(last.price * last.justFilled)
-            : last.justFilled,
+            ? abs(last.price * last.qtyFilled)
+            : last.qtyFilled,
           fee,
           0, 0, 0, 0, 0,
           last.isPong,
@@ -1341,7 +1341,7 @@ namespace tribeca {
         : sells
       ).insert(pair<Price, RecentTrade>(
         last.price,
-        RecentTrade(last.price, last.justFilled)
+        RecentTrade(last.price, last.qtyFilled)
       ));
     };
     void expire() {
@@ -1702,7 +1702,7 @@ namespace tribeca {
           calcHeldAmount(orders.last->side);
           calcFundsSilently();
         }
-        if (orders.last->justFilled)
+        if (orders.last->qtyFilled)
           safety.insertTrade(*orders.last);
       };
       mMatter about() const override {
@@ -2536,30 +2536,24 @@ namespace tribeca {
         return false;
       };
     private:
-      bool abandon(const Order &order, System::Quote &quote, unsigned int &bullets) {
+      bool abandon(const Order &order, const Price &currentPrice, System::Quote &quote, unsigned int &limit) {
         if (orders.zombies.stillAlive(order)) {
-          if (abs(order.price - quote.price) < K.gateway->tickPrice)
-            quote.skip();
-          else if (order.status == Status::Waiting) {
-            if (qp.safety != QuotingSafety::AK47
-              or !--bullets
-            ) quote.skip();
-          } else if (qp.safety != QuotingSafety::AK47
-            or quote.deprecates(order.price)
-          ) {
-            if (qp.lifetime and order.time + qp.lifetime > Tstamp)
-              quote.skip();
-            else return true;
-          }
+          if ((order.status == Status::Waiting
+            or abs(order.price - currentPrice) < K.gateway->tickPrice
+            or (qp.lifetime and order.time + qp.lifetime > Tstamp)
+          ) and (qp.safety != QuotingSafety::AK47
+              or (!limit or !--limit)
+          )) quote.skip();
+          else return true;
         }
         return false;
       };
       vector<Order*> abandon(System::Quote &quote) {
         vector<Order*> abandoned;
-        unsigned int bullets = qp.bullets;
-        const bool all = quote.state != QuoteState::Live;
+        unsigned int limit = qp.bullets;
+        const Price currentPrice = quote.price;
         for (Order *const it : orders.at(quote.side))
-          if (all or abandon(*it, quote, bullets))
+          if (!currentPrice or abandon(*it, currentPrice, quote, limit))
             abandoned.push_back(it);
         return abandoned;
       };

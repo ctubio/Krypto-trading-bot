@@ -21,7 +21,3 @@
 //! \def
 //! \brief Define color yellow  as green.
 #define ANSI_YELLOW                "2"
-
-//! \def
-//! \brief Define color cyan    as blue.
-#define ANSI_CYAN                  "4"
