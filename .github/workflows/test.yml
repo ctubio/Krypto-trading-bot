@@ -4,14 +4,11 @@ on: [push, pull_request]
 
 jobs:
   build:
-    env:
-      TERM: xterm
-
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@main
+      - uses: actions/setup-node@main
 
       - name: configure
         run: |
@@ -22,7 +19,7 @@ jobs:
           sudo npm install -g npm-check-updates
 
       - name: install
-        run: yes 1 | KUNITS=1 make install lib K
+        run: KUNITS=1 make install lib K <<< '1'
 
       - name: check
         run: |

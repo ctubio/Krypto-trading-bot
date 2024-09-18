@@ -2,7 +2,7 @@ K         ?= K.sh
 MAJOR      = 0
 MINOR      = 7
 PATCH      = 0
-BUILD      = 3
+BUILD      = 4
 
 OBLIGATORY = DISCLAIMER: This is strict non-violent software: \n$\
              if you hurt other living creatures, please stop; \n$\
@@ -223,9 +223,9 @@ system_install:
 	@curl -s --time-cond $(KHOME)/ssl/cacert.pem https://curl.se/ca/cacert.pem -o $(KHOME)/ssl/cacert.pem
 
 install:
-	@yes = | head -n`expr $(shell tput -T xterm cols 2> /dev/null || echo 10) / 2` | xargs echo && echo " _  __" && echo "| |/ /  v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)" && echo "| ' /" && echo "| . \\   Select your (beloved) architecture" && echo "|_|\\_\\  to download pre-compiled binaries:" && echo
+	@seq `expr $${COLUMNS:-21} / 2` | sed 's/.*/=/' | xargs echo && echo " _  __" && echo "| |/ /  v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)" && echo "| ' /" && echo "| . \\   Select your (beloved) architecture" && echo "|_|\\_\\  to download pre-compiled binaries:" && echo
 	@echo $(CARCH) | tr ' ' "\n" | cat -n && echo && echo "(Hint! uname says \"`uname -sm`\")" && echo
-	@read -p "[$(shell seq -s \\ `echo $(CARCH) | wc -w`)]: " chost && $(MAKE) download CHOST=`echo $(CARCH) | cut -d ' ' -f$${chost}`
+	@read -p "[$(shell seq -s \\ `echo $(CARCH) | wc -w`)]: " chost && (test -n "`echo $(CARCH) | cut -d ' ' -f$${chost}`" && ($(MAKE) download CHOST=`echo $(CARCH) | cut -d ' ' -f$${chost}`) || (echo && echo Unknown option selected.. abort.))
 
 docker: download
 	@sed -i "/Usage/,+$(shell expr `cat K.sh | wc -l` - 16)d" K.sh
