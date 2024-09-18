@@ -2,7 +2,7 @@ K         ?= K.sh
 MAJOR      = 0
 MINOR      = 7
 PATCH      = 0
-BUILD      = 1
+BUILD      = 2
 
 OBLIGATORY = DISCLAIMER: This is strict non-violent software: \n$\
              if you hurt other living creatures, please stop; \n$\
@@ -33,7 +33,7 @@ KBUILD    := build-$(KHOST)
 KHOME     := $(if ${SYSTEMROOT},$(word 1,$(subst :, ,${SYSTEMROOT})):/,$(if \
                $(findstring $(CHOST),$(lastword $(CARCH))),C:/,/var/lib/))K
 
-ERR        = *** K require g++ v10 or greater, but it was not found.
+ERR        = *** K require g++ v12 or greater, but it was not found.
 HINT      := consider a symlink at /usr/bin/$(CHOST)-g++ pointing to your g++ executable
 STEP       = $(shell tput setaf 2;tput setab 0)Building $(1)..$(shell tput sgr0)
 SUDO       = $(shell test -n "`command -v sudo`" && echo sudo)
@@ -127,7 +127,7 @@ clean check lib:
 ifdef KALL
 	unset KALL $(foreach chost,$(CARCH),&& $(MAKE) $@ CHOST=$(chost))
 else
-	$(if $(shell ver="`$(CHOST)-g++ -dumpversion | cut -d'-' -f1`" && test $${ver%%.*} -lt 10 && echo 1),$(warning $(ERR));$(error $(HINT)))
+	$(if $(shell ver="`$(CHOST)-g++ -dumpversion | cut -d'-' -f1`" && test $${ver%%.*} -lt 12 && echo 1),$(warning $(ERR));$(error $(HINT)))
 	@$(MAKE) -C src/lib $@ CHOST=$(CHOST) KHOST=$(KHOST) KHOME=$(KHOME)
 endif
 
@@ -155,7 +155,7 @@ ifdef KALL
 	unset KALL $(foreach chost,$(CARCH),&& $(MAKE) $@ CHOST=$(chost))
 else
 	$(info $(call STEP,$(KSRC) $@ $(CHOST)))
-	$(if $(shell ver="`$(CHOST)-g++ -dumpversion | cut -d'-' -f1`" && test $${ver%%.*} -lt 10 && echo 1),$(warning $(ERR));$(error $(HINT)))
+	$(if $(shell ver="`$(CHOST)-g++ -dumpversion | cut -d'-' -f1`" && test $${ver%%.*} -lt 12 && echo 1),$(warning $(ERR));$(error $(HINT)))
 	@$(CHOST)-g++ --version
 	@mkdir -p $(KBUILD)/bin
 	$(MAKE) $(if $(findstring darwin,$(CHOST)),Darwin,$(if $(findstring mingw32,$(CHOST)),Win32,$(shell uname -s))) CHOST=$(CHOST)
@@ -223,7 +223,7 @@ system_install:
 	@curl -s --time-cond $(KHOME)/ssl/cacert.pem https://curl.se/ca/cacert.pem -o $(KHOME)/ssl/cacert.pem
 
 install:
-	@yes = | head -n`expr $(shell tput cols) / 2` | xargs echo && echo " _  __" && echo "| |/ /  v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)" && echo "| ' /" && echo "| . \\   Select your (beloved) architecture" && echo "|_|\\_\\  to download pre-compiled binaries:" && echo
+	@yes = | head -n`expr $(shell tput -T xterm cols 2> /dev/null || echo 10) / 2` | xargs echo && echo " _  __" && echo "| |/ /  v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)" && echo "| ' /" && echo "| . \\   Select your (beloved) architecture" && echo "|_|\\_\\  to download pre-compiled binaries:" && echo
 	@echo $(CARCH) | tr ' ' "\n" | cat -n && echo && echo "(Hint! uname says \"`uname -sm`\")" && echo
 	@read -p "[$(shell seq -s \\ `echo $(CARCH) | wc -w`)]: " chost && $(MAKE) download CHOST=`echo $(CARCH) | cut -d ' ' -f$${chost}`
 
