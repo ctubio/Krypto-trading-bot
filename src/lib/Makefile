@@ -104,7 +104,7 @@ uv:
 
 pvs:
 ifndef V_PVS
-	$(MAKE) $@ V_PVS=$(shell curl -s https://pvs-studio.com/en/pvs-studio/download-all/ | grep x86_64.tgz | sed 's/.*href=\"\(.*\)\" .*/\1/' | cut -d '-' -f4)
+	$(MAKE) $@ V_PVS=$(shell curl -s https://pvs-studio.com/en/pvs-studio/download-all/ | grep x86_64.tgz | sed 's/.*href=\"\(.*\)\" .*/\1/' | cut -d '-' -f4 | head -n1)
 else
 	test -d $(KBUILD)/var/pvs-studio-$(V_PVS)-x86_64 || (                    \
 	curl -L https://files.pvs-studio.com/pvs-studio-$(V_PVS)-x86_64.tgz      \
@@ -114,7 +114,7 @@ endif
 
 lcov:
 ifndef V_LCOV
-	$(MAKE) $@ V_LCOV=$(shell curl -s https://api.github.com/repos/linux-test-project/lcov/releases/latest | grep name | grep -v 'tag\|lcov' | cut -d '"' -f4)
+	$(MAKE) $@ V_LCOV=$(shell curl -s https://api.github.com/repos/linux-test-project/lcov/releases/latest | grep name | grep -v 'tag\|lcov' | cut -d '"' -f4 | head -n1)
 else
 	test -d $(KBUILD)/var/lcov-$(V_LCOV) || (                                                             \
 	curl -L https://github.com/linux-test-project/lcov/releases/download/v$(V_LCOV)/lcov-$(V_LCOV).tar.gz \
