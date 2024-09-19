@@ -62,20 +62,19 @@ openssl:
 	--prefix=$(KBUILD) --cross-compile-prefix=$(CHOST)- && make install_dev                               )
 
 curl:
-	@mkdir -p $(KBUILD)/var/ssl
-	curl --time-cond $(KBUILD)/var/ssl/curl-ca-bundle.crt https://curl.se/ca/cacert.pem -o $(KBUILD)/var/ssl/curl-ca-bundle.crt
-	test -d $(KBUILD)/var/curl-$(V_CURL) || (                                                   \
-	curl -L https://curl.haxx.se/download/curl-$(V_CURL).tar.gz | tar xz -C $(KBUILD)/var       \
-	&& cd $(KBUILD)/var/curl-$(V_CURL) && PKG_CONFIG="pkg-config --static"                      \
-	PKG_CONFIG_PATH=$(KBUILD)/lib/pkgconfig ./configure --host=$(CHOST) --prefix=$(KBUILD)      \
-	--with-zlib=$(KBUILD) --disable-manual --disable-docs --disable-shared --enable-static      \
-	$(if $(findstring mingw32,$(CHOST)),--with-schannel,--with-openssl=$(KBUILD)                \
-	--with-ca-embed=$(KBUILD)/var/ssl/curl-ca-bundle.crt)                                       \
-	--disable-rtsp --disable-ares --disable-telnet --disable-imap --disable-file                \
-	--disable-tftp --disable-smtp --disable-pop3 --disable-smb --disable-ftp --disable-sspi     \
-	--disable-ldap --disable-dict --without-libpsl --without-nghttp2 --without-libssh2          \
-	--without-brotli --without-zstd --disable-gopher --without-libidn2 --without-librtmp        \
-	&& make && (cd lib && make install) && (cd include && make install)                         )
+	test -d $(KBUILD)/var/curl-$(V_CURL) || (                                                  \
+	curl -L https://curl.haxx.se/download/curl-$(V_CURL).tar.gz | tar xz -C $(KBUILD)/var      \
+	&& cd $(KBUILD)/var/curl-$(V_CURL) && mkdir -p ssl && curl --etag-compare ssl/cacert.etag  \
+	--etag-save ssl/cacert.etag https://curl.se/ca/cacert.pem -o ssl/cacert.pem                \
+	&& PKG_CONFIG="pkg-config --static" PKG_CONFIG_PATH=$(KBUILD)/lib/pkgconfig ./configure    \
+	--host=$(CHOST) --prefix=$(KBUILD) --with-zlib=$(KBUILD) --disable-manual --disable-docs   \
+	--disable-file --disable-telnet --disable-ftp --disable-smtp --disable-ldap --disable-ares \
+	$(if $(findstring mingw32,$(CHOST)),--with-schannel,--with-openssl=$(KBUILD)               \
+	--with-ca-embed=$(KBUILD)/var/ssl/curl-ca-bundle.crt) --disable-imap --disable-pop3        \
+	--disable-rtsp  --without-libidn2 --without-librtmp  --without-nghttp2 --without-zstd      \
+	--disable-tftp --disable-smb --disable-sspi --disable-dict --without-libpsl                \
+	--without-brotli --without-libssh2 --disable-gopher --disable-shared --enable-static       \
+	&& make && (cd lib && make install) && (cd include && make install)                        )
 
 sqlite:
 	test -d $(KBUILD)/var/sqlite-autoconf-$(V_SQL) || (                                       \
