@@ -12,43 +12,43 @@ jobs:
 
       - name: configure-g++
         run: |
-          sudo apt-get install g++-x86-64-linux-gnu
-          # sudo update-alternatives --install /usr/bin/g++                  g++                  /usr/bin/g++-12                  100
-          # sudo update-alternatives --install /usr/bin/x86_64-linux-gnu-g++ x86_64-linux-gnu-g++ /usr/bin/x86_64-linux-gnu-g++-12 100
+          sudo apt-get install g++-12
+          sudo update-alternatives --install /usr/bin/g++                  g++                  /usr/bin/g++-12                    100
+          sudo update-alternatives --install /usr/bin/x86_64-linux-gnu-g++ x86_64-linux-gnu-g++ /usr/bin/x86_64-linux-gnu-g++-12   100
 
       - name: configure-gcov
         run: |
-          sudo apt-get install gcov-12 libcapture-tiny-perl libdatetime-perl
-          # sudo update-alternatives --install /usr/bin/gcov                 gcov                 /usr/bin/gcov-12                 100
+          sudo apt-get install libcapture-tiny-perl libdatetime-perl
+          sudo update-alternatives --install /usr/bin/gcov                  gcov                 /usr/bin/x86_64-linux-gnu-gcov-12 100
           
       - name: configure-clang
         run: |
           sudo apt-get install clang-tidy-14
-          # sudo update-alternatives --install /usr/bin/clang-tidy           clang-tidy           /usr/bin/clang-tidy-14           100
+          sudo update-alternatives --install /usr/bin/clang-tidy            clang-tidy           /usr/bin/clang-tidy-14            100
 
-      - name: configure-build
+      - name: configure-test
         run: |
           sudo apt-get install cowsay
           sudo npm install -g npm-check-updates
 
-      - name: install
+      - name: run-install
         run: KUNITS=1 make install lib K <<< '1'
 
-      - name: check
+      - name: run-check
         run: |
           make check                                | tr -d "#" | cowsay -nW80 -fduck
           (cd /var/lib/K && ncu)               | sed '/^\s*$/d' | cowsay -nW80 -fduck
 
-      - name: test
+      - name: run-test
         run: |
           make test-c                                           | cowsay -nW160 -felephant || :
           make test            | sed '/^\s*$/d' | sed '/====/d' | cowsay -nW160 -fbud-frogs && test ${PIPESTATUS[0]} -eq 0
 
-      - name: coverage
+      - name: send-coverage
         run: |
-          lcov -o lcov.info -c -d . --gcov-tool /usr/bin/gcov        #> /dev/null 2>&1
-          lcov -o lcov.info -r lcov.info '/usr/*' '*/include/*'      #> /dev/null 2>&1
-          lcov -l lcov.info                                          | cowsay -nW80 -fdefault
+          lcov -o lcov.info -c -d . --gcov-tool /usr/bin/gcov   #> /dev/null 2>&1
+          lcov -o lcov.info -r lcov.info '/usr/*' '*/include/*' #> /dev/null 2>&1
+          lcov -l lcov.info                                     | cowsay -nW80 -fdefault
 
       - uses: coverallsapp/github-action@main
         continue-on-error: true

@@ -40,12 +40,12 @@ STEP       = $(call TPUT,setaf 2)$(call TPUT,setab 0)Building $(1)..$(call TPUT,
 SUDO       = $(shell test -n "`command -v sudo`" && echo sudo)
 
 KARGS     := -std=c++23 -O3 -pthread                     \
+  -D'K_CHOST="$(KHOST)"' -D'K_SOURCE="K-$(KSRC)"'        \
+  -D'K_BUILD="v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)"'     \
+  -D'K_STAMP="$(shell date "+%Y-%m-%d %H:%M:%S")"'       \
   -D'K_HOME="$(KHOME)"' -D'K_HEAD="$(shell               \
     git rev-parse HEAD 2>/dev/null || echo HEAD          \
-  )"' -D'K_CHOST="$(KHOST)"' -D'K_SOURCE="K-$(KSRC)"'    \
-  -D'K_STAMP="$(shell date "+%Y-%m-%d %H:%M:%S")"'       \
-  -D'K_BUILD="v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)"'     \
-  -I$(KBUILD)/include                                    \
+  )"' -I$(KBUILD)/include                                \
   $(addprefix $(KBUILD)/lib/,                            \
     K-$(KHOST).$(ABI).a                                  \
     libsqlite3.a libcurl.a libssl.a  libcrypto.a libz.a  \

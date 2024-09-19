@@ -37,7 +37,7 @@ clean:
 	@rm -vrf $(KBUILD)
 
 check:
-	# zlib    | $(V_ZLIB)   | $(shell  curl -s https://www.zlib.net/ChangeLog.txt                    | grep "Changes in " | head -n1 | cut -d' ' -f3)
+	# zlib    | $(V_ZLIB)   | $(shell curl -s https://www.zlib.net/ChangeLog.txt                    | grep "Changes in " | head -n1 | cut -d' ' -f3)
 	# openssl | $(V_SSL)   | $(shell  curl -s https://api.github.com/repos/openssl/openssl/releases | grep "tag_name" | grep $(shell curl -s https://openssl-library.org/source/ | grep "The latest stable version is " | cut -d' ' -f8) | head -n1 | cut -d'o' -f2 | cut -d'-' -f2 | cut -d'"' -f1)
 	# curl    | $(V_CURL)  | $(shell  curl -s https://curl.se/changes.html                          | grep "Fixed in " | head -n1 | cut -d' ' -f4)
 	# sqlite  | $(V_SQL) | $(shell    curl -s https://www.sqlite.org/download.html                  | grep "sqlite-amalgamation-" | head -n1 | cut -d'-' -f3 | cut -d'.' -f1)
