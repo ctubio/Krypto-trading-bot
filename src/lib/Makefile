@@ -56,24 +56,26 @@ zlib:
 openssl:
 	test -d $(KBUILD)/var/openssl-$(V_SSL) || (                                                           \
 	curl -L https://github.com/openssl/openssl/releases/download/openssl-$(V_SSL)/openssl-$(V_SSL).tar.gz \
-	| tar xz -C $(KBUILD)/var && cd $(KBUILD)/var/openssl-$(V_SSL)                                        \
-	&& CC=gcc ./Configure no-asm --openssldir=$(KBUILD)                                                   \
+	| tar xz -C $(KBUILD)/var && cd $(KBUILD)/var/openssl-$(V_SSL) && CC=gcc ./Configure                  \
+	no-asm no-psk no-srp no-idea no-ssl3 no-weak-ssl-ciphers --openssldir=$(KBUILD)                       \
 	$(if $(findstring mingw32,$(CHOST)),mingw64 -static --libdir=lib,gcc)                                 \
 	--prefix=$(KBUILD) --cross-compile-prefix=$(CHOST)- && make install_dev                               )
 
 curl:
-	test -d $(KBUILD)/var/curl-$(V_CURL) || (                                               \
-	curl -L https://curl.haxx.se/download/curl-$(V_CURL).tar.gz | tar xz -C $(KBUILD)/var   \
-	&& cd $(KBUILD)/var/curl-$(V_CURL) && PKG_CONFIG="pkg-config --static"                  \
-	PKG_CONFIG_PATH=$(KBUILD)/lib/pkgconfig ./configure --host=$(CHOST) --prefix=$(KBUILD)  \
-	--with-ca-bundle=$(if $(findstring /var/lib,$(KHOME)                                    \
-	),$(KHOME)/ssl/,$(subst /,\\\\,$(KHOME))\\\\ssl\\\\)cacert.pem --with-zlib=$(KBUILD)    \
-	--with-ssl=$(KBUILD) --disable-ares --disable-manual --disable-imap --disable-file      \
-	--disable-tftp --disable-smtp --disable-pop3 --disable-smb --disable-ftp --disable-sspi \
-	--disable-ldap --disable-dict --without-libpsl --without-nghttp2 --without-libssh2      \
-	--disable-telnet --disable-rtsp --disable-gopher --without-libidn2 --without-librtmp    \
-	--disable-shared --enable-static                                                        \
-	&& make && (cd lib && make install) && (cd include && make install)                     )
+	@mkdir -p $(KBUILD)/var/ssl
+	curl --time-cond $(KBUILD)/var/ssl/curl-ca-bundle.crt https://curl.se/ca/cacert.pem -o $(KBUILD)/var/ssl/curl-ca-bundle.crt
+	test -d $(KBUILD)/var/curl-$(V_CURL) || (                                                   \
+	curl -L https://curl.haxx.se/download/curl-$(V_CURL).tar.gz | tar xz -C $(KBUILD)/var       \
+	&& cd $(KBUILD)/var/curl-$(V_CURL) && PKG_CONFIG="pkg-config --static"                      \
+	PKG_CONFIG_PATH=$(KBUILD)/lib/pkgconfig ./configure --host=$(CHOST) --prefix=$(KBUILD)      \
+	--with-zlib=$(KBUILD) --disable-manual --disable-docs --disable-shared --enable-static      \
+	$(if $(findstring mingw32,$(CHOST)),--with-schannel,--with-openssl=$(KBUILD)                \
+	--with-ca-embed=$(KBUILD)/var/ssl/curl-ca-bundle.crt)                                       \
+	--disable-rtsp --disable-ares --disable-telnet --disable-imap --disable-file                \
+	--disable-tftp --disable-smtp --disable-pop3 --disable-smb --disable-ftp --disable-sspi     \
+	--disable-ldap --disable-dict --without-libpsl --without-nghttp2 --without-libssh2          \
+	--without-brotli --without-zstd --disable-gopher --without-libidn2 --without-librtmp        \
+	&& make && (cd lib && make install) && (cd include && make install)                         )
 
 sqlite:
 	test -d $(KBUILD)/var/sqlite-autoconf-$(V_SQL) || (                                       \

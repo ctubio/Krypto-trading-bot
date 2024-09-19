@@ -2,7 +2,7 @@ K         ?= K.sh
 MAJOR      = 0
 MINOR      = 7
 PATCH      = 0
-BUILD      = 5
+BUILD      = 6
 
 OBLIGATORY = DISCLAIMER: This is strict non-violent software: \n$\
              if you hurt other living creatures, please stop; \n$\
@@ -173,7 +173,7 @@ else ifndef KTEST
 else
 	$(CHOST)-g++ -s $(KTEST) -o $(KBUILD)/bin/K-$(KSRC) \
 	  -static-libstdc++ -static-libgcc -rdynamic        \
-	  $< $(KARGS) -ldl -Wall -Wextra -Wno-psabi
+	  $< $(KARGS) -ldl -Wall -Wextra -Wno-psabi -z execstack
 endif
 
 Darwin: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
@@ -217,10 +217,8 @@ system_install:
 	@$(SUDO) mkdir -p $(KHOME)
 	@$(SUDO) chown $(shell id -u) $(KHOME)
 	@mkdir -p $(KHOME)/db
-	@mkdir -p $(KHOME)/ssl
 	@mkdir -p $(KHOME)/cache
 	@rm -f $(KHOME)/cache/handshake.*
-	@curl -s --time-cond $(KHOME)/ssl/cacert.pem https://curl.se/ca/cacert.pem -o $(KHOME)/ssl/cacert.pem
 
 install:
 	@seq `expr $${COLUMNS:-21} / 2` | sed 's/.*/=/' | xargs echo && echo " _  __" && echo "| |/ /  v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)" && echo "| ' /" && echo "| . \\   Select your (beloved) architecture" && echo "|_|\\_\\  to download pre-compiled binaries:" && echo

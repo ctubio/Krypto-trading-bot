@@ -735,7 +735,7 @@ namespace ₿ {
           };
       };
   };
-  
+
   class Text {
     public:
       static string strL(string input) {
@@ -1116,9 +1116,9 @@ namespace ₿ {
           };
           bool listen(const curl_socket_t &loopfd, const string &inet, const int &port, const bool &ipv6, const Session &data) {
             if (sockfd) return false;
-            addrinfo  hints = {AI_PASSIVE, AF_UNSPEC, SOCK_STREAM, 0, 0, nullptr, nullptr, nullptr},
-                     *result,
-                     *rp;
+            addrinfo  hints  = {AI_PASSIVE, AF_UNSPEC, SOCK_STREAM, 0, 0, nullptr, nullptr, nullptr},
+                     *result = nullptr,
+                     *rp     = nullptr;
             if (!getaddrinfo(inet.empty() ? nullptr : inet.data(), to_string(port).data(), &hints, &result)) {
               if (ipv6)
                 for (rp = result; rp and !sockfd; rp = sockfd ? rp : rp->ai_next)
@@ -1128,7 +1128,7 @@ namespace ₿ {
                 for (rp = result; rp and !sockfd; rp = sockfd ? rp : rp->ai_next)
                   if (rp->ai_family == AF_INET)
                     socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-              if (sockfd) {
+              if (rp && sockfd) {
                 const
 #ifdef _WIN32
                 char

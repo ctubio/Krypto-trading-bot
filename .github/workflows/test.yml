@@ -12,10 +12,7 @@ jobs:
 
       - name: configure
         run: |
-          sudo apt-get install g++-12 clang-tidy-14 cowsay
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 50
-          sudo update-alternatives --install /usr/bin/x86_64-linux-gnu-g++ x86_64-linux-gnu-g++ /usr/bin/x86_64-linux-gnu-g++-12 50
-          sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-14 100
+          sudo apt-get install cowsay
           sudo npm install -g npm-check-updates
 
       - name: install
@@ -23,19 +20,19 @@ jobs:
 
       - name: check
         run: |
-          make check                                     | tr -d "#" | cowsay -nW80 -fduck
-          (cd /var/lib/K && ncu)                    | sed '/^\s*$/d' | cowsay -nW80 -fduck
+          make check                                 | tr -d "#" | cowsay -nW80 -fduck
+          (cd /var/lib/K && ncu)                | sed '/^\s*$/d' | cowsay -nW80 -fduck
 
       - name: test
         run: |
-          make test-c                                                | cowsay -nW160 -felephant || :
-          make test                 | sed '/^\s*$/d' | sed '/====/d' | cowsay -nW160 -fbud-frogs && test ${PIPESTATUS[0]} -eq 0
+          make test-c                                            | cowsay -nW160 -felephant || :
+          make test             | sed '/^\s*$/d' | sed '/====/d' | cowsay -nW160 -fbud-frogs && test ${PIPESTATUS[0]} -eq 0
 
       - name: coverage
         run: |
-          lcov -o lcov.info -c -d . --gcov-tool /usr/bin/gcov-10     > /dev/null 2>&1
-          lcov -o lcov.info -r lcov.info '/usr/*' '*/include/*'      > /dev/null 2>&1
-          lcov -l lcov.info                                          | cowsay -nW80 -fdefault
+          lcov -o lcov.info -c -d . --gcov-tool /usr/bin/gcov-10 > /dev/null 2>&1
+          lcov -o lcov.info -r lcov.info '/usr/*' '*/include/*'  > /dev/null 2>&1
+          lcov -l lcov.info                                      | cowsay -nW80 -fdefault
 
       - uses: coverallsapp/github-action@master
         continue-on-error: true
