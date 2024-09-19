@@ -12,7 +12,7 @@ jobs:
 
       - name: configure
         run: |
-          sudo apt-get install g++-12 clang-tidy-14 cowsay
+          sudo apt-get install g++-12 clang-tidy-14 libcapture-tiny-perl cowsay
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 50
           sudo update-alternatives --install /usr/bin/x86_64-linux-gnu-g++ x86_64-linux-gnu-g++ /usr/bin/x86_64-linux-gnu-g++-12 50
           sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-14 100
