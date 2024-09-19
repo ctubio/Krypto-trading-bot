@@ -21,33 +21,28 @@ jobs:
           sudo apt-get install libcapture-tiny-perl libdatetime-perl
           sudo update-alternatives --install /usr/bin/gcov                  gcov                 /usr/bin/x86_64-linux-gnu-gcov-12 100
           
-      - name: configure-clang
-        run: |
-          sudo apt-get install clang-tidy-14
-          sudo update-alternatives --install /usr/bin/clang-tidy            clang-tidy           /usr/bin/clang-tidy-14            100
-
       - name: configure-test
         run: |
           sudo apt-get install cowsay
           sudo npm install -g npm-check-updates
 
-      - name: run-install
-        run: KUNITS=1 make install lib K <<< '1'
+      - name: install
+        run: KUNITS=1 make install lib K <<< 1
 
-      - name: run-check
+      - name: check
         run: |
           make check                                | tr -d "#" | cowsay -nW80 -fduck
           (cd /var/lib/K && ncu)               | sed '/^\s*$/d' | cowsay -nW80 -fduck
 
-      - name: run-test
+      - name: test
         run: |
           make test-c                                           | cowsay -nW160 -felephant || :
           make test            | sed '/^\s*$/d' | sed '/====/d' | cowsay -nW160 -fbud-frogs && test ${PIPESTATUS[0]} -eq 0
 
-      - name: send-coverage
+      - name: coverage
         run: |
-          lcov -o lcov.info -c -d . --gcov-tool /usr/bin/gcov   #> /dev/null 2>&1
-          lcov -o lcov.info -r lcov.info '/usr/*' '*/include/*' #> /dev/null 2>&1
+          lcov -o lcov.info -c -d . --gcov-tool /usr/bin/gcov   > /dev/null 2>&1
+          lcov -o lcov.info -r lcov.info '/usr/*' '*/include/*' > /dev/null 2>&1
           lcov -l lcov.info                                     | cowsay -nW80 -fdefault
 
       - uses: coverallsapp/github-action@main
