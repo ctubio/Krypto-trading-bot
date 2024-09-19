@@ -2,7 +2,7 @@ K         ?= K.sh
 MAJOR      = 0
 MINOR      = 7
 PATCH      = 0
-BUILD      = 7
+BUILD      = 8
 
 OBLIGATORY = DISCLAIMER: This is strict non-violent software: \n$\
              if you hurt other living creatures, please stop; \n$\
@@ -35,7 +35,8 @@ KHOME     := $(if ${SYSTEMROOT},$(word 1,$(subst :, ,${SYSTEMROOT})):/,$(if \
 
 ERR        = *** K require g++ v12 or greater, but it was not found.
 HINT      := consider a symlink at /usr/bin/$(CHOST)-g++ pointing to your g++ executable
-STEP       = $(shell tput setaf 2;tput setab 0)Building $(1)..$(shell tput sgr0)
+TPUT       = $(if $(shell echo $${TERM}),$(shell tput $(1)))
+STEP       = $(call TPUT,setaf 2)$(call TPUT,setab 0)Building $(1)..$(call TPUT,sgr0)
 SUDO       = $(shell test -n "`command -v sudo`" && echo sudo)
 
 KARGS     := -std=c++23 -O3 -pthread                     \
@@ -289,7 +290,9 @@ else
 	@pvs-studio-analyzer credentials PVS-Studio Free FREE-FREE-FREE-FREE > /dev/null 2>&1
 	@pvs-studio-analyzer analyze -e src/bin/$(KSRC)/$(KSRC).test.h -e src/lib/Krypto.ninja-test.h -e $(KBUILD)/include --source-file test/static_code_analysis.cxx --cl-params $(KARGS) test/static_code_analysis.cxx 2> /dev/null && \
 	  (echo $(KSRC) `plog-converter -a GA:1,2 -t tasklist -o report.tasks PVS-Studio.log | tail -n+8 | sed '/Total messages/d'` && cat report.tasks | sed '/Help: The documentation/d' && rm report.tasks) || :
-	@clang-tidy -header-filter=$(realpath src) -checks='modernize-*, -modernize-use-trailing-return-type, -modernize-use-nodiscard' test/static_code_analysis.cxx -- $(KARGS) 2> /dev/null
+	-@egrep ₿       src test -lR | xargs -r sed -i 's/₿/\\u20BF/g'
+	-@clang-tidy -header-filter=$(realpath src) -checks='modernize-*, -modernize-use-trailing-return-type, -modernize-use-nodiscard' test/static_code_analysis.cxx -- $(subst ++23,++20,$(KARGS)) 2> /dev/null
+	-@egrep \\u20BF src test -lR | xargs -r sed -i 's/\\u20BF/₿/g'
 	@rm -f PVS-Studio.log > /dev/null 2>&1
 endif
 

@@ -14,8 +14,9 @@ TSC       := tsc --baseUrl $(NODE_PATH) --typeRoots $(NODE_PATH)/@types \
 BROWSERIFY:= browserify --transform [ $(NODE_PATH)/babelify --presets [ $(NODE_PATH)/@babel/preset-env ] ]
 SASS      := sass --no-source-map --style compressed
 
+TPUT       = $(if $(shell echo $${TERM}),$(shell tput $(1)))
 STEPS     := $(shell grep "call\ STEP" Makefile | wc -l)
-STEP       = $(shell tput setaf 2;tput setab 0)[$(1)/$(STEPS)]$(shell tput setaf 3;tput setab 0) Building client $(2)..$(shell tput sgr0)
+STEP       = $(call TPUT,setaf 2)$(call TPUT,setab 0)[$(1)/$(STEPS)]$(call TPUT,setaf 3)$(call TPUT,setab 0) Building client $(2)..$(call TPUT,sgr0)
 STEP_1    := $(call STEP,1,npm packages)
 STEP_2    := $(call STEP,2,ts files)
 STEP_3    := $(call STEP,3,js zip file)
