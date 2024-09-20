@@ -4,10 +4,10 @@ $(if $(subst 0,,${MAKELEVEL}),,$(warning $(ERR));$(error $(HINT)))
 
 V_ZLIB  = 1.3.1
 V_SSL   = 3.3.2
-V_CURL  = 8.10.0
+V_CURL  = 8.10.1
 V_SQL   = 3460100
 V_JSON  = 3.11.3
-V_CATCH = 2.13.7
+V_CATCH = 2.13.10
 V_UV    = 1.48.0
 
 KBUILD := $(abspath ../../build-$(KHOST))
@@ -42,7 +42,7 @@ check:
 	# curl    | $(V_CURL)  | $(shell  curl -s https://curl.se/changes.html                          | grep "Fixed in " | head -n1 | cut -d' ' -f4)
 	# sqlite  | $(V_SQL) | $(shell    curl -s https://www.sqlite.org/download.html                  | grep "sqlite-amalgamation-" | head -n1 | cut -d'-' -f3 | cut -d'.' -f1)
 	# json    | $(V_JSON)  | $(shell  curl -s https://api.github.com/repos/nlohmann/json/releases   | grep "tag_name" | head -n1 | cut -d'v' -f2 | cut -d'"' -f1)
-	# catch   | $(V_CATCH)  | $(shell curl -s https://api.github.com/repos/catchorg/Catch2/releases | grep "tag_name" | head -n1 | cut -d'v' -f2 | cut -d'"' -f1)
+	# catch   | $(V_CATCH) | $(shell curl -s https://api.github.com/repos/catchorg/Catch2/releases | grep "tag_name" | grep "v2" | head -n1 | cut -d'v' -f2 | cut -d'"' -f1)
 	# uv      | $(V_UV)  | $(shell    curl -s https://api.github.com/repos/libuv/libuv/releases     | grep "tag_name" | head -n1 | cut -d'v' -f2 | cut -d'"' -f1)
 
 zlib:
