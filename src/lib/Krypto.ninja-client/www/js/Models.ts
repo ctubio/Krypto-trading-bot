@@ -296,7 +296,6 @@ export class ProductAdvertisement {
                 public base:        string = "",
                 public quote:       string = "",
                 public symbol:      string = "",
-                public margin:      number = 0,
                 public webMarket:   string = "",
                 public webOrders:   string = "",
                 public environment: string = "",

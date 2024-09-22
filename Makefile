@@ -2,7 +2,7 @@ K         ?= K.sh
 MAJOR      = 0
 MINOR      = 7
 PATCH      = 0
-BUILD      = 9
+BUILD      = 10
 
 OBLIGATORY = DISCLAIMER: This is strict non-violent software: \n$\
              if you hurt other living creatures, please stop; \n$\
@@ -222,9 +222,14 @@ system_install:
 	@rm -f $(KHOME)/cache/handshake.*
 
 install:
-	@seq `expr $${COLUMNS:-21} / 2` | sed 's/.*/=/' | xargs echo && echo " _  __" && echo "| |/ /  v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)" && echo "| ' /" && echo "| . \\   Select your (beloved) architecture" && echo "|_|\\_\\  to download pre-compiled binaries:" && echo
-	@echo $(CARCH) | tr ' ' "\n" | cat -n && echo && echo "(Hint! uname says \"`uname -sm`\")" && echo
-	@read -p "[$(shell seq -s \\ `echo $(CARCH) | wc -w`)]: " chost && (test -n "`echo $(CARCH) | cut -d ' ' -f$${chost}`" && ($(MAKE) download CHOST=`echo $(CARCH) | cut -d ' ' -f$${chost}`) || (echo && echo Unknown option selected.. abort.))
+	@seq `expr $${COLUMNS:-21} / 2` | sed 's/.*/=/' | xargs echo                                                             \
+	&& echo " _  __"                                                                                                         \
+	&& echo "| |/ /  v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)"                                                                   \
+	&& echo "| ' /" && echo "| . \\   Select your (beloved) architecture"                                                    \
+	&& echo "|_|\\_\\  to download pre-compiled binaries:" && echo                                                           \
+	&& echo $(CARCH) | tr ' ' "\n" | cat -n && echo && echo "(Hint! uname says \"`uname -sm`\")" && echo                     \
+	&& read -p "[$(shell seq -s \\ `echo $(CARCH) | wc -w`)]: " chost && (test -n "`echo $(CARCH) | cut -d ' ' -f$${chost}`" \
+	&& ($(MAKE) download CHOST=`echo $(CARCH) | cut -d ' ' -f$${chost}`) || (echo && echo Unknown option selected.. abort.))
 
 docker: download
 	@sed -i "/Usage/,+$(shell expr `cat K.sh | wc -l` - 16)d" K.sh
@@ -290,9 +295,9 @@ else
 	@pvs-studio-analyzer credentials PVS-Studio Free FREE-FREE-FREE-FREE > /dev/null 2>&1
 	@pvs-studio-analyzer analyze -e src/bin/$(KSRC)/$(KSRC).test.h -e src/lib/Krypto.ninja-test.h -e $(KBUILD)/include --source-file test/static_code_analysis.cxx --cl-params $(KARGS) test/static_code_analysis.cxx 2> /dev/null && \
 	  (echo $(KSRC) `plog-converter -a GA:1,2 -t tasklist -o report.tasks PVS-Studio.log | tail -n+8 | sed '/Total messages/d'` && cat report.tasks | sed '/Help: The documentation/d' && rm report.tasks) || :
-	-@egrep ₿       src test -lR | xargs -r sed -i 's/₿/\\u20BF/g'
+	-@egrep ₿     src test -lR | xargs -r sed -i 's/₿/u20BF/g'
 	-@clang-tidy -header-filter=$(realpath src) -checks='modernize-*, -modernize-use-trailing-return-type, -modernize-use-nodiscard' test/static_code_analysis.cxx -- $(subst ++23,++20,$(KARGS)) 2> /dev/null
-	-@egrep \\u20BF src test -lR | xargs -r sed -i 's/\\u20BF/₿/g'
+	-@egrep u20BF src test -lR | xargs -r sed -i 's/u20BF/₿/g'
 	@rm -f PVS-Studio.log > /dev/null 2>&1
 endif
 

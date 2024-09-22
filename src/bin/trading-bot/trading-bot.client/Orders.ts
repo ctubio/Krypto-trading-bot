@@ -133,12 +133,7 @@ export class OrdersComponent {
         exchangeId: o.exchangeId,
         side: Models.Side[o.side],
         price: o.price.toFixed(this.product.tickPrice),
-        value: (this.product.margin == 0
-                 ? Math.round(o.quantity * o.price * 100) / 100
-                 : (this.product.margin == 1
-                     ? Math.round((o.quantity / o.price) * 1e+8) / 1e+8
-                     : Math.round((o.quantity * o.price) * 1e+8) / 1e+8
-                 )).toFixed(this.product.tickPrice),
+        value: (Math.round(o.quantity * o.price * 100) / 100).toFixed(this.product.tickPrice),
         type: Models.OrderType[o.type],
         tif: Models.TimeInForce[o.timeInForce],
         lat: o.latency + 'ms',

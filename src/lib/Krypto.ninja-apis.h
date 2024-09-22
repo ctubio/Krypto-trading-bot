@@ -7,7 +7,6 @@ namespace ₿ {
   enum class         Side: unsigned int { Bid, Ask };
   enum class  TimeInForce: unsigned int { GTC, IOC, FOK };
   enum class    OrderType: unsigned int { Limit, Market };
-  enum class       Future: unsigned int { Spot, Inverse, Linear };
 
   struct Level {
      Price price = 0;
@@ -307,8 +306,6 @@ namespace ₿ {
              makeFee   = 0,
              takeFee   = 0;
          int maxLevel  = 0;
-      double leverage  = 0;
-      Future margin    = (Future)0;
         bool debug     = false;
       Connectivity adminAgreement = Connectivity::Disconnected;
       json handshake(const bool &nocache) {
@@ -332,7 +329,6 @@ namespace ₿ {
         base      = reply.value("base",      base);
         quote     = reply.value("quote",     quote);
         symbol    = reply.value("symbol",    symbol);
-        margin    = reply.value("margin",    margin);
         tickPrice = reply.value("tickPrice", 0.0);
         tickSize  = reply.value("tickSize",  0.0);
         minValue  = reply.value("minValue",  0.0);
@@ -359,16 +355,10 @@ namespace ₿ {
       };
       void report(Report notes, const bool &nocache) {
         for (const auto &it : (Report){
-          {"symbols", (margin == Future::Linear
-                        ? symbol             + " (" + decimal.funds.str(decimal.funds.step)
-                        : base + "/" + quote + " (" + decimal.amount.str(tickSize)
-                      ) + "/"
-                        + decimal.price.str(tickPrice) + ")"                                  },
-          {"minSize", decimal.amount.str(minSize) + " " + (
-                        margin == Future::Spot
-                          ? base
-                          : "Contract" + string(minSize != 1, 's')
-                      ) + (minValue ? " or " + decimal.price.str(minValue) + " " + quote : "")},
+          {"symbols", base + "/" + quote + " (" + decimal.amount.str(tickSize)
+                        + "/" + decimal.price.str(tickPrice) + ")"                            },
+          {"minSize", decimal.amount.str(minSize) + " " + base
+                        + (minValue ? " or " + decimal.price.str(minValue) + " " + quote : "")},
           {"makeFee", decimal.percent.str(makeFee * 1e+2) + "%"                               },
           {"takeFee", decimal.percent.str(takeFee * 1e+2) + "%"                               }
         }) notes.push_back(it);
@@ -633,14 +623,14 @@ class GwApiWsFix: public GwApiWs,
         ws     = "wss://stream.binance.com:9443/ws";
         randId = Random::uuid36Id;
         webMarket = "https://www.binance.com/en/trade/";
-        webOrders = "https://www.binance.com/en/my/orders/exchange/tradeorder";
+        webOrders = "https://www.binance.com/en/my/orders/exchange";
       };
       string web(const string &base, const string &quote) const {
         return webMarket + base + "_" + quote + "?layout=pro";
       };
     protected:
       string nonce() const override {
-        return to_string(Tstamp);
+        return to_string(Tstamp) + "&recvWindow=21000";
       };
       void pairs(string &report) const override {
         const json reply = Curl::Web::xfer(*guard, http + "/api/v3/exchangeInfo");
@@ -657,7 +647,7 @@ class GwApiWsFix: public GwApiWs,
           ) report += it.value("baseAsset", "") + "/" + it.value("quoteAsset", "") + ANSI_NEW_LINE;
       };
       json handshake() const override {
-        json reply1 = Curl::Web::xfer(*guard, http + "/api/v3/exchangeInfo");
+        json reply1 = Curl::Web::xfer(*guard, http + "/api/v3/exchangeInfo?symbol="+ base + quote);
         if (reply1.contains("symbols") and reply1.at("symbols").is_array())
           for (const json &it : reply1.at("symbols"))
             if (it.value("symbol", "") == base + quote) {
@@ -666,7 +656,7 @@ class GwApiWsFix: public GwApiWs,
                 for (const json &it_ : reply1.at("filters")) {
                   if (it_.value("filterType", "") == "PRICE_FILTER")
                     reply1["tickPrice"] = stod(it_.value("tickSize", "0"));
-                  else if (it_.value("filterType", "") == "MIN_NOTIONAL")
+                  else if (it_.value("filterType", "") == "NOTIONAL")
                     reply1["minValue"] = stod(it_.value("minNotional", "0"));
                   else if (it_.value("filterType", "") == "LOT_SIZE") {
                     reply1["tickSize"] = stod(it_.value("stepSize", "0"));
@@ -734,28 +724,26 @@ class GwApiWsFix: public GwApiWs,
         return to_string(Tstamp);
       };
       void pairs(string &report) const override {
-        const json reply = Curl::Web::xfer(*guard, http + "/instrument/active");
+        const json reply = Curl::Web::xfer(*guard, http + "/instrument?filter={\"typ\":\"IFXXXP\",\"state\":\"Open\"}");
         if (!reply.is_array()
           or reply.empty()
           or !reply.at(0).is_object()
           or !reply.at(0).contains("symbol")
         ) print("Error while reading pairs: " + reply.dump());
         else for (const json &it : reply)
-          report += it.value("symbol", "") + ANSI_NEW_LINE;
+          if (!it.value("isInverse", false))
+            report += it.value("symbol", "") + ANSI_NEW_LINE;
       };
       json handshake() const override {
         json reply = {
-          {"object", Curl::Web::xfer(*guard, http + "/instrument?symbol=" + base + quote)}
+          {"object", Curl::Web::xfer(*guard, http + "/instrument?symbol=" + base + "_" + quote)}
         };
         if (reply.at("object").is_array() and !reply.at("object").empty())
           reply = reply.at("object").at(0);
         return {
           {     "base", base                           },
           {    "quote", quote                          },
-          {   "symbol", base + quote                   },
-          {   "margin", reply.value("isInverse", false)
-                          ? Future::Inverse
-                          : Future::Linear             },
+          {   "symbol", base + "_" + quote             },
           {"tickPrice", reply.value("tickSize", 0.0)   },
           { "tickSize", reply.value("lotSize", 0.0)    },
           {  "minSize", reply.value("lotSize", 0.0)    },

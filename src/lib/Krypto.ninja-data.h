@@ -1128,7 +1128,7 @@ namespace ₿ {
                 for (rp = result; rp and !sockfd; rp = sockfd ? rp : rp->ai_next)
                   if (rp->ai_family == AF_INET)
                     socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-              if (rp && sockfd) {
+              if (rp and sockfd) {
                 const
 #ifdef _WIN32
                 char

@@ -194,12 +194,7 @@ namespace analpaper {
           const Amount minBid = K.gateway->minValue
             ? fmax(K.gateway->minSize, K.gateway->minValue / bid.price)
             : K.gateway->minSize;
-          const Amount maxBid = K.gateway->margin == Future::Spot
-            ? wallet.quote.total / bid.price
-            : (K.gateway->margin == Future::Inverse
-                ? wallet.base.amount * bid.price
-                : wallet.base.amount / bid.price
-            );
+          const Amount maxBid = wallet.quote.total / bid.price;
           bid.size = K.gateway->decimal.amount.round(
             fmax(minBid * (1.0 + K.gateway->takeFee * 1e+2), fmin(
               bid.size,
@@ -211,14 +206,7 @@ namespace analpaper {
           const Amount minAsk = K.gateway->minValue
             ? fmax(K.gateway->minSize, K.gateway->minValue / ask.price)
             : K.gateway->minSize;
-          const Amount maxAsk = K.gateway->margin == Future::Spot
-            ? wallet.base.total
-            : (K.gateway->margin == Future::Inverse
-                ? (bid.empty()
-                  ? wallet.base.amount * ask.price
-                  : bid.size)
-                : wallet.base.amount / ask.price
-            );
+          const Amount maxAsk = wallet.base.total;
           ask.size = K.gateway->decimal.amount.round(
             fmax(minAsk * (1.0 + K.gateway->takeFee * 1e+2), fmin(
               ask.size,
@@ -232,25 +220,15 @@ namespace analpaper {
           const Amount minBid = K.gateway->minValue
             ? fmax(K.gateway->minSize, K.gateway->minValue / bid.price)
             : K.gateway->minSize;
-          if ((K.gateway->margin == Future::Spot
-              ? wallet.quote.total / bid.price
-              : (K.gateway->margin == Future::Inverse
-                  ? wallet.base.amount * bid.price
-                  : wallet.base.amount / bid.price)
-              ) < minBid
-          ) bid.skip(QuoteState::DepletedFunds);
+          if (wallet.quote.total / bid.price < minBid)
+            bid.skip(QuoteState::DepletedFunds);
         }
         if (!ask.empty()) {
           const Amount minAsk = K.gateway->minValue
             ? fmax(K.gateway->minSize, K.gateway->minValue / ask.price)
             : K.gateway->minSize;
-          if ((K.gateway->margin == Future::Spot
-              ? wallet.base.total
-              : (K.gateway->margin == Future::Inverse
-                  ? wallet.base.amount * ask.price
-                  : wallet.base.amount / ask.price)
-              ) < minAsk
-          ) ask.skip(QuoteState::DepletedFunds);
+          if (wallet.base.total < minAsk)
+            ask.skip(QuoteState::DepletedFunds);
         }
       };
   };

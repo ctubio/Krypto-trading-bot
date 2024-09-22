@@ -24,27 +24,25 @@ import {Models} from 'lib/K';
         >{{ (position.base.amount + position.base.held).toFixed(8)}}</span>
       </small>
     </h4>
-    <div *ngIf="!product.margin">
-      <h4 class="col-md-12 col-xs-2">
-        <small><i class="beacon sym-_default-s sym-{{ product.quote.toLowerCase() }}-s" ></i> {{ product.quote }}:
-          <br/>
-          <span
-            title="{{ product.quote }} Available"
-            class="text-danger"
-          >{{ position.quote.amount.toFixed(product.tickPrice) }}</span>
-          <br/>
-          <span
-            title="{{ product.quote }} Held"
-            [ngClass]="position.quote.held ? 'buy' : 'text-muted'"
-          >{{ position.quote.held.toFixed(product.tickPrice) }}</span>
-          <hr style="margin:0 30px;color:#fff;opacity:.7">
-          <span
-            class="text-muted"
-            title="{{ product.quote }} Total"
-          >{{ (position.quote.amount + position.quote.held).toFixed(product.tickPrice) }}</span>
-        </small>
-      </h4>
-    </div>
+    <h4 class="col-md-12 col-xs-2">
+      <small><i class="beacon sym-_default-s sym-{{ product.quote.toLowerCase() }}-s" ></i> {{ product.quote }}:
+        <br/>
+        <span
+          title="{{ product.quote }} Available"
+          class="text-danger"
+        >{{ position.quote.amount.toFixed(product.tickPrice) }}</span>
+        <br/>
+        <span
+          title="{{ product.quote }} Held"
+          [ngClass]="position.quote.held ? 'buy' : 'text-muted'"
+        >{{ position.quote.held.toFixed(product.tickPrice) }}</span>
+        <hr style="margin:0 30px;color:#fff;opacity:.7">
+        <span
+          class="text-muted"
+          title="{{ product.quote }} Total"
+        >{{ (position.quote.amount + position.quote.held).toFixed(product.tickPrice) }}</span>
+      </small>
+    </h4>
     <h4 class="col-md-12 col-xs-2" style="margin-bottom: 0px!important;">
       <small>Value:</small>
       <br/>
@@ -60,8 +58,8 @@ import {Models} from 'lib/K';
           title="{{ product.base }} profit %"
           class="{{ position.base.profit>0 ? \'text-danger\' : \'text-muted\' }}"
         >{{ position.base.profit>=0?'+':'' }}{{ position.base.profit.toFixed(2) }}%</span>
-        <span *ngIf="!product.margin">, </span>
-        <span *ngIf="!product.margin"
+        <span>, </span>
+        <span
           title="{{ product.quote }} profit %"
           class="{{ position.quote.profit>0 ? \'text-danger\' : \'text-muted\' }}"
         >{{ position.quote.profit>=0?'+':'' }}{{ position.quote.profit.toFixed(2) }}%</span>

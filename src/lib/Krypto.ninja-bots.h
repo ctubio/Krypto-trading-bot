@@ -103,8 +103,8 @@ namespace ₿ {
       static void die(const int) {
         if (epilogue.empty())
           epilogue = "Excellent decision! "
-                   + Curl::Web::xfer(lock, "https://api.icndb.com/jokes/random?escape=javascript&limitTo=[nerdy]")
-                       .value("/value/joke"_json_pointer, "let's plant a tree instead..");
+                   + Curl::Web::xfer(lock, "https://api.chucknorris.io/jokes/random?category=dev")
+                       .value("value", "let's plant a tree instead..");
         halt(
           epilogue.find("Errrror") == string::npos
             ? EXIT_SUCCESS
@@ -502,7 +502,7 @@ namespace ₿ {
         args["currency"] = Text::strU(arg<string>("currency"));
         args["base"]  = arg<string>("currency").substr(0, arg<string>("currency").find("/"));
         args["quote"] = arg<string>("currency").substr(1+ arg<string>("currency").find("/"));
-        if (arg<string>("secret").find("EC PRIVATE KEY") != string::npos && arg<string>("secret").find(ANSI_NEW_LINE) == string::npos) {
+        if (arg<string>("secret").find("EC PRIVATE KEY") != string::npos and arg<string>("secret").find(ANSI_NEW_LINE) == string::npos) {
           string::size_type n = 0;
           while ((n = arg<string>("secret").find("\\r", n)) != string::npos)
             args["secret"] = string(arg<string>("secret")).erase(n, 2);
@@ -510,12 +510,10 @@ namespace ₿ {
           while ((n = arg<string>("secret").find("\\n", n + 4)) != string::npos)
             args["secret"] = string(arg<string>("secret")).replace(n, 2, ANSI_NEW_LINE);
         }
-        if (!args.contains("leverage"))  args["leverage"]  = 1.0;
         if (!args.contains("min-size"))  args["min-size"]  = 0.0;
         if (!args.contains("maker-fee")) args["maker-fee"] = 0.0;
         if (!args.contains("taker-fee")) args["taker-fee"] = 0.0;
         args["market-limit"] = max(10, arg<int>("market-limit"));
-        args["leverage"] = fmax(0, fmin(100, arg<double>("leverage")));
         if (arg<int>("debug"))
           args["heartbeat"] =
           args["debug-orders"] =
@@ -1500,7 +1498,6 @@ namespace ₿ {
           gateway->makeFee = K->arg<double>("maker-fee") / 1e+2;
         if (K->arg<double>("min-size"))
           gateway->minSize = K->arg<double>("min-size");
-        gateway->leverage  = K->arg<double>("leverage");
         gateway->apikey    = K->arg<string>("apikey");
         gateway->secret    = K->arg<string>("secret");
         gateway->apikeyid  = K->arg<string>("apikeyid");
@@ -1554,7 +1551,7 @@ namespace ₿ {
                 if (orders->purgeable(*orders->last))
                   orders->purge(orders->last);
               }
-              if (raw.qtyFilled == raw.quantity && raw.status == Status::Terminated) {
+              if (raw.qtyFilled == raw.quantity and raw.status == Status::Terminated) {
                 gateway->askForBalance = true;
                 make_computer_go->beep();
               }

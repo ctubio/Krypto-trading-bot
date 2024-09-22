@@ -11,7 +11,7 @@ import {Socket, Models} from 'lib/K';
     (click)="toggle()">{{
       state.online ? product.exchange : 'Connecting to exchange..'
     }}<span [hidden]="!state.online"><br />{{
-      product.margin == 2 ? product.symbol : product.base + '/' + product.quote
+      product.base + '/' + product.quote
     }}</span>
   </button>`
 })

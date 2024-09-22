@@ -111,12 +111,12 @@ import {Socket, Models} from 'lib/K';
                          [(ngModel)]="params.tradeSizeTBPExp">
                   </td>
                   <td style="width:169px;border-bottom: 3px solid #D64A4A;" *ngIf="!params.percentageValues">
-                      <input class="form-control input-sm" title="{{ product.margin ? 'Contracts' : product.base }}"
+                      <input class="form-control input-sm" title="{{ product.base }}"
                          type="number" step="{{ product.stepSize }}" min="{{ product.minSize}}"
                          [(ngModel)]="params.buySize">
                   </td>
                   <td style="width:169px;border-bottom: 3px solid #D64A4A;" *ngIf="params.percentageValues">
-                      <input class="form-control input-sm" title="{{ product.margin ? 'Contracts' : product.base }}"
+                      <input class="form-control input-sm" title="{{ product.base }}"
                          type="number" step="0.001" min="0.001" max="100"
                          [(ngModel)]="params.buySizePercentage">
                   </td>
@@ -125,12 +125,12 @@ import {Socket, Models} from 'lib/K';
                          [(ngModel)]="params.buySizeMax">
                   </td>
                   <td style="width:169px;border-bottom: 3px solid #D64A4A;" *ngIf="!params.percentageValues">
-                      <input class="form-control input-sm" title="{{ product.margin ? 'Contracts' : product.base }}"
+                      <input class="form-control input-sm" title="{{ product.base }}"
                          type="number" step="{{ product.stepSize }}" min="{{ product.minSize }}"
                          [(ngModel)]="params.sellSize">
                   </td>
                   <td style="width:169px;border-bottom: 3px solid #D64A4A;" *ngIf="params.percentageValues">
-                      <input class="form-control input-sm" title="{{ product.margin ? 'Contracts' : product.base }}"
+                      <input class="form-control input-sm" title="{{ product.base }}"
                          type="number" step="0.001" min="0.001" max="100"
                          [(ngModel)]="params.sellSizePercentage">
                   </td>

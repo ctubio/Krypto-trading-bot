@@ -275,7 +275,6 @@ namespace analpaper {
           {       "base", K.gateway->base                             },
           {      "quote", K.gateway->quote                            },
           {     "symbol", K.gateway->symbol                           },
-          {     "margin", K.gateway->margin                           },
           {  "webMarket", K.gateway->web()                            },
           {  "webOrders", K.gateway->web(true)                        },
           {  "tickPrice", K.gateway->decimal.price.stream.precision() },

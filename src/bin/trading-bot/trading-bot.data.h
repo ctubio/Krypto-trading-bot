@@ -1150,9 +1150,7 @@ namespace tribeca {
           last.qtyFilled,
           time,
           to_string(time),
-          K.gateway->margin == Future::Spot
-            ? abs(last.price * last.qtyFilled)
-            : last.qtyFilled,
+          abs(last.price * last.qtyFilled),
           fee,
           0, 0, 0, 0, 0,
           last.isPong,
@@ -1164,10 +1162,9 @@ namespace tribeca {
             ? ANSI_HIGH_CYAN    + (last.isPong?"PONG":"PING") + " TRADE BUY  "
             : ANSI_PUKE_MAGENTA + (last.isPong?"PONG":"PING") + " TRADE SELL "
           )
-          + K.gateway->decimal.amount.str(filled.quantity) + ' '
-          + (K.gateway->margin == Future::Spot ? K.gateway->base : "Contracts") + " at price "
-          + K.gateway->decimal.price.str(filled.price) + ' ' + K.gateway->quote + " (value "
-          + K.gateway->decimal.price.str(filled.value) + ' ' + K.gateway->quote + ")"
+          + K.gateway->decimal.amount.str(filled.quantity) + ' ' + K.gateway->base + " at price "
+          + K.gateway->decimal.price.str(filled.price)     + ' ' + K.gateway->quote + " (value "
+          + K.gateway->decimal.price.str(filled.value)     + ' ' + K.gateway->quote + ")"
         );
         if (qp.safety == QuotingSafety::Off
           or qp.safety == QuotingSafety::PingPong
@@ -1698,10 +1695,8 @@ namespace tribeca {
       };
       void calcFundsAfterOrder() {
         if (!orders.last) return;
-        if (K.gateway->margin == Future::Spot) {
-          calcHeldAmount(orders.last->side);
-          calcFundsSilently();
-        }
+        calcHeldAmount(orders.last->side);
+        calcFundsSilently();
         if (orders.last->qtyFilled)
           safety.insertTrade(*orders.last);
       };
@@ -1732,15 +1727,8 @@ namespace tribeca {
           quote = {quote.total - heldSide, heldSide, quote.currency};
       };
       void calcValues() {
-        base.value  = K.gateway->margin == Future::Spot
-                        ? base.total + (quote.total / fairValue)
-                        : base.total;
-        quote.value = K.gateway->margin == Future::Spot
-                        ? (base.total * fairValue) + quote.total
-                        : (K.gateway->margin == Future::Inverse
-                            ? base.total * fairValue
-                            : base.total / fairValue
-                        );
+        base.value  = base.total  + (quote.total / fairValue);
+        quote.value = quote.total + (base.total  * fairValue);
       };
       void calcProfits() {
         if (!profits.ratelimit())
@@ -2060,22 +2048,12 @@ namespace tribeca {
         if (!qp.buySizeMax and !bid.empty())
           bid.size = fmin(
             qp.sopSizeMultiplier * bid.size,
-            K.gateway->margin == Future::Spot
-              ? (wallet.quote.amount / bid.price) / 2
-              : (K.gateway->margin == Future::Inverse
-                  ? (wallet.base.amount / 2) * bid.price
-                  : (wallet.base.amount / 2) / bid.price
-              )
+            (wallet.quote.amount / bid.price) / 2
           );
         if (!qp.sellSizeMax and !ask.empty())
           ask.size = fmin(
             qp.sopSizeMultiplier * ask.size,
-            K.gateway->margin == Future::Spot
-              ? wallet.base.amount / 2
-              : (K.gateway->margin == Future::Inverse
-                  ? (wallet.base.amount / 2) * ask.price
-                  : (wallet.base.amount / 2) / ask.price
-              )
+            wallet.base.amount / 2
           );
       };
       void applyEwmaProtection() {
@@ -2093,12 +2071,7 @@ namespace tribeca {
             if (!qp.buySizeMax)
               bid.size = fmin(
                 qp.aprMultiplier * bid.size,
-                K.gateway->margin == Future::Spot
-                  ? wallet.target.targetBasePosition - wallet.base.total
-                  : (K.gateway->margin == Future::Inverse
-                      ? (wallet.target.targetBasePosition - wallet.base.total) * bid.price
-                      : (wallet.target.targetBasePosition - wallet.base.total) / bid.price
-                  )
+                wallet.target.targetBasePosition - wallet.base.total
               );
           }
         }
@@ -2109,12 +2082,7 @@ namespace tribeca {
             if (!qp.sellSizeMax)
               ask.size = fmin(
                 qp.aprMultiplier * ask.size,
-                K.gateway->margin == Future::Spot
-                  ? wallet.base.total - wallet.target.targetBasePosition
-                  : (K.gateway->margin == Future::Inverse
-                      ? (wallet.base.total - wallet.target.targetBasePosition) * ask.price
-                      : (wallet.base.total - wallet.target.targetBasePosition) / ask.price
-                  )
+                wallet.base.total - wallet.target.targetBasePosition
               );
           }
         }
@@ -2259,12 +2227,7 @@ namespace tribeca {
           const Amount minBid = K.gateway->minValue
             ? fmax(K.gateway->minSize, K.gateway->minValue / bid.price)
             : K.gateway->minSize;
-          const Amount maxBid = K.gateway->margin == Future::Spot
-            ? wallet.quote.total / bid.price
-            : (K.gateway->margin == Future::Inverse
-                ? wallet.base.amount * bid.price
-                : wallet.base.amount / bid.price
-            );
+          const Amount maxBid = wallet.quote.total / bid.price;
           bid.size = K.gateway->decimal.amount.round(
             fmax(minBid * (1.0 + K.gateway->takeFee * 1e+2), fmin(
               bid.size,
@@ -2276,14 +2239,7 @@ namespace tribeca {
           const Amount minAsk = K.gateway->minValue
             ? fmax(K.gateway->minSize, K.gateway->minValue / ask.price)
             : K.gateway->minSize;
-          const Amount maxAsk = K.gateway->margin == Future::Spot
-            ? wallet.base.total
-            : (K.gateway->margin == Future::Inverse
-                ? (bid.empty()
-                  ? wallet.base.amount * ask.price
-                  : bid.size)
-                : wallet.base.amount / ask.price
-            );
+          const Amount maxAsk = wallet.base.total;
           ask.size = K.gateway->decimal.amount.round(
             fmax(minAsk * (1.0 + K.gateway->takeFee * 1e+2), fmin(
               ask.size,
@@ -2293,22 +2249,10 @@ namespace tribeca {
         }
       };
       void applyDepleted() {
-        if (!bid.empty())
-          if ((K.gateway->margin == Future::Spot
-              ? wallet.quote.total / bid.price
-              : (K.gateway->margin == Future::Inverse
-                  ? wallet.base.amount * bid.price
-                  : wallet.base.amount / bid.price)
-              ) < bid.size
-          ) bid.skip(QuoteState::DepletedFunds);
-        if (!ask.empty())
-          if ((K.gateway->margin == Future::Spot
-              ? wallet.base.total
-              : (K.gateway->margin == Future::Inverse
-                  ? wallet.base.amount * ask.price
-                  : wallet.base.amount / ask.price)
-              ) < ask.size
-          ) ask.skip(QuoteState::DepletedFunds);
+        if (!bid.empty() and wallet.quote.total / bid.price < bid.size)
+            bid.skip(QuoteState::DepletedFunds);
+        if (!ask.empty() and wallet.base.total < ask.size)
+          ask.skip(QuoteState::DepletedFunds);
       };
       void applyWaitingPing() {
         if (qp.safety == QuotingSafety::Off) return;
@@ -2405,7 +2349,6 @@ namespace tribeca {
           {       "base", K.gateway->base                             },
           {      "quote", K.gateway->quote                            },
           {     "symbol", K.gateway->symbol                           },
-          {     "margin", K.gateway->margin                           },
           {  "webMarket", K.gateway->web()                            },
           {  "webOrders", K.gateway->web(true)                        },
           {  "tickPrice", K.gateway->decimal.price.stream.precision() },
