@@ -439,8 +439,15 @@ namespace ₿ {
   };
 #endif
 
+  static struct curl_blob curl_ca_embed_blob = {
+    (void*)curl_ca_embed,
+    strlen((const char*)curl_ca_embed),
+    CURL_BLOB_NOCOPY
+  };
+
   static function<void(CURL*)> args_easy_setopt = [](CURL *curl) {
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "K");
+    curl_easy_setopt_nowin32(curl, CURLOPT_CAINFO_BLOB, &curl_ca_embed_blob);
   };
 
   class Curl {
@@ -609,7 +616,6 @@ namespace ₿ {
               curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write);
               curl_easy_setopt(curl, CURLOPT_WRITEDATA, &reply);
               curl_easy_setopt(curl, CURLOPT_TIMEOUT, 21L);
-              // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
               rc = curl_easy_perform(curl);
               curl_easy_cleanup(curl);
               if (slist) curl_slist_free_all(slist);

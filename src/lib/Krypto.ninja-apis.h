@@ -625,7 +625,7 @@ class GwApiWsFix: public GwApiWs,
         webMarket = "https://www.binance.com/en/trade/";
         webOrders = "https://www.binance.com/en/my/orders/exchange";
       };
-      string web(const string &base, const string &quote) const {
+      string web(const string &base, const string &quote) const override {
         return webMarket + base + "_" + quote + "?layout=pro";
       };
     protected:
@@ -716,7 +716,7 @@ class GwApiWsFix: public GwApiWs,
         webMarket = "https://www.bitmex.com/app/trade/";
         webOrders = "https://www.bitmex.com/app/orderHistory";
       };
-      string web(const string &base, const string &quote) const {
+      string web(const string &base, const string &quote) const override {
         return webMarket + base + quote;
       };
     protected:
@@ -770,7 +770,7 @@ class GwApiWsFix: public GwApiWs,
         webMarket = "https://www.gate.io/trade/";
         webOrders = "https://www.gate.io/myaccount/myorders";
       };
-      string web(const string &base, const string &quote) const {
+      string web(const string &base, const string &quote) const override {
         return webMarket + base + "_" + quote;
       };
     protected:
@@ -832,7 +832,7 @@ class GwApiWsFix: public GwApiWs,
         webMarket = "https://hitbtc.com/exchange/";
         webOrders = "https://hitbtc.com/reports/orders";
       };
-      string web(const string &base, const string &quote) const {
+      string web(const string &base, const string &quote) const override {
         return webMarket + base + "-to-" + quote;
       };
     protected:
@@ -891,7 +891,7 @@ class GwApiWsFix: public GwApiWs,
         webMarket = "https://www.coinbase.com/advanced-trade/spot/";
         webOrders = "https://www.coinbase.com/orders/";
       };
-      string web(const string &base, const string &quote) const {
+      string web(const string &base, const string &quote) const override {
         return webMarket + base + "-" + quote;
       };
     protected:
@@ -951,7 +951,7 @@ class GwApiWsFix: public GwApiWs,
         webMarket = "https://www.bitfinex.com/trading/";
         webOrders = "https://www.bitfinex.com/reports/orders";
       };
-      string web(const string &base, const string &quote) const {
+      string web(const string &base, const string &quote) const override {
         return webMarket + base + quote;
       };
     protected:
@@ -1041,7 +1041,7 @@ class GwApiWsFix: public GwApiWs,
         webMarket = "https://trade.kucoin.com/";
         webOrders = "https://www.kucoin.com/order/trade";
       };
-      string web(const string &base, const string &quote) const {
+      string web(const string &base, const string &quote) const override {
         return webMarket + base + "-" + quote;
       };
     protected:
@@ -1123,7 +1123,7 @@ class GwApiWsFix: public GwApiWs,
         webMarket = "https://trade.kraken.com/charts/KRAKEN:";
         webOrders = "https://www.kraken.com/u/trade";
       };
-      string web(const string &base, const string &quote) const {
+      string web(const string &base, const string &quote) const override {
         return webMarket + base + "-" + quote;
       };
     protected:
@@ -1178,7 +1178,7 @@ class GwApiWsFix: public GwApiWs,
         webMarket = "https://poloniex.com/exchange/";
         webOrders = "https://poloniex.com/tradeHistory";
       };
-      string web(const string &base, const string &quote) const {
+      string web(const string &base, const string &quote) const override {
         return webMarket + quote + "_" + base;
       };
     protected:

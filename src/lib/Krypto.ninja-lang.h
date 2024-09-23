@@ -61,6 +61,7 @@
 #include <sqlite3.h>
 
 #include <curl/curl.h>
+#include <curl/cacert_embed.h>
 
 #include <openssl/ssl.h>
 #include <openssl/bio.h>

@@ -2,7 +2,7 @@ K         ?= K.sh
 MAJOR      = 0
 MINOR      = 7
 PATCH      = 0
-BUILD      = 10
+BUILD      = 11
 
 OBLIGATORY = DISCLAIMER: This is strict non-violent software: \n$\
              if you hurt other living creatures, please stop; \n$\
@@ -48,7 +48,8 @@ KARGS     := -std=c++23 -O3 -pthread                     \
   )"' -I$(KBUILD)/include                                \
   $(addprefix $(KBUILD)/lib/,                            \
     K-$(KHOST).$(ABI).a                                  \
-    libsqlite3.a libcurl.a libssl.a  libcrypto.a libz.a  \
+    libcurl.a libssl.a libcrypto.a libz.a libsqlite3.a   \
+  	cacert_embed.o                                       \
   )                                                      \
   $(wildcard $(addprefix $(KBUILD)/lib/,                 \
     K-$(KSRC)-client.o                                   \

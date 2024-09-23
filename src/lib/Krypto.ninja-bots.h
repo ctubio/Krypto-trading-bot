@@ -553,17 +553,20 @@ namespace ₿ {
         if (!arg<string>("interface").empty() and !arg<int>("ipv6"))
           args_easy_setopt = [inet = arg<string>("interface")](CURL *curl) {
             curl_easy_setopt(curl, CURLOPT_USERAGENT, "K");
+            curl_easy_setopt_nowin32(curl, CURLOPT_CAINFO_BLOB, &curl_ca_embed_blob);
             curl_easy_setopt(curl, CURLOPT_INTERFACE, inet.data());
             curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
           };
         else if (!arg<string>("interface").empty())
           args_easy_setopt = [inet = arg<string>("interface")](CURL *curl) {
             curl_easy_setopt(curl, CURLOPT_USERAGENT, "K");
+            curl_easy_setopt_nowin32(curl, CURLOPT_CAINFO_BLOB, &curl_ca_embed_blob);
             curl_easy_setopt(curl, CURLOPT_INTERFACE, inet.data());
           };
         else if (!arg<int>("ipv6"))
           args_easy_setopt = [](CURL *curl) {
             curl_easy_setopt(curl, CURLOPT_USERAGENT, "K");
+            curl_easy_setopt_nowin32(curl, CURLOPT_CAINFO_BLOB, &curl_ca_embed_blob);
             curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
           };
       };
