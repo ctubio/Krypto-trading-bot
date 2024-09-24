@@ -8,7 +8,7 @@ namespace ₿ {
   //! \param[in] reason Allows any (colorful?) string.
   static void exit(const string &reason = "") {
     epilogue = reason + string(!(reason.empty() or reason.back() == '.'), '.');
-    raise(SIGQUIT);
+    raise(SIGBREAK);
   };
 
   //! \brief     Call all endingFn once and print a last error log msg.
@@ -72,9 +72,9 @@ namespace ₿ {
         ::signal(SIGPIPE,  SIG_IGN);
         ::signal(SIGINT, [](const int) {
           clog << ANSI_NEW_LINE;
-          raise(SIGQUIT);
+          raise(SIGBREAK);
         });
-        ::signal(SIGQUIT,  die);
+        ::signal(SIGBREAK, die);
         ::signal(SIGTERM,  err);
         ::signal(SIGABRT,  wtf);
         ::signal(SIGSEGV,  wtf);
@@ -304,7 +304,7 @@ namespace ₿ {
           << setw(3) << microseconds.count();
         time_t tt = chrono::system_clock::to_time_t(clock);
         char datetime[15];
-        strftime(datetime, 15, "%m/%d %H:%M:%S", localtime(&tt));
+        strftime(datetime, sizeof(datetime), "%m/%d %H:%M:%S", localtime(&tt));
         return                  ANSI_HIGH_GREEN +
               datetime        + ANSI_PUKE_GREEN +
               microtime.str() + ANSI_HIGH_WHITE +
@@ -638,7 +638,7 @@ namespace ₿ {
     private:
       Loop::Async::Event<char> keylogger;
       mutable unordered_map<char, function<void()>> maps = {
-        { (char)SIGQUIT, []() { raise(SIGQUIT); } }
+        { (char)SIGBREAK, []() { raise(SIGBREAK); } }
       };
     protected:
       void wait_for_keylog(Loop *const loop) {

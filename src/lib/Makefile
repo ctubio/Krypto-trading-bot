@@ -77,8 +77,9 @@ curl:
 	--disable-dict --without-nghttp2 --without-brotli  --disable-shared --enable-static             \
 	&& make && (cd lib && make install) && (cd include && make install)                             \
 	&& (echo "#define curl_easy_setopt_nowin32(a, b, c) $(if $(findstring mingw32,$(CHOST)),        \
-	,curl_easy_setopt(a, b, c))" && echo "`grep extern src/tool_ca_embed.c | cut -d';' -f1`;") >    \
-	$(KBUILD)/include/curl/cacert_embed.h && cp -v src/tool_ca_embed.o $(KBUILD)/lib/cacert_embed.o )
+	,curl_easy_setopt(a, b, c))" && echo "`grep extern src/tool_ca_embed.c |                        \
+	cut -d';' -f1`;") > $(KBUILD)/include/curl/cacert_embed.h                                       \
+	&& cp -v src/tool_ca_embed.o $(KBUILD)/lib/cacert_embed.o                                       )
 
 sqlite:
 	test -d $(KBUILD)/var/sqlite-autoconf-$(V_SQL) || (                                       \
@@ -103,9 +104,7 @@ uv:
 	test -d $(KBUILD)/var/libuv-$(V_UV) || (                                                          \
 	curl -L https://github.com/libuv/libuv/archive/v$(V_UV).tar.gz | tar xz -C $(KBUILD)/var          \
 	&& cd $(KBUILD)/var/libuv-$(V_UV) && sh autogen.sh && CC=$(CHOST)-gcc ./configure --host=$(CHOST) \
-	--prefix=$(KBUILD) --disable-shared --enable-static && make all install                           \
-	$(if $(findstring mingw32,$(CHOST)),                                                              \
-	&& sed -i "s/\(#define SIGQUIT\)/\/\/\1/" $(KBUILD)/include/uv/win.h))                            )
+	--prefix=$(KBUILD) --disable-shared --enable-static && make all install)                          )
 
 pvs:
 ifndef V_PVS

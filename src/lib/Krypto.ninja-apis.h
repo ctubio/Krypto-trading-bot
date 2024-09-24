@@ -724,7 +724,9 @@ class GwApiWsFix: public GwApiWs,
         return to_string(Tstamp);
       };
       void pairs(string &report) const override {
-        const json reply = Curl::Web::xfer(*guard, http + "/instrument?filter={\"typ\":\"IFXXXP\",\"state\":\"Open\"}");
+        const json reply = Curl::Web::xfer(*guard, http + "/instrument?filter="+((json){
+          {"typ", "IFXXXP"}, {"state", "Open"}
+        }).dump());
         if (!reply.is_array()
           or reply.empty()
           or !reply.at(0).is_object()

@@ -2,7 +2,7 @@ K         ?= K.sh
 MAJOR      = 0
 MINOR      = 7
 PATCH      = 0
-BUILD      = 11
+BUILD      = 12
 
 OBLIGATORY = DISCLAIMER: This is strict non-violent software: \n$\
              if you hurt other living creatures, please stop; \n$\
@@ -23,7 +23,6 @@ CARCH      = x86_64-linux-gnu        \
 
 CHOST     ?= $(or $(findstring $(shell test -n "`command -v g++`" && g++ -dumpmachine), \
                 $(CARCH)),$(subst build-,,$(firstword $(wildcard build-*))))
-ABI       ?= 1
 
 KHOST     := $(shell echo $(CHOST)                               \
                | sed 's/-\([a-z_0-9]*\)-\(linux\)$$/-\2-\1/'     \
@@ -47,9 +46,9 @@ KARGS     := -std=c++23 -O3 -pthread                     \
     git rev-parse HEAD 2>/dev/null || echo HEAD          \
   )"' -I$(KBUILD)/include                                \
   $(addprefix $(KBUILD)/lib/,                            \
-    K-$(KHOST).$(ABI).a                                  \
+    K-$(KHOST).a                                         \
     libcurl.a libssl.a libcrypto.a libz.a libsqlite3.a   \
-  	cacert_embed.o                                       \
+    cacert_embed.o                                       \
   )                                                      \
   $(wildcard $(addprefix $(KBUILD)/lib/,                 \
     K-$(KSRC)-client.o                                   \
@@ -184,9 +183,9 @@ Darwin: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
 	  $< $(KARGS) -ldl -framework SystemConfiguration -framework CoreFoundation
 
 Win32: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
-	$(CHOST)-g++-posix -s -DNDEBUG -o $(KBUILD)/bin/K-$(KSRC).exe             \
-	  -DCURL_STATICLIB -DSIGUSR1=SIGABRT -DSIGPIPE=SIGABRT -DSIGQUIT=SIGBREAK \
-	  $< $(KARGS) -static -lstdc++ -lgcc -lole32 -lbcrypt -lcrypt32           \
+	$(CHOST)-g++-posix -s -DNDEBUG -o $(KBUILD)/bin/K-$(KSRC).exe   \
+	  -DCURL_STATICLIB -DSIGUSR1=SIGABRT -DSIGPIPE=SIGABRT          \
+	  $< $(KARGS) -static -lstdc++ -lgcc -lole32 -lbcrypt -lcrypt32 \
 	   -lpsapi -luserenv -liphlpapi -lwldap32 -lws2_32 -ldbghelp
 
 download:
@@ -297,7 +296,7 @@ else
 	@pvs-studio-analyzer analyze -e src/bin/$(KSRC)/$(KSRC).test.h -e src/lib/Krypto.ninja-test.h -e $(KBUILD)/include --source-file test/static_code_analysis.cxx --cl-params $(KARGS) test/static_code_analysis.cxx 2> /dev/null && \
 	  (echo $(KSRC) `plog-converter -a GA:1,2 -t tasklist -o report.tasks PVS-Studio.log | tail -n+8 | sed '/Total messages/d'` && cat report.tasks | sed '/Help: The documentation/d' && rm report.tasks) || :
 	-@egrep ₿     src test -lR | xargs -r sed -i 's/₿/u20BF/g'
-	-@clang-tidy -header-filter=$(realpath src) -checks='modernize-*, -modernize-use-trailing-return-type, -modernize-use-nodiscard' test/static_code_analysis.cxx -- $(subst ++23,++20,$(KARGS)) 2> /dev/null
+	-@clang-tidy -header-filter=$(realpath src) -checks='modernize-*, -modernize-use-trailing-return-type, -modernize-use-nodiscard, -clang-diagnostic-unknown-warning-option, -modernize-avoid-c-arrays, -modernize-return-braced-init-list' test/static_code_analysis.cxx -- $(subst ++23,++20,$(KARGS)) 2> /dev/null
 	-@egrep u20BF src test -lR | xargs -r sed -i 's/u20BF/₿/g'
 	@rm -f PVS-Studio.log > /dev/null 2>&1
 endif

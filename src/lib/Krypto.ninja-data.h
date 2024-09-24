@@ -66,9 +66,8 @@ namespace ₿ {
   };
 
   class FixFrames {
-    protected:
-      const string  target;
     private_ref:
+      const string &target;
       const string &sender;
     public:
       FixFrames(const string &t, const string &s)
@@ -560,11 +559,15 @@ namespace ₿ {
               do {
                 n = 0;
                 rc = curl_easy_recv(curl, data, sizeof(data), &n);
+#ifdef _WIN32
+                if (rc == CURLE_UNSUPPORTED_PROTOCOL and n == 0)
+                  rc = CURLE_OK;
+#endif
                 in.append(data, n);
                 if (rc == CURLE_AGAIN and !wait(true, timeout))
                   return CURLE_OPERATION_TIMEDOUT;
               } while (rc == CURLE_AGAIN);
-              if ((timeout and in.find(ANSI_NEW_LINE ANSI_NEW_LINE) != in.find("\u0001" "10="))
+              if ((timeout and in.find(ANSI_NEW_LINE ANSI_NEW_LINE) != string::npos)
                 or rc != CURLE_OK
                 or n == 0
               ) break;
