@@ -120,6 +120,7 @@ export class StatsComponent implements OnInit {
     navigator: {enabled: false},
     rangeSelector:{enabled: false,height:0},
     scrollbar: {enabled: false},
+    accessibility: {enabled: false},
     credits: {enabled: false},
     xAxis: {
       type: 'datetime',
@@ -360,6 +361,7 @@ export class StatsComponent implements OnInit {
         resetZoomButton: {theme: {display: 'none'}},
         backgroundColor:'rgba(255, 255, 255, 0)'
     },
+    accessibility: {enabled: false},
     credits: {enabled: false},
     tooltip: {
         shared: true,
@@ -441,6 +443,7 @@ export class StatsComponent implements OnInit {
         resetZoomButton: {theme: {display: 'none'}},
         backgroundColor:'rgba(255, 255, 255, 0)'
     },
+    accessibility: {enabled: false},
     credits: {enabled: false},
     tooltip: {
         shared: true,

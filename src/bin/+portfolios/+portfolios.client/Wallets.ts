@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 
-import {GridOptions, RowNode} from '@ag-grid-community/all-modules';
+import {GridOptions, GridApi, RowNode} from 'ag-grid-community';
 
 import {Shared, Models} from 'lib/K';
 
@@ -14,10 +14,10 @@ import {Shared, Models} from 'lib/K';
       [market]="market"></markets>
   </div>
   <ag-grid-angular id="portfolios"
-    class="ag-theme-fresh ag-theme-dark ag-theme-big"
+    class="ag-theme-alpine ag-theme-big"
     style="width: 100%;"
-    (window:resize)="onGridReady()"
-    (gridReady)="onGridReady()"
+    (window:resize)="onGridReady($event)"
+    (gridReady)="onGridReady($event)"
     (rowClicked)="onRowClicked($event)"
     [gridOptions]="grid"></ag-grid-angular>`
 })
@@ -47,17 +47,20 @@ export class WalletsComponent {
   private onRowClicked = ($event) => {
     if (!$event.data.currency) return;
     if (this.selection == $event.data.currency) {
-      this.grid.api.deselectAll();
+      this.api.deselectAll();
       this.selection = null;
     }
     else this.selection = $event.data.currency;
   };
+
+  private api: GridApi;
 
   private grid: GridOptions = <GridOptions>{
     overlayLoadingTemplate: `<span class="ag-overlay-no-rows-center">missing data</span>`,
     overlayNoRowsTemplate: `<span class="ag-overlay-no-rows-center">missing data</span>`,
     defaultColDef: { sortable: true, resizable: true, flex: 1 },
     rowHeight:35,
+    headerHeight:35,
     domLayout: 'autoHeight',
     animateRows:true,
     rowSelection:'single',
@@ -65,11 +68,11 @@ export class WalletsComponent {
     onSelectionChanged: () => {
       this.markets_view = false;
       this.market = null;
-      this.grid.api.forEachNode((node: RowNode) => {
+      this.api.forEachNode((node: RowNode) => {
         node.setRowHeight(this.grid.rowHeight);
       });
-      var node: RowNode = this.grid.api.getSelectedNodes().reverse().pop();
-      if (!node) return this.grid.api.onRowHeightChanged();
+      var node: any = this.api.getSelectedNodes().reverse().pop();
+      if (!node) return this.api.onRowHeightChanged();
       this.deferredRender = () => {
         document.querySelector("#portfolios div[row-id='" + node.data.currency + "'] div[aria-colindex='4']").appendChild(document.querySelector('#markets'));
         var style = (<HTMLElement>document.querySelector('#markets')).style;
@@ -79,7 +82,7 @@ export class WalletsComponent {
           + parseInt(style.marginBottom)
           + (<HTMLElement>document.querySelector('#markets div')).offsetHeight
         );
-        this.grid.api.onRowHeightChanged();
+        this.api.onRowHeightChanged();
       };
       setTimeout(() => {
         this.markets_view = true;
@@ -94,7 +97,7 @@ export class WalletsComponent {
     ) && (
       !this.pattern || node.data.currency.toUpperCase().indexOf(this.pattern) > -1
     ),
-    getRowNodeId: (data) => data.currency,
+    getRowId: (data: any) => data.currency,
     columnDefs: [{
       width: 220,
       field: 'held',
@@ -182,15 +185,16 @@ export class WalletsComponent {
     }]
   };
 
-  private onGridReady() {
-    Shared.currencyHeaders(this.grid.api, this.settings.currency, this.settings.currency);
+  private onGridReady(event: any) {
+    this.api = event.api;
+    Shared.currencyHeaders(this.api, this.settings.currency, this.settings.currency);
 
     this.pin();
   };
 
   private pin = () => {
-    if (this.grid.api && !this.grid.api.getPinnedTopRowCount()) {
-      this.grid.api.setPinnedTopRowData([{}]);
+    if (this.api && !this.api.getPinnedTopRowCount()) {
+      this.api.setGridOption('pinnedTopRowData', [{}]);
 
       var pin = (pin) => {
         if (document.getElementById("filter_pattern")
@@ -204,7 +208,7 @@ export class WalletsComponent {
           document.getElementById("filter_pattern").addEventListener("keyup", event => {
             this.pattern =
             (<HTMLInputElement>event.target).value = (<HTMLInputElement>event.target).value.toUpperCase();
-            this.grid.api.onFilterChanged();
+            this.api.onFilterChanged();
             this.cleanSelection();
           });
 
@@ -224,16 +228,16 @@ export class WalletsComponent {
 
   private cleanSelection = () => {
     if (!this.selection) return;
-    var node: RowNode = this.grid.api.getRowNode(this.selection);
+    var node: any = this.api.getRowNode(this.selection);
     if (node && !this.grid.doesExternalFilterPass(node))
       this.onRowClicked({data:{currency:this.selection}});
   };
 
   private addRowData = (o: any) => {
-    if (!this.grid.api) return;
+    if (!this.api) return;
     var sum = 0;
     if (o === null) {
-      this.grid.api.setRowData([]);
+      this.api.setGridOption('rowData', []);
       this.selection = null;
     }
     else o.forEach(o => {
@@ -243,9 +247,9 @@ export class WalletsComponent {
       const balance = Shared.str(o.wallet.value,                  8);
       const price   = Shared.str(o.price,                         8);
       sum += o.wallet.value;
-      var node: RowNode = this.grid.api.getRowNode(o.wallet.currency);
+      var node: any = this.api.getRowNode(o.wallet.currency);
       if (!node)
-        this.grid.api.applyTransaction({add: [{
+        this.api.applyTransaction({add: [{
           currency: o.wallet.currency,
           amount: amount,
           held: held,
@@ -254,7 +258,7 @@ export class WalletsComponent {
           price: price
         }]});
       else
-        this.grid.api.flashCells({
+        this.api.flashCells({
           rowNodes: [node],
           columns: [].concat(Shared.resetRowData('balance', balance, node))
                      .concat(Shared.resetRowData('price',   price,   node))
@@ -264,16 +268,16 @@ export class WalletsComponent {
         });
     });
 
-    this.grid.api.onFilterChanged();
+    this.api.onFilterChanged();
 
-    if (!this.grid.api.getSelectedNodes().length)
-      this.grid.api.onSortChanged();
+    if (!this.api.getSelectedNodes().length)
+      this.api.onSortChanged();
 
     var pin_sum = document.getElementById('balance_pin');
     if (pin_sum) {
       pin_sum.innerHTML = Shared.str(sum, 8);
 
-      this.grid.api.forEachNode((node: RowNode) => {
+      this.api.forEachNode((node: RowNode) => {
         var el = document.getElementById('balance_percent_' + node.data.currency);
         if (el) {
           var val = Shared.str(Shared.num(node.data.balance) / sum * 100, 2);

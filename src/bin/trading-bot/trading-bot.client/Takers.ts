@@ -1,16 +1,16 @@
 import {Component, Input} from '@angular/core';
 
-import {GridOptions, RowNode} from '@ag-grid-community/all-modules';
+import {GridOptions, GridApi, RowNode} from 'ag-grid-community';
 
 import {Shared, Models} from 'lib/K';
 
 @Component({
   selector: 'takers',
   template: `<ag-grid-angular
-    class="ag-theme-fresh ag-theme-dark marketTrades"
+    class="{{ onGridTheme() }} marketTrades"
     style="height: 616px;width: 100%;"
-    (window:resize)="onGridReady()"
-    (gridReady)="onGridReady()"
+    (window:resize)="onGridReady($event)"
+    (gridReady)="onGridReady($event)"
     [gridOptions]="grid"></ag-grid-angular>`
 })
 export class TakersComponent {
@@ -21,11 +21,14 @@ export class TakersComponent {
     this.addRowData(o);
   };
 
+  private api: GridApi;
+
   private grid: GridOptions = <GridOptions>{
     overlayLoadingTemplate: `<span class="ag-overlay-no-rows-center">empty history</span>`,
     overlayNoRowsTemplate: `<span class="ag-overlay-no-rows-center">empty history</span>`,
     defaultColDef: { sortable: true, resizable: true, flex: 1 },
     rowHeight:21,
+    headerHeight:21,
     columnDefs: [{
       field: 'time',
       width: 82,
@@ -70,16 +73,21 @@ export class TakersComponent {
     }]
   };
 
-  private onGridReady() {
-    Shared.currencyHeaders(this.grid.api, this.product.base, this.product.quote);
+  private onGridReady(event: any) {
+    this.api = event.api;
+    Shared.currencyHeaders(this.api, this.product.base, this.product.quote);
+  };
+
+  private onGridTheme() {
+    return "ag-theme-alpine"+((document.getElementById('daynight').getAttribute('href').indexOf('dark') != -1)?'-dark':'');
   };
 
   private addRowData = (o: Models.MarketTrade) => {
-    if (!this.grid.api) return;
+    if (!this.api) return;
 
-    if (o === null) this.grid.api.setRowData([]);
+    if (o === null) this.api.setGridOption('rowData', []);
     else {
-      this.grid.api.applyTransaction({add: [{
+      this.api.applyTransaction({add: [{
         price: o.price.toFixed(this.product.tickPrice),
         quantity: o.quantity.toFixed(this.product.tickSize),
         time: o.time,
@@ -87,9 +95,9 @@ export class TakersComponent {
         side: Models.Side[o.side]
       }]});
 
-      this.grid.api.forEachNode((node: RowNode) => {
+      this.api.forEachNode((node: RowNode) => {
         if (Math.abs(o.time - node.data.time) > 3600000)
-          this.grid.api.applyTransaction({remove: [node.data]});
+          this.api.applyTransaction({remove: [node.data]});
         else if (node.data.recent && Math.abs(o.time - node.data.time) > 7000)
           node.setData(Object.assign(node.data, {recent: false}));
       });

@@ -1,16 +1,16 @@
 import {Component, Input, Output, EventEmitter} from '@angular/core';
 
-import {GridOptions, RowNode} from '@ag-grid-community/all-modules';
+import {GridOptions, GridApi} from 'ag-grid-community';
 
 import {Shared, Models} from 'lib/K';
 
 @Component({
   selector: 'markets',
   template: `<ag-grid-angular id="markets"
-    class="ag-theme-fresh ag-theme-dark ag-theme-big"
+    class="ag-theme-alpine ag-theme-big"
     style="width: 560px;margin: 6px 0px;"
-    (window:resize)="onGridReady()"
-    (gridReady)="onGridReady()"
+    (window:resize)="onGridReady($event)"
+    (gridReady)="onGridReady($event)"
     (firstDataRendered)="onFirstDataRendered()"
     [gridOptions]="grid"></ag-grid-angular>`
 })
@@ -33,15 +33,18 @@ export class MarketsComponent {
     this.addRowData();
   };
 
+  private api: GridApi;
+
   private grid: GridOptions = <GridOptions>{
     overlayLoadingTemplate: `<span class="ag-overlay-no-rows-center">missing data</span>`,
     overlayNoRowsTemplate: `<span class="ag-overlay-no-rows-center">missing data</span>`,
     defaultColDef: { sortable: true, resizable: true, flex: 1 },
     rowHeight:35,
+    headerHeight:35,
     domLayout: 'autoHeight',
     animateRows:true,
     enableCellTextSelection: true,
-    getRowNodeId: (data) => data.currency,
+    getRowId: (data: any) => data.currency,
     columnDefs: [{
       width: 150,
       field: 'currency',
@@ -90,8 +93,9 @@ export class MarketsComponent {
     }]
   };
 
-  private onGridReady() {
-    Shared.currencyHeaders(this.grid.api, this.settings.currency, this.settings.currency);
+  private onGridReady(event: any) {
+    this.api = event.api;
+    Shared.currencyHeaders(this.api, this.settings.currency, this.settings.currency);
   };
 
   private onFirstDataRendered() {
@@ -99,9 +103,9 @@ export class MarketsComponent {
   };
 
   private addRowData = () => {
-    if (!this.grid.api) return;
+    if (!this.api) return;
     if (!this._market || !this._markets)
-      return this.grid.api.setRowData([]);
+      return this.api.setGridOption('rowData', []);
     var o = {};
     for (let x in this._markets)
       if (x == this._market)
@@ -110,14 +114,14 @@ export class MarketsComponent {
       else if (this._markets[x].hasOwnProperty(this._market))
         o[x] = this._markets[x][this._market];
     if (!Object.keys(o).length)
-      return this.grid.api.setRowData([]);
+      return this.api.setGridOption('rowData', []);
     for (let x in o) {
       const spread = Shared.str(o[x].spread, 8);
       const open   = Shared.str(o[x].open,   2);
       const volume = Shared.str(o[x].volume, 0);
-      var node: RowNode = this.grid.api.getRowNode(x);
+      var node: any = this.api.getRowNode(x);
       if (!node)
-        this.grid.api.applyTransaction({add: [{
+        this.api.applyTransaction({add: [{
           currency: x,
           web: o[x].web,
           spread: spread,
@@ -125,7 +129,7 @@ export class MarketsComponent {
           volume: volume
         }]});
       else
-        this.grid.api.flashCells({
+        this.api.flashCells({
           rowNodes: [node],
           columns: [].concat(Shared.resetRowData('spread', spread, node))
                      .concat(Shared.resetRowData('open',   open,   node))
@@ -133,6 +137,6 @@ export class MarketsComponent {
         });
     }
 
-    this.grid.api.onSortChanged();
+    this.api.onSortChanged();
   };
 };

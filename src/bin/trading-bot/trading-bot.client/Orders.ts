@@ -1,16 +1,16 @@
 import {Component, Input} from '@angular/core';
 
-import {GridOptions, RowNode} from '@ag-grid-community/all-modules';
+import {GridOptions, GridApi} from 'ag-grid-community';
 
 import {Socket, Shared, Models} from 'lib/K';
 
 @Component({
   selector: 'orders',
   template: `<ag-grid-angular
-    class="ag-theme-fresh ag-theme-dark"
+    class="ag-theme-alpine"
     style="height: 131px;width: 99.80%;"
-    (window:resize)="onGridReady()"
-    (gridReady)="onGridReady()"
+    (window:resize)="onGridReady($event)"
+    (gridReady)="onGridReady($event)"
     (cellClicked)="onCellClicked($event)"
     [gridOptions]="grid"></ag-grid-angular>`
 })
@@ -24,10 +24,13 @@ export class OrdersComponent {
     this.addRowData(o);
   };
 
+  private api: GridApi;
+
   private grid: GridOptions = <GridOptions>{
     suppressNoRowsOverlay: true,
     defaultColDef: { sortable: true, resizable: true, flex: 1 },
     rowHeight:21,
+    headerHeight:21,
     columnDefs: [{
       width: 30,
       field: "cancel",
@@ -113,8 +116,9 @@ export class OrdersComponent {
     }]
   };
 
-  private onGridReady() {
-    Shared.currencyHeaders(this.grid.api, this.product.base, this.product.quote);
+  private onGridReady(event: any) {
+    this.api = event.api;
+    Shared.currencyHeaders(this.api, this.product.base, this.product.quote);
   };
 
   private onCellClicked = ($event) => {
@@ -123,7 +127,7 @@ export class OrdersComponent {
   };
 
   private addRowData = (o: Models.Order[]) => {
-    if (!this.grid.api) return;
+    if (!this.api) return;
 
     var add = [];
 
@@ -143,8 +147,8 @@ export class OrdersComponent {
       });
     });
 
-    this.grid.api.setRowData([]);
+    this.api.setGridOption('rowData', []);
 
-    if (add.length) this.grid.api.applyTransaction({add: add});
+    if (add.length) this.api.applyTransaction({add: add});
   };
 };

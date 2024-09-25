@@ -1,16 +1,16 @@
 import {Component, Input, Output, EventEmitter} from '@angular/core';
 
-import {GridOptions, RowNode, ColDef} from '@ag-grid-community/all-modules';
+import {GridOptions, GridApi, IRowNode, RowNode, ColDef} from 'ag-grid-community';
 
 import {Socket, Shared, Models} from 'lib/K';
 
 @Component({
   selector: 'trades',
   template: `<ag-grid-angular
-    class="ag-theme-fresh ag-theme-dark"
+    class="ag-theme-alpine"
     style="height: 479px;width: 99.80%;"
-    (window:resize)="onGridReady()"
-    (gridReady)="onGridReady()"
+    (window:resize)="onGridReady($event)"
+    (gridReady)="onGridReady($event)"
     (cellClicked)="onCellClicked($event)"
     [gridOptions]="grid"></ag-grid-angular>`
 })
@@ -38,13 +38,16 @@ export class TradesComponent {
 
   @Output() onTradesChartData = new EventEmitter<Models.TradeChart>();
 
+  private api: GridApi;
+
   private grid: GridOptions = <GridOptions>{
     overlayLoadingTemplate: `<span class="ag-overlay-no-rows-center">0 closed orders</span>`,
     overlayNoRowsTemplate: `<span class="ag-overlay-no-rows-center">0 closed orders</span>`,
     defaultColDef: { sortable: true, resizable: true, flex: 1 },
     rowHeight:21,
+    headerHeight:21,
     animateRows:true,
-    getRowNodeId: (data) => data.tradeId,
+    getRowId: (data: any) => data.tradeId,
     columnDefs: [{
       width: 30,
       field: 'cancel',
@@ -165,8 +168,9 @@ export class TradesComponent {
     }]
   };
 
-  private onGridReady() {
-    Shared.currencyHeaders(this.grid.api, this.product.base, this.product.quote);
+  private onGridReady(event: any) {
+    this.api = event.api;
+    Shared.currencyHeaders(this.api, this.product.base, this.product.quote);
   };
 
   private onCellClicked = ($event) => {
@@ -181,28 +185,28 @@ export class TradesComponent {
 
     this.headerNameMod = this.hasPongs ? "➜" : "";
 
-    if (!this.grid.api) return;
+    if (!this.api) return;
 
     this.grid.columnDefs.map((x: ColDef)  => {
       if (['Ktime','Kqty','Kprice','Kvalue','delta'].indexOf(x.field) > -1)
-        this.grid.columnApi.setColumnVisible(x.field, this.hasPongs);
+        this.api.setColumnsVisible([x.field], this.hasPongs);
       return x;
     });
 
-    this.grid.api.refreshHeader();
+    this.api.refreshHeader();
 
     this.emitLengths();
   };
 
   private addRowData = (o: Models.Trade) => {
-    if (!this.grid.api) return;
+    if (!this.api) return;
 
-    if (o === null) this.grid.api.setRowData([]);
+    if (o === null) this.api.setGridOption('rowData', []);
     else {
-      var node: RowNode = this.grid.api.getRowNode(o.tradeId);
+      var node: IRowNode = this.api.getRowNode(o.tradeId);
       if (o.Kqty < 0) {
         if (node)
-          this.grid.api.applyTransaction({remove: [node.data]});
+          this.api.applyTransaction({remove: [node.data]});
       } else {
         var edit = {
           time: o.time,
@@ -218,7 +222,7 @@ export class TradesComponent {
         };
 
         if (node) node.setData(Object.assign(node.data, edit));
-        else this.grid.api.applyTransaction({add: [Object.assign(edit, {
+        else this.api.applyTransaction({add: [Object.assign(edit, {
           tradeId: o.tradeId,
           price: o.price.toFixed(this.product.tickPrice)
         })]});
@@ -241,10 +245,10 @@ export class TradesComponent {
   };
 
   private emitLengths = () => {
-    this.onTradesLength.emit(this.grid.api.getModel().getRowCount());
+    this.onTradesLength.emit(this.api.getDisplayedRowCount());
     var tradesMatched: number = 0;
     if (this.hasPongs) {
-      this.grid.api.forEachNode((node: RowNode) => {
+      this.api.forEachNode((node: RowNode) => {
         if (node.data.Kqty) tradesMatched++;
       });
     } else tradesMatched = -1;

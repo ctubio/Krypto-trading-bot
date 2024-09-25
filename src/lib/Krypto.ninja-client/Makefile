@@ -11,7 +11,7 @@ PATH      := $(NODE_PATH)/.bin:$(PATH)
 
 TSC       := tsc --baseUrl $(NODE_PATH) --typeRoots $(NODE_PATH)/@types \
                --alwaysStrict --experimentalDecorators --target ES2018 --module commonjs
-BROWSERIFY:= browserify --transform [ $(NODE_PATH)/babelify --presets [ $(NODE_PATH)/@babel/preset-env ] ]
+ESBUILD   := esbuild --bundle
 SASS      := sass --no-source-map --style compressed
 
 TPUT       = $(if $(shell echo $${TERM}),$(shell tput $(1)))
@@ -49,15 +49,13 @@ js: $(KCLIENT)/.main.ts lib
 	$(TSC) --outDir $(KASSETS)/$@ $<
 	@rm -v $<
 	$(info $(STEP_3))
-	$(BROWSERIFY) $(KASSETS)/$@/$(notdir $(basename $<)).$@ | uglifyjs | gzip > $(KASSETS)/$@/client.min.$@
+	$(ESBUILD) $(KASSETS)/$@/$(notdir $(basename $<)).$@ | uglifyjs | gzip > $(KASSETS)/$@/client.min.$@
 
 css: www/css beacons
 	$(info $(STEP_4))
 	$(foreach x,$(wildcard $</*.scss),$(SASS) $(realpath $(x)):$(KASSETS)/$@/$(notdir $(basename $(x))).min.$@;)
 	cp -R $(NODE_PATH)/beacons $(KASSETS)/font
-	cat $(NODE_PATH)/@ag-grid-community/all-modules/dist/styles/ag-grid.$@ $(NODE_PATH)/@ag-grid-community/all-modules/dist/styles/ag-theme-bootstrap.min.$@ $(KASSETS)/font/beacons.$@ >> $(KASSETS)/$@/bootstrap.min.$@
-	cat $(NODE_PATH)/@ag-grid-community/all-modules/dist/styles/ag-theme-dark.min.$@  >> $(KASSETS)/$@/bootstrap-dark.min.$@
-	cat $(NODE_PATH)/@ag-grid-community/all-modules/dist/styles/ag-theme-fresh.min.$@ >> $(KASSETS)/$@/bootstrap-light.min.$@
+	cat $(NODE_PATH)/ag-grid-community/styles/ag-grid.$@ $(KASSETS)/font/beacons.$@ $(NODE_PATH)/ag-grid-community/styles/ag-theme-alpine.min.$@ >> $(KASSETS)/$@/bootstrap.min.$@
 
 beacons:
 	@test -d $(NODE_PATH)/$@ || (mkdir -p $(NODE_PATH)/$@ &&                  \
@@ -69,27 +67,24 @@ beacons:
 export define PACKAGE_JSON
 {
   "dependencies": {
-    "@ag-grid-community/all-modules": "^26.1.0",
-    "@ag-grid-community/angular":     "^26.1.0",
-    "@angular/common":                   "^12.2.8",
-    "@angular/compiler":                 "^12.2.8",
-    "@angular/core":                     "^12.2.8",
-    "@angular/forms":                    "^12.2.8",
-    "@angular/platform-browser":         "^12.2.8",
-    "@angular/platform-browser-dynamic": "^12.2.8",
-    "@angular/router":                   "^12.2.8",
-    "@babel/core":       "^7.15.0",
-    "@babel/preset-env": "^7.15.0",
-    "@types/node": "^16.10.2",
-    "babelify": "^10.0.0",
-    "browserify": "^17.0.0",
-    "highcharts": "^9.2.2",
-    "highcharts-angular": "^2.10.0",
-    "rxjs": "^7.3.1",
-    "sass": "^1.42.1",
-    "typescript": "^4.4.3",
-    "uglify-js": "^3.14.2",
-    "zone.js": "^0.11.4"
+    "@angular/common":                   "^18.2.5",
+    "@angular/compiler":                 "^18.2.5",
+    "@angular/core":                     "^18.2.5",
+    "@angular/forms":                    "^18.2.5",
+    "@angular/platform-browser":         "^18.2.5",
+    "@angular/platform-browser-dynamic": "^18.2.5",
+    "@angular/router":                   "^18.2.5",
+    "@types/node": "^22.6.1",
+    "ag-grid-angular":    "^32.2.0",
+    "ag-grid-community":  "^32.2.0",
+    "esbuild": "^0.24.0",
+    "highcharts": "^11.4.8",
+    "highcharts-angular": "^4.0.1",
+    "rxjs": "^7.8.1",
+    "sass": "^1.79.3",
+    "typescript": "^5.6.2",
+    "uglify-js": "^3.19.3",
+    "zone.js": "^0.14.10"
   },
   "description": "K",
   "homepage": "https://github.com/ctubio/Krypto-trading-bot",

@@ -8,9 +8,8 @@ require('highcharts/highcharts-more')(Highcharts);
 export {Highcharts};
 import {HighchartsChartModule} from 'highcharts-angular';
 
-import {ModuleRegistry, ICellRendererParams}                from '@ag-grid-community/core';
-import {ClientSideRowModelModule, GridApi, ColDef, RowNode} from '@ag-grid-community/all-modules';
-import {AgGridModule}                                       from '@ag-grid-community/angular';
+import {GridApi, ColDef, RowNode} from 'ag-grid-community';
+import {AgGridModule}             from 'ag-grid-angular';
 
 import {Socket, Models} from 'lib/K';
 
@@ -58,7 +57,7 @@ import {Socket, Models} from 'lib/K';
             style="margin-top: 6px;display: inline-block;">{{ db_size }}</span> -
           <span [innerHTML]="footer"></span>
           <a href="#"
-            (click)="changeTheme()">{{ system_theme == 'light' ? 'LIGHT' : 'DARK' }}</a> -
+            (click)="changeTheme()">{{ system_theme == 'light' ? 'DARK' : 'LIGHT' }}</a> -
         </span>
         <a href="#"
           (click)="openMatryoshka()">MATRYOSHKA</a> -
@@ -66,11 +65,8 @@ import {Socket, Models} from 'lib/K';
           href="{{ homepage }}/issues/new?title=%5Btopic%5D%20short%20and%20sweet%20description&body=description%0Aplease,%20consider%20to%20add%20all%20possible%20details%20%28if%20any%29%20about%20your%20new%20feature%20request%20or%20bug%20report%0A%0A%2D%2D%2D%0A%60%60%60%0Aapp%20exchange%3A%20{{ product.exchange }}/{{ product.base+'/'+product.quote }}%0Aapp%20version%3A%20undisclosed%0AOS%20distro%3A%20undisclosed%0A%60%60%60%0A![300px-spock_vulcan-salute3](https://cloud.githubusercontent.com/assets/1634027/22077151/4110e73e-ddb3-11e6-9d84-358e9f133d34.png)">CREATE ISSUE</a> -
         <a rel="noreferrer" target="_blank"
           href="https://github.com/ctubio/Krypto-trading-bot/discussions/new">HELP</a> -
-        <a title="irc://irc.libera.chat:6697/#krypto.ninja"
-          href="irc://irc.libera.chat:6697/#krypto.ninja"
-        >IRC</a>|<a rel="noreferrer" target="_blank"
-          href="https://kiwiirc.com/client/irc.libera.chat:6697/?theme=cli#krypto.ninja"
-        >www</a>
+        <a rel="noreferrer" target="_blank"
+          href="https://discord.gg/jAX7GEzcWD">CHAT</a>
       </small>
     </address>
     <iframe
@@ -138,6 +134,10 @@ export class KComponent implements OnInit {
   private setTheme = () => {
     if (document.getElementById('daynight').getAttribute('href') != '/css/bootstrap-' + this.system_theme + '.min.css')
       document.getElementById('daynight').setAttribute('href', '/css/bootstrap-' + this.system_theme + '.min.css');
+    [...document.getElementsByTagName('ag-grid-angular')].forEach(o => {
+      o.classList.add('ag-theme-alpine' + (this.system_theme=='dark'?'-dark':''));
+      o.classList.remove('ag-theme-alpine' + (this.system_theme=='dark'?'':'-dark'));
+    });
   };
 
   private changeTheme = () => {
@@ -181,8 +181,6 @@ export class KComponent implements OnInit {
 };
 
 export function bootstrapModule(declarations: any[]) {
-  ModuleRegistry.registerModules([ClientSideRowModelModule]);
-
   @NgModule({
     imports: [
       BrowserModule,
@@ -248,7 +246,7 @@ export function currencyHeaders(api: GridApi, base: string, quote: string) {
       return o;
     });
 
-    api.setColumnDefs(colDef);
+    api.setGridOption('columnDefs', colDef);
 };
 
 export function resetRowData(name: string, val: string, node: RowNode): string[] {
