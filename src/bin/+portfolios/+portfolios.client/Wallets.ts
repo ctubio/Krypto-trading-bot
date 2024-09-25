@@ -97,7 +97,7 @@ export class WalletsComponent {
     ) && (
       !this.pattern || node.data.currency.toUpperCase().indexOf(this.pattern) > -1
     ),
-    getRowId: (data: any) => data.currency,
+    getRowId: (params: any) => params.data.currency,
     columnDefs: [{
       width: 220,
       field: 'held',
@@ -185,8 +185,8 @@ export class WalletsComponent {
     }]
   };
 
-  private onGridReady(event: any) {
-    this.api = event.api;
+  private onGridReady($event: any) {
+    if ($event.api) this.api = $event.api;
     Shared.currencyHeaders(this.api, this.settings.currency, this.settings.currency);
 
     this.pin();

@@ -44,10 +44,10 @@ export class TradesComponent {
     overlayLoadingTemplate: `<span class="ag-overlay-no-rows-center">0 closed orders</span>`,
     overlayNoRowsTemplate: `<span class="ag-overlay-no-rows-center">0 closed orders</span>`,
     defaultColDef: { sortable: true, resizable: true, flex: 1 },
-    rowHeight:21,
-    headerHeight:21,
+    rowHeight:25,
+    headerHeight:25,
     animateRows:true,
-    getRowId: (data: any) => data.tradeId,
+    getRowId: (params: any) => params.data.tradeId,
     columnDefs: [{
       width: 30,
       field: 'cancel',
@@ -168,8 +168,8 @@ export class TradesComponent {
     }]
   };
 
-  private onGridReady(event: any) {
-    this.api = event.api;
+  private onGridReady($event: any) {
+    if ($event.api) this.api = $event.api;
     Shared.currencyHeaders(this.api, this.product.base, this.product.quote);
   };
 

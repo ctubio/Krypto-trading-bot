@@ -27,8 +27,8 @@ export class TakersComponent {
     overlayLoadingTemplate: `<span class="ag-overlay-no-rows-center">empty history</span>`,
     overlayNoRowsTemplate: `<span class="ag-overlay-no-rows-center">empty history</span>`,
     defaultColDef: { sortable: true, resizable: true, flex: 1 },
-    rowHeight:21,
-    headerHeight:21,
+    rowHeight:25,
+    headerHeight:25,
     columnDefs: [{
       field: 'time',
       width: 82,
@@ -73,8 +73,8 @@ export class TakersComponent {
     }]
   };
 
-  private onGridReady(event: any) {
-    this.api = event.api;
+  private onGridReady($event: any) {
+    if ($event.api) this.api = $event.api;
     Shared.currencyHeaders(this.api, this.product.base, this.product.quote);
   };
 

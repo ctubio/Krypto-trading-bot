@@ -44,7 +44,7 @@ export class MarketsComponent {
     domLayout: 'autoHeight',
     animateRows:true,
     enableCellTextSelection: true,
-    getRowId: (data: any) => data.currency,
+    getRowId: (params: any) => params.data.currency,
     columnDefs: [{
       width: 150,
       field: 'currency',
@@ -93,8 +93,8 @@ export class MarketsComponent {
     }]
   };
 
-  private onGridReady(event: any) {
-    this.api = event.api;
+  private onGridReady($event: any) {
+    if ($event.api) this.api = $event.api;
     Shared.currencyHeaders(this.api, this.settings.currency, this.settings.currency);
   };
 

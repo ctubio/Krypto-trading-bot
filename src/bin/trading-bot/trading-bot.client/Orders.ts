@@ -29,8 +29,8 @@ export class OrdersComponent {
   private grid: GridOptions = <GridOptions>{
     suppressNoRowsOverlay: true,
     defaultColDef: { sortable: true, resizable: true, flex: 1 },
-    rowHeight:21,
-    headerHeight:21,
+    rowHeight:25,
+    headerHeight:25,
     columnDefs: [{
       width: 30,
       field: "cancel",
@@ -116,8 +116,8 @@ export class OrdersComponent {
     }]
   };
 
-  private onGridReady(event: any) {
-    this.api = event.api;
+  private onGridReady($event: any) {
+    if ($event.api) this.api = $event.api;
     Shared.currencyHeaders(this.api, this.product.base, this.product.quote);
   };
 
