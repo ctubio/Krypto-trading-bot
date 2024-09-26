@@ -1172,8 +1172,8 @@ class GwApiWsFix: public GwApiWs,
     public:
       GwPoloniex()
       {
-        http   = "https://poloniex.com";
-        ws     = "wss://ws..poloniex.com";
+        http   = "https://api.poloniex.com";
+        ws     = "wss://ws.poloniex.com";
         randId = Random::int45Id;
         webMarket = "https://poloniex.com/exchange/";
         webOrders = "https://poloniex.com/tradeHistory";
