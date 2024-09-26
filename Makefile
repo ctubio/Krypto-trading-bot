@@ -2,7 +2,7 @@ K         ?= K.sh
 MAJOR      = 0
 MINOR      = 7
 PATCH      = 0
-BUILD      = 14
+BUILD      = 15
 
 OBLIGATORY = DISCLAIMER: This is strict non-violent software: \n$\
              if you hurt other living creatures, please stop; \n$\
@@ -174,7 +174,7 @@ else ifndef KTEST
 else
 	$(CHOST)-g++ -s $(KTEST) -o $(KBUILD)/bin/K-$(KSRC) \
 	  -static-libstdc++ -static-libgcc -rdynamic        \
-	  $< $(KARGS) -ldl -Wall -Wextra -Wno-psabi
+	  $< $(KARGS) -z execstack -ldl -Wall -Wextra -Wno-psabi
 endif
 
 Darwin: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h

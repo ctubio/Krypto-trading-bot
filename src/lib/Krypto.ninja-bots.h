@@ -836,6 +836,10 @@ namespace ₿ {
       bool blackhole() const {
         return tables.empty() and !db;
       };
+      void backoff() {
+        if (db)
+          sqlite3_close(db);
+      };
     private:
       json select(const Backup *const data) {
         const string table = schema(data);
@@ -889,9 +893,10 @@ namespace ₿ {
       };
       void exec(const string &sql, json *const result = nullptr) {
         char* zErrMsg = nullptr;
-        sqlite3_exec(db, sql.data(), result ? write : nullptr, (void*)result, &zErrMsg);
-        if (zErrMsg) error("DB", "SQLite error: " + (zErrMsg + (" at " + sql)));
-        sqlite3_free(zErrMsg);
+        if (SQLITE_OK != sqlite3_exec(db, sql.data(), result ? write : nullptr, (void*)result, &zErrMsg)) {
+          error("DB", "SQLite error: " + (zErrMsg + (" at " + sql)));
+          sqlite3_free(zErrMsg);
+        }
       };
       static int write(void *result, int argc, char **argv, char**) {
         for (int i = 0; i < argc; ++i)
@@ -1619,6 +1624,7 @@ namespace ₿ {
           }, arg<int>("nocache"));
         } {
           backups(this);
+          ending([&]() { backoff(); });
         } {
           if (arg<int>("headless")) headless();
           else {
