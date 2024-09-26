@@ -67,14 +67,14 @@ beacons:
 export define PACKAGE_JSON
 {
   "dependencies": {
-    "@angular/common":                   "^18.2.5",
-    "@angular/compiler":                 "^18.2.5",
-    "@angular/core":                     "^18.2.5",
-    "@angular/forms":                    "^18.2.5",
-    "@angular/platform-browser":         "^18.2.5",
-    "@angular/platform-browser-dynamic": "^18.2.5",
-    "@angular/router":                   "^18.2.5",
-    "@types/node": "^22.7.0",
+    "@angular/common":                   "^18.2.6",
+    "@angular/compiler":                 "^18.2.6",
+    "@angular/core":                     "^18.2.6",
+    "@angular/forms":                    "^18.2.6",
+    "@angular/platform-browser":         "^18.2.6",
+    "@angular/platform-browser-dynamic": "^18.2.6",
+    "@angular/router":                   "^18.2.6",
+    "@types/node": "^22.7.2",
     "ag-grid-angular":   "^32.2.0",
     "ag-grid-community": "^32.2.0",
     "esbuild": "^0.24.0",
