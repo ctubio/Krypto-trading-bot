@@ -620,8 +620,8 @@ namespace ₿ {
               curl_easy_setopt(curl, CURLOPT_WRITEDATA, &reply);
               curl_easy_setopt(curl, CURLOPT_TIMEOUT, 21L);
               rc = curl_easy_perform(curl);
-              curl_easy_cleanup(curl);
               if (slist) curl_slist_free_all(slist);
+              curl_easy_cleanup(curl);
             }
             return rc == CURLE_OK
               ? (json::accept(reply)
