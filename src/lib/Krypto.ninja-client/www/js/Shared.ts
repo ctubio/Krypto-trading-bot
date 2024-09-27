@@ -216,18 +216,14 @@ export function playAudio(basename: string) {
 function currencyHeaderTemplate(symbol: string) {
   return {
     template:`<div class="ag-cell-label-container" role="presentation">
-      <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"></span>
-      <div ref="eLabel" class="ag-header-cell-label" role="presentation">
-          <span>
-            <span ref="eText" class="ag-header-cell-text" role="columnheader"></span>
+        <span data-ref="eMenu" class="ag-header-icon ag-header-cell-menu-button" aria-hidden="true"></span>
+        <span data-ref="eFilterButton" class="ag-header-icon ag-header-cell-filter-button" aria-hidden="true"></span>
+        <div data-ref="eLabel" class="ag-header-cell-label" role="presentation">
+            <span data-ref="eText" class="ag-header-cell-text"></span>
             <i class="beacon sym-` + symbol.toLowerCase() + `-s"></i>
-          </span>
-          <span ref="eFilter" class="ag-header-icon ag-filter-icon"></span>
-          <span ref="eSortOrder" class="ag-header-icon ag-sort-order"></span>
-          <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon"></span>
-          <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon"></span>
-          <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon"></span>
-      </div>
+            <span data-ref="eFilter" class="ag-header-icon ag-header-label-icon ag-filter-icon" aria-hidden="true"></span>
+            <ag-sort-indicator data-ref="eSortIndicator"></ag-sort-indicator>
+        </div>
     </div>`
   };
 };
