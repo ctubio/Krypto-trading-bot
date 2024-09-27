@@ -1177,8 +1177,8 @@ class GwApiWsFix: public GwApiWs,
         http   = "https://api.poloniex.com";
         ws     = "wss://ws.poloniex.com";
         randId = Random::int45Id;
-        webMarket = "https://poloniex.com/exchange/";
-        webOrders = "https://poloniex.com/tradeHistory";
+        webMarket = "https://poloniex.com/trade/";
+        webOrders = "https://poloniex.com/activity/spot/open-orders";
       };
       string web(const string &base, const string &quote) const override {
         return webMarket + quote + "_" + base;
@@ -1188,31 +1188,33 @@ class GwApiWsFix: public GwApiWs,
         return to_string(Tstamp);
       };
       void pairs(string &report) const override {
-        const json reply = Curl::Web::xfer(*guard, http + "/public?command=returnTicker");
-        if (!reply.is_object())
+        const json reply = Curl::Web::xfer(*guard, http + "/markets");
+        if (!reply.is_array())
           print("Error while reading pairs: " + reply.dump());
-        else for (auto it = reply.begin(); it != reply.end(); ++it)
-          report += it.key() + ANSI_NEW_LINE;
+        else for (auto &it : reply)
+          if (it.value("state", "") == "NORMAL")
+            report += it.value("displayName", "") + ANSI_NEW_LINE;
       };
       json handshake() const override {
-        const json reply = Curl::Web::xfer(*guard, http + "/public?command=returnTicker")
-                             .value(quote + "_" + base, json::object());
+        json reply = Curl::Web::xfer(*guard, http + "/markets/" + base + "_" + quote);
+        if (reply.is_array() and !reply.empty() and reply.at(0).value("state", "") == "NORMAL" and reply.at(0).at("symbolTradeLimit").is_object())
+          reply = reply.at(0).at("symbolTradeLimit");
         return {
-          {     "base", base              },
-          {    "quote", quote             },
-          {   "symbol", quote + "_" + base},
-          {"tickPrice", reply.empty()
-                          ? 0 : 1e-8      },
-          { "tickSize", 1e-8              },
-          {  "minSize", 1e-4              },
-          {    "reply", reply             }
+          {     "base", base                                     },
+          {    "quote", quote                                    },
+          {   "symbol", base + "_" + quote                       },
+          {"tickPrice", pow(10, -reply.value("priceScale", 0))   },
+          { "tickSize", pow(10, -reply.value("quantityScale", 0))},
+          {  "minSize", stod(reply.value("minQuantity", "0"))    },
+          {    "reply", reply                                    }
         };
       };
-      json xfer(const string &url, const string &post, const string &h1, const string &h2) const {
+      json xfer(const string &url, const string &post, const string &h1, const string &h2, const string &h3) const {
         return Curl::Web::xfer(*guard, url, "GET", post, {
-          "Content-Type: application/x-www-form-urlencoded",
-          "Key: "  + h1,
-          "Sign: " + h2
+          "Content-Type: application/json",
+          "key: "  + h1,
+          "signature: " + h2,
+          "signTimestamp: " + h3
         });
       };
   };
