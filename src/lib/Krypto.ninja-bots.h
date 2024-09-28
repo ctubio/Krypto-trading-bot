@@ -800,9 +800,15 @@ namespace ₿ {
     public:
       function<unsigned int()> dbSize = [](){ return 0; };
     private:
-      sqlite3 *db = nullptr;
-      string disk = "main";
+      unique_ptr<
+        sqlite3, decltype(&sqlite3_close)
+      >                       db;
+                       string disk = "main";
       mutable vector<Backup*> tables;
+    public:
+      Sqlite()
+        : db(nullptr, sqlite3_close)
+      {};
     protected:
       void backups(const Option *const K) {
         if (blackhole()) return;
@@ -811,8 +817,10 @@ namespace ₿ {
             struct stat st;
             return stat(K->arg<string>("database").data(), &st) ? 0 : st.st_size;
           };
-        if (sqlite3_open(K->arg<string>("database").data(), &db))
-          error("DB", sqlite3_errmsg(db));
+        sqlite3 *_db = nullptr;
+        if (sqlite3_open(K->arg<string>("database").data(), &_db))
+          error("DB", sqlite3_errmsg(_db));
+        db.reset(_db);
         K->log("DB", "loaded OK from", K->arg<string>("database"));
         if (!K->arg<string>("diskdata").empty()) {
           exec("ATTACH '" + K->arg<string>("diskdata") + "' AS " + (disk = "disk") + ";");
@@ -835,10 +843,6 @@ namespace ₿ {
       };
       bool blackhole() const {
         return tables.empty() and !db;
-      };
-      void backoff() {
-        if (db)
-          sqlite3_close(db);
       };
     private:
       json select(const Backup *const data) {
@@ -892,8 +896,8 @@ namespace ₿ {
           : "";
       };
       void exec(const string &sql, json *const result = nullptr) {
-        if (SQLITE_OK != sqlite3_exec(db, sql.data(), result ? write : nullptr, (void*)result, nullptr))
-          error("DB", "SQLite error: " + (sqlite3_errmsg(db) + (" at " + sql)));
+        if (SQLITE_OK != sqlite3_exec(db.get(), sql.data(), result ? write : nullptr, (void*)result, nullptr))
+          error("DB", "SQLite error: " + (sqlite3_errmsg(db.get()) + (" at " + sql)));
       };
       static int write(void *result, int argc, char **argv, char**) {
         for (int i = 0; i < argc; ++i)
@@ -1621,7 +1625,6 @@ namespace ₿ {
           }, arg<int>("nocache"));
         } {
           backups(this);
-          ending([&]() { backoff(); });
         } {
           if (arg<int>("headless")) headless();
           else {
