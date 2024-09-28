@@ -456,19 +456,19 @@ namespace ₿ {
           string in;
         private:
           string out;
-          CURL *curl = nullptr;
+          unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl;
         private_ref:
           mutex *const &lock;
         public:
           Easy(mutex *const &l)
-            : lock(l)
+            : curl(nullptr, curl_easy_cleanup)
+            , lock(l)
           {};
         protected:
           void cleanup() {
             if (curl) {
               if (!out.empty()) send();
-              curl_easy_cleanup(curl);
-              curl = nullptr;
+              curl.reset();
               stop();
             }
           };
@@ -481,12 +481,12 @@ namespace ₿ {
             in.clear();
             CURLcode rc;
             if (CURLE_OK == (rc = init())) {
-              args_easy_setopt(curl);
-              curl_easy_setopt(curl, CURLOPT_URL, url.data());
-              curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
-              curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
-              if ( CURLE_OK != (rc = curl_easy_perform(curl))
-                or CURLE_OK != (rc = curl_easy_getinfo(curl, CURLINFO_ACTIVESOCKET, &sockfd))
+              args_easy_setopt(curl.get());
+              curl_easy_setopt(curl.get(), CURLOPT_URL, url.data());
+              curl_easy_setopt(curl.get(), CURLOPT_NOSIGNAL, 1L);
+              curl_easy_setopt(curl.get(), CURLOPT_CONNECT_ONLY, 1L);
+              if ( CURLE_OK != (rc = curl_easy_perform(curl.get()))
+                or CURLE_OK != (rc = curl_easy_getinfo(curl.get(), CURLINFO_ACTIVESOCKET, &sockfd))
                 or CURLE_OK != (rc = send())
                 or CURLE_OK != (rc = recv(5))
                 or string::npos == in.find(res1)
@@ -529,8 +529,8 @@ namespace ₿ {
           };
         private:
           CURLcode init() {
-            if (!curl) curl = curl_easy_init();
-            else curl_easy_reset(curl);
+            if (!curl) curl.reset(curl_easy_init());
+            else curl_easy_reset(curl.get());
             sockfd = 0;
             return curl
               ? CURLE_OK
@@ -541,7 +541,7 @@ namespace ₿ {
             do {
               do {
                 size_t n = 0;
-                rc = curl_easy_send(curl, out.data(), out.length(), &n);
+                rc = curl_easy_send(curl.get(), out.data(), out.length(), &n);
                 out = out.substr(n);
                 if (rc == CURLE_AGAIN and !wait(false, 5))
                   return CURLE_OPERATION_TIMEDOUT;
@@ -558,7 +558,7 @@ namespace ₿ {
               size_t n;
               do {
                 n = 0;
-                rc = curl_easy_recv(curl, data, sizeof(data), &n);
+                rc = curl_easy_recv(curl.get(), data, sizeof(data), &n);
 #ifdef _WIN32
                 if (rc == CURLE_UNSUPPORTED_PROTOCOL and n == 0)
                   rc = CURLE_OK;
@@ -920,7 +920,7 @@ namespace ₿ {
             Socket::start(loopfd, ioHttp);
           };
           void shutdown() {
-            ssl.release();
+            ssl.reset();
             Socket::shutdown();
             if (!time) session->upgrade(-1, addr);
           };
@@ -1119,7 +1119,7 @@ namespace ₿ {
               requests.back().shutdown();
               requests.pop_back();
             }
-            ctx.release();
+            ctx.reset();
             shutdown();
           };
           void timeouts() {
@@ -1223,7 +1223,7 @@ namespace ₿ {
                 );
                 if (!SSL_CTX_use_certificate(ctx.get(), cert.get())
                   or !SSL_CTX_use_PrivateKey(ctx.get(), pkey.get())
-                ) ctx.release();
+                ) ctx.reset();
               } else {
                 if (access(crt.data(), R_OK) == -1)
                   warn.emplace_back("Unable to read SSL .crt file at " + crt);
@@ -1232,7 +1232,7 @@ namespace ₿ {
                 if (!SSL_CTX_use_certificate_file(ctx.get(), crt.data(), SSL_FILETYPE_PEM)
                   or !SSL_CTX_use_PrivateKey_file(ctx.get(), key.data(), SSL_FILETYPE_PEM)
                 ) {
-                  ctx.release();
+                  ctx.reset();
                   warn.emplace_back("Unable to encrypt web clients using the .crt and .key files, will fallback to plain text");
                 }
               }
