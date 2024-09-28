@@ -125,7 +125,7 @@ namespace ₿ {
 #ifndef _WIN32
             + "- tracelog: " ANSI_NEW_LINE;
           void *k[69];
-          size_t jumps = backtrace(k, 69);
+          size_t jumps = backtrace(k, sizeof(k) / sizeof(void*));
           char **trace = backtrace_symbols(k, jumps);
           for (;
             jumps --> 0;
@@ -892,11 +892,8 @@ namespace ₿ {
           : "";
       };
       void exec(const string &sql, json *const result = nullptr) {
-        char* zErrMsg = nullptr;
-        if (SQLITE_OK != sqlite3_exec(db, sql.data(), result ? write : nullptr, (void*)result, &zErrMsg)) {
-          error("DB", "SQLite error: " + (zErrMsg + (" at " + sql)));
-          sqlite3_free(zErrMsg);
-        }
+        if (SQLITE_OK != sqlite3_exec(db, sql.data(), result ? write : nullptr, (void*)result, nullptr))
+          error("DB", "SQLite error: " + (sqlite3_errmsg(db) + (" at " + sql)));
       };
       static int write(void *result, int argc, char **argv, char**) {
         for (int i = 0; i < argc; ++i)
