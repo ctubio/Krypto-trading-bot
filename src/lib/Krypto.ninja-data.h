@@ -1174,37 +1174,53 @@ namespace ₿ {
                   warn.emplace_back("Ignored .crt file because .key file is missing");
                 if (!key.empty())
                   warn.emplace_back("Ignored .key file because .crt file is missing");
-                warn.emplace_back("Connected web clients will enjoy unsecure SSL encryption.."
-                  ANSI_NEW_LINE
-                  "(because the private key is visible in the source!). See --help argument to setup your own SSL");
                 const char tlscrt[] = "-----BEGIN CERTIFICATE-----"                  ANSI_NEW_LINE
-                  "MIICATCCAWoCCQCiyDyPL5ov3zANBgkqhkiG9w0BAQsFADBFMQswCQYDVQQGEwJB" ANSI_NEW_LINE
-                  "VTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0" ANSI_NEW_LINE
-                  "cyBQdHkgTHRkMB4XDTE2MTIyMjIxMDMyNVoXDTE3MTIyMjIxMDMyNVowRTELMAkG" ANSI_NEW_LINE
-                  "A1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoMGEludGVybmV0" ANSI_NEW_LINE
-                  "IFdpZGdpdHMgUHR5IEx0ZDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAunyx" ANSI_NEW_LINE
-                  "1lNsHkMmCa24Ns9xgJAwV3A6/Jg/S5jPCETmjPRMXqAp89fShZxN2b/2FVtU7q/N" ANSI_NEW_LINE
-                  "EtNpPyEhfAhPwYrkHCtip/RmZ/b6qY2Cx6otFIsuwO8aUV27CetpoM8TAQSuufcS" ANSI_NEW_LINE
-                  "jcZD9pCAa9GM/yWeqc45su9qBBmLnAKYuYUeDQUCAwEAATANBgkqhkiG9w0BAQsF" ANSI_NEW_LINE
-                  "AAOBgQAeZo4zCfnq5/6gFzoNDKg8DayoMnCtbxM6RkJ8b/MIZT5p6P7OcKNJmi1o" ANSI_NEW_LINE
-                  "XD2evdxNrY0ObQ32dpiLqSS1JWL8bPqloGJBNkSPi3I+eBoJSE7/7HOroLNbp6nS" ANSI_NEW_LINE
-                  "aaec6n+OlGhhjxn0DzYiYsVBUsokKSEJmHzoLHo3ZestTTqUwg=="             ANSI_NEW_LINE
+                  "MIIDJTCCAg2gAwIBAgIBAjANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdSb290" ANSI_NEW_LINE
+                  "IENBMCAXDTE2MDExNDIyMjk0NloYDzIxMTYwMTE1MjIyOTQ2WjAZMRcwFQYDVQQD" ANSI_NEW_LINE
+                  "DA5zZXJ2ZXIuZXhhbXBsZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB" ANSI_NEW_LINE
+                  "ANVdYGrf/GHuSKqMEUhDpW22Ul2qmEmxYZI1sfw6BCUMbXn/tNXJ6VwcO+Crs7h9" ANSI_NEW_LINE
+                  "o95tveDd11q/FEcRQl6mgtBhwX/dE0bmCYUHDvLU/Bpk0gqtIKsga5bwrczEGVNV" ANSI_NEW_LINE
+                  "3AEdpLPvirRJU12KBRzx3OFEv8XX4ncZV1yXC3XuiENxD8pswbSyUKd3RmxYDxG/" ANSI_NEW_LINE
+                  "8XYkWq45QrdRZynh0FUwbxfkkeqt+CjCQ2+iZKn7nZiSYkg+6w1PgkqK/z9y7pa1" ANSI_NEW_LINE
+                  "rqHBmLrvfZB1bf9aUp6r9cB+0IdD24UHBw99OHr90dPuZR3T6jlqhzfuStPgDW71" ANSI_NEW_LINE
+                  "cKzCvfFu85KVXqnwoWWVk40CAwEAAaN9MHswHQYDVR0OBBYEFMDnhL/oWSczELBS" ANSI_NEW_LINE
+                  "T1FSLwbWwHrNMB8GA1UdIwQYMBaAFHB/Lq6DaFmYBCMqzes+F80k3QFJMAkGA1Ud" ANSI_NEW_LINE
+                  "EwQCMAAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwGQYDVR0RBBIwEIIOc2VydmVyLmV4" ANSI_NEW_LINE
+                  "YW1wbGUwDQYJKoZIhvcNAQELBQADggEBAHvTBEN1ig8RrsT716Ginv4gGNX0LzGI" ANSI_NEW_LINE
+                  "RrZ1jO7lm5emuaPNYJpGw0iX5Zdo91qGNXPZaZ75X3S55pQTActq3OPEBOll2pyk" ANSI_NEW_LINE
+                  "iyjz+Zp/v5cfRZLlBbFW5gv2R94eibYr4U3fSn4B0yPcl4xH/l/HzJhGDsSDW8qK" ANSI_NEW_LINE
+                  "8VIJvmvsPwmL0JMCv+FR59F+NFYZdND/KCXet59WUpF9ICmFCoBEX3EyJXEPwhbi" ANSI_NEW_LINE
+                  "X2sdPzJbCjx0HLli8e0HUKNttLQxCsBTRGo6iISLLamwN47mGDa9miBADwGSiz2q" ANSI_NEW_LINE
+                  "YeeuLO02zToHhnQ6KbPXOrQAqcL1kngO4g+j/ru+4AZThFkdkGnltvk="         ANSI_NEW_LINE
                   "-----END CERTIFICATE-----"                                        ANSI_NEW_LINE;
-                const char tlskey[] = "-----BEGIN RSA PRIVATE KEY-----"              ANSI_NEW_LINE
-                  "MIICXAIBAAKBgQC6fLHWU2weQyYJrbg2z3GAkDBXcDr8mD9LmM8IROaM9ExeoCnz" ANSI_NEW_LINE
-                  "19KFnE3Zv/YVW1Tur80S02k/ISF8CE/BiuQcK2Kn9GZn9vqpjYLHqi0Uiy7A7xpR" ANSI_NEW_LINE
-                  "XbsJ62mgzxMBBK659xKNxkP2kIBr0Yz/JZ6pzjmy72oEGYucApi5hR4NBQIDAQAB" ANSI_NEW_LINE
-                  "AoGBAJi9OrbtOreKjeQNebzCqRcAgeeLz3RFiknzjVYbgK1gBhDWo6XJVe8C9yxq" ANSI_NEW_LINE
-                  "sjYJyQV5zcAmkaQYEaHR+OjvRiZ4UmXbItukOD+dnq7xs69n3w54FfANjkurdL2M" ANSI_NEW_LINE
-                  "fPAQm/GJT4TSBDIr7eJQPOrork9uxQStwADTqvklVlKm2YldAkEA80ZYaLrGOBbz" ANSI_NEW_LINE
-                  "5871ewKxtVJNCCmXdYUwq7nI/lqsLBZnB+wiwnQ+3tgfi4YoUoTnv0hIIwkyLYl9" ANSI_NEW_LINE
-                  "Z2wqensf6wJBAMQ96gUGnIcYJzknB5CYDNQalcvvTx7tLtgRXDf47bQJ3X/Q5k/t" ANSI_NEW_LINE
-                  "yDlByUBqvYVShXWs+d4ynNKLze/w18H8Os8CQBYFDAOOxFpXWYRl6zpTKBqtdGOE" ANSI_NEW_LINE
-                  "wDzW7WzdyB+dvW/QJ0tESHEpbHdnQJO0dPnjJcbemAjz0CLnCv7Nf5rOgjkCQE3Q" ANSI_NEW_LINE
-                  "izIw+/JptmvoOQyx7ixQ2mNCYmpN/Iw63gln0MHaQ5WCPUEmdYWWu3mqmbn7Deaq" ANSI_NEW_LINE
-                  "j233Pc4TF7b0FmnaXWsCQAVvyLVU3a9Yactb5MXaN+rEYjUW37GSo+Q1lXfm0OwF" ANSI_NEW_LINE
-                  "EJB7X66Bavwg4MCfpGykS71OxhTEfDu+y1gylPMCGHY="                     ANSI_NEW_LINE
-                  "-----END RSA PRIVATE KEY-----"                                    ANSI_NEW_LINE;
+                const char tlskey[] = "-----BEGIN PRIVATE KEY-----"                  ANSI_NEW_LINE
+                  "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDVXWBq3/xh7kiq" ANSI_NEW_LINE
+                  "jBFIQ6VttlJdqphJsWGSNbH8OgQlDG15/7TVyelcHDvgq7O4faPebb3g3ddavxRH" ANSI_NEW_LINE
+                  "EUJepoLQYcF/3RNG5gmFBw7y1PwaZNIKrSCrIGuW8K3MxBlTVdwBHaSz74q0SVNd" ANSI_NEW_LINE
+                  "igUc8dzhRL/F1+J3GVdclwt17ohDcQ/KbMG0slCnd0ZsWA8Rv/F2JFquOUK3UWcp" ANSI_NEW_LINE
+                  "4dBVMG8X5JHqrfgowkNvomSp+52YkmJIPusNT4JKiv8/cu6Wta6hwZi6732QdW3/" ANSI_NEW_LINE
+                  "WlKeq/XAftCHQ9uFBwcPfTh6/dHT7mUd0+o5aoc37krT4A1u9XCswr3xbvOSlV6p" ANSI_NEW_LINE
+                  "8KFllZONAgMBAAECggEADLTt7A+A2Vg2jamf0dztejY0e42QWjstI2b9PZc67fXq" ANSI_NEW_LINE
+                  "gyx+WYkX07t+uWegYWliG/oPJ9guXiIpE/5sJHToL37S5kmFP2CtynVcJ4wVo4DD" ANSI_NEW_LINE
+                  "nY0n9+kLX0bgIuS+2V6wpoRcbbbjXM9NHrH8kfe5ftT4UtEDlLI2qLX6IcDd7p4u" ANSI_NEW_LINE
+                  "OYjILChR8GSGTw96yIy2Ws/1Uq9PMw64JoT4RcK5QqnkcPMDFRH1SeLOL+zXP2c4" ANSI_NEW_LINE
+                  "nEl9yOy3HauZKxwl/Ry/XK1s3DdjopIAU29ut+hAuMiTb06kzZnumL9NoplKoZtU" ANSI_NEW_LINE
+                  "otw/gVcCKhT+Ep+p6i8InLF0XEME8A0qUR0niWebgQKBgQD6vkxR49B8ZZQrzjw4" ANSI_NEW_LINE
+                  "XKs1lI9cP7cgPiuWlDHMNjYou3WbOaGrMeScvbB1Ldh9A8pjAhxlw8AaV/xs4qcA" ANSI_NEW_LINE
+                  "trmVmSISVMVyc1wSGlJXWi2nUzTNs9OE3vj22SyStihf8UUZtWwX2b5Y4JrYhA/V" ANSI_NEW_LINE
+                  "+ThGGqHR03oLNLShNLtJc2c7YQKBgQDZ1nkibEyrepexw/fnwkw61IJKq9wRIh1G" ANSI_NEW_LINE
+                  "PREakhbe9wU5ie0knuf9razt7awzQiwFmlixmWqsM7UEtLuXNnNPciwdrKhhbvrd" ANSI_NEW_LINE
+                  "vD/rkbIEHEPllIhFlDtOzn3hRBWTzWmXFjpou/2LvHTSbVis4IYVZymTp2jb1ZLs" ANSI_NEW_LINE
+                  "7VbiG9JTrQKBgQDc6n75g1szzpdehQT/r33U5j/syeJBUSU8NPMu9fB/sLHsgjlT" ANSI_NEW_LINE
+                  "SNEf2+y1QSBE/Or6kmiMrIv7advn30W+Vj9qc5HWTsPrk4HiHTjA553jl2alebN5" ANSI_NEW_LINE
+                  "lK4LZspjtIQcC8mS3goPdXPEgJdM/gWpwzr2YQ6DfOxBJT2j7n64NyoT4QKBgH7/" ANSI_NEW_LINE
+                  "yx+GhCx1DHtXBPDZFhg2TL+78lEK0oZgk9gp06up2CHzh44SFq6O0oLkTcCUk5Ww" ANSI_NEW_LINE
+                  "poTkLIy4mJBlzfgahp+KsK2cO46SZS9g0ONFzcMXt33hWpE2Gl2XhUwPpYTF/QlY" ANSI_NEW_LINE
+                  "rDTjZK5S8Mi9dzVSsNlJi7PJphiEK2R1+nFYRwcBAoGBANWoIG85jpXAOnq/Kcgx" ANSI_NEW_LINE
+                  "Rl3YivR0Ke6r1tFlP58rT7X3EkiboXyQl5vLIFCAwUte6RGrLl1dy3Qyh80B9ySL" ANSI_NEW_LINE
+                  "Jx6vj42CK7vgv6A96TuVYhnXTnEI6ZvwAQ2VGaw4BizhjALs/kdSE/og9aSCs3ws" ANSI_NEW_LINE
+                  "KQypwAFz0tbHxaNag/bSAN0J"                                         ANSI_NEW_LINE
+                  "-----END PRIVATE KEY-----"                                        ANSI_NEW_LINE;
                 unique_ptr<BIO, decltype(&BIO_free)> cbio(
                   BIO_new_mem_buf(tlscrt, -1),
                   BIO_free
@@ -1223,7 +1239,12 @@ namespace ₿ {
                 );
                 if (!SSL_CTX_use_certificate(ctx.get(), cert.get())
                   or !SSL_CTX_use_PrivateKey(ctx.get(), pkey.get())
-                ) ctx.reset();
+                ) {
+                  ctx.reset();
+                  warn.emplace_back("Unable to encrypt web clients using internal cert because it seems to be out of date, will fallback to plain text");
+                } else  
+                  warn.emplace_back("Connected web clients will enjoy unsecure SSL encryption.." ANSI_NEW_LINE
+                    "(because the private key is visible in the source!). See --help argument to setup your own SSL");
               } else {
                 if (access(crt.data(), R_OK) == -1)
                   warn.emplace_back("Unable to read SSL .crt file at " + crt);
