@@ -315,6 +315,8 @@ namespace ₿ {
           +  '.' + base
           +  '.' + quote
           +  '.' + "json";
+        if (!nocache and !Files::mkdirs(cache))
+          print("Error while writing into " + cache + ", please create the parent directory or change the permissions manually before try again.");
         fstream file;
         struct stat st;
         if (!nocache
@@ -339,7 +341,7 @@ namespace ₿ {
         decimal.price.precision(tickPrice);
         decimal.amount.precision(tickSize);
         decimal.percent.precision(1e-2);
-        if (!file.is_open()
+        if (!nocache and !file.is_open() and Files::mkdirs(cache)
           and tickPrice and tickSize and minSize
           and !base.empty() and !quote.empty()
         ) {

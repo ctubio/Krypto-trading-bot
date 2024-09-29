@@ -812,19 +812,24 @@ namespace ₿ {
     protected:
       void backups(const Option *const K) {
         if (blackhole()) return;
-        if (K->arg<string>("database") != ":memory:")
+        if (K->arg<string>("database") != ":memory:") {
+          if (!Files::mkdirs(K->arg<string>("database")))
+            error("CF", "Can't write into " + K->arg<string>("database") + ", please create the parent directory or change the permissions manually before try again.");
           dbSize = [K](){
             struct stat st;
             return stat(K->arg<string>("database").data(), &st) ? 0 : st.st_size;
           };
+        }
         sqlite3 *_db = nullptr;
         if (sqlite3_open(K->arg<string>("database").data(), &_db))
           error("DB", sqlite3_errmsg(_db));
         db.reset(_db);
         K->log("DB", "loaded OK from", K->arg<string>("database"));
         if (!K->arg<string>("diskdata").empty()) {
+          if (!Files::mkdirs(K->arg<string>("diskdata")))
+            error("CF", "Can't write into " + K->arg<string>("diskdata") + ", please create the parent directory or change the permissions manually before try again.");
           exec("ATTACH '" + K->arg<string>("diskdata") + "' AS " + (disk = "disk") + ";");
-            K->log("DB", "loaded OK from", K->arg<string>("diskdata"));
+          K->log("DB", "loaded OK from", K->arg<string>("diskdata"));
         }
         exec("PRAGMA " + disk + ".journal_mode = WAL;"
              "PRAGMA " + disk + ".synchronous = NORMAL;");

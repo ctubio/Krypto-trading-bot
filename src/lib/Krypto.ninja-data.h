@@ -1378,4 +1378,24 @@ namespace ₿ {
         return stream.str();
       };
   };
+
+  class Files {
+    public:
+      static bool mkdirs(const string &file) {
+        string::size_type has_dir = file.find_last_of("/\\");
+        if (has_dir != string::npos) {
+          string dir = file.substr(0, has_dir);
+          if (access(dir.data(), R_OK) == -1) {
+            mkdir(dir.data()
+#ifndef _WIN32
+            , 0775
+#endif
+            );
+            if (access(dir.data(), R_OK) == -1)
+              return false;
+          }
+        }
+        return true;
+      }
+  };
 }

@@ -2,7 +2,7 @@ K         ?= K.sh
 MAJOR      = 0
 MINOR      = 7
 PATCH      = 0
-BUILD      = 20
+BUILD      = 21
 
 OBLIGATORY = DISCLAIMER: This is strict non-violent software: \n$\
              if you hurt other living creatures, please stop; \n$\
@@ -117,7 +117,6 @@ hlep hepl help:
 	#  make download     - download K src precompiled  #
 	#  make clean        - remove external src files   #
 	#  KALL=1 make clean - remove external src files   #
-	#  make cleandb      - remove databases            #
 	#  make uninstall    - remove /usr/local/bin/K-*   #
 	#                                                  #
 
@@ -193,9 +192,6 @@ download:
 	@$(MAKE) system_install -s
 	@test -n "`ls *.sh 2>/dev/null`" || (cp etc/K.sh.dist K.sh && chmod +x K.sh && echo && echo NEW CONFIG FILE created at: && LS_COLORS="ex=40;92" CLICOLOR="Yes" ls $(shell ls --color > /dev/null 2>&1 && echo --color) -lah K.sh && echo)
 
-cleandb:
-	rm -vrf $(KHOME)/db/K*
-
 packages:
 	@test -n "`command -v apt-get`" && sudo apt-get -y install g++ build-essential automake autoconf libtool libxml2 libxml2-dev zlib1g-dev python curl gzip screen doxygen graphviz \
 	|| (test -n "`command -v yum`" && sudo yum -y install gcc-c++ automake autoconf libtool libxml2 libxml2-devel python curl gzip screen) \
@@ -203,7 +199,6 @@ packages:
 	|| (test -n "`command -v pacman`" && $(SUDO) pacman --noconfirm -S --needed base-devel libxml2 zlib curl python gzip)
 
 uninstall:
-	rm -vrf $(KHOME)/cache $(KHOME)/node_modules
 	@$(foreach bin,$(addprefix /usr/local/bin/,$(notdir $(wildcard $(KBUILD)/bin/K-*))), $(SUDO) rm -v $(bin);)
 
 system_install:
@@ -217,9 +212,6 @@ system_install:
 	@echo
 	@$(SUDO) mkdir -p $(KHOME)
 	@$(SUDO) chown $(shell id -u) $(KHOME)
-	@mkdir -p $(KHOME)/db
-	@mkdir -p $(KHOME)/cache
-	@rm -f $(KHOME)/cache/handshake.*
 
 install:
 	@seq `expr $${COLUMNS:-21} / 2` | sed 's/.*/=/' | xargs echo                                                             \
@@ -348,4 +340,4 @@ md5: src
 asandwich:
 	@test "`whoami`" = "root" && echo OK || echo make it yourself!
 
-.PHONY: all K $(SOURCE) hlep hepl help doc test src client client.o clean check lib download cleandb screen-help list screen start stop restart startall stopall restartall packages system_install uninstall install docker reinstall diff upgrade changelog test-c push MAJOR MINOR PATCH BUILD release md5 asandwich
+.PHONY: all K $(SOURCE) hlep hepl help doc test src client client.o clean check lib download screen-help list screen start stop restart startall stopall restartall packages system_install uninstall install docker reinstall diff upgrade changelog test-c push MAJOR MINOR PATCH BUILD release md5 asandwich
