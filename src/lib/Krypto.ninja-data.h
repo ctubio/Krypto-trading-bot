@@ -964,14 +964,15 @@ namespace ₿ {
             ) {
               if (addr.empty())
                 addr = address();
+              const string IN     = Text::strU(in);
               const string path   = in.substr(4, in.find(" HTTP/") - 4);
-              const size_t papers = in.find("Authorization: Basic ");
+              const size_t papers = IN.find("AUTHORIZATION: BASIC ");
               string auth;
               if (papers != string::npos) {
                 auth = in.substr(papers + 21);
                 auth = auth.substr(0, auth.find(ANSI_NEW_LINE));
               }
-              const size_t key = in.find("Sec-WebSocket-Key: ");
+              const size_t key = IN.find("SEC-WEBSOCKET-KEY: ");
               int allowed = 1;
               if (key == string::npos) {
                 out = session->response(path, auth, addr);
@@ -979,10 +980,10 @@ namespace ₿ {
                   shutdown();
                 else change(EPOLLIN | EPOLLOUT);
               } else if ((session->auth.empty() or auth == session->auth)
-                and in.find(ANSI_NEW_LINE "Upgrade: websocket" ANSI_NEW_LINE) != string::npos
-                and in.find(ANSI_NEW_LINE "Connection: ")                     != string::npos
-                and in.find(" Upgrade")                                       != string::npos
-                and in.find("Sec-WebSocket-Version: 13" ANSI_NEW_LINE)        != string::npos
+                and IN.find(ANSI_NEW_LINE "UPGRADE: WEBSOCKET") != string::npos
+                and IN.find(ANSI_NEW_LINE "CONNECTION: ")       != string::npos
+                and IN.find(" UPGRADE")                         != string::npos
+                and (IN.find("SEC-WEBSOCKET-VERSION: 13")       != string::npos)
                 and (allowed = session->upgrade(allowed, addr))
               ) {
                 time = 0;
