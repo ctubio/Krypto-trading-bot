@@ -213,14 +213,15 @@ export function playAudio(basename: string) {
   audio.play();
 };
 
-function currencyHeaderTemplate(symbol: string) {
+function currencyHeaderTemplate(symbol: string, reversed: boolean) {
   return {
     template:`<div class="ag-cell-label-container" role="presentation">
         <span data-ref="eMenu" class="ag-header-icon ag-header-cell-menu-button" aria-hidden="true"></span>
         <span data-ref="eFilterButton" class="ag-header-icon ag-header-cell-filter-button" aria-hidden="true"></span>
         <div data-ref="eLabel" class="ag-header-cell-label" role="presentation">
+            `+(reversed?`<i class="beacon sym-` + symbol.toLowerCase() + `-s"></i>`:'')+`
             <span data-ref="eText" class="ag-header-cell-text"></span>
-            <i class="beacon sym-` + symbol.toLowerCase() + `-s"></i>
+            `+(!reversed?`<i class="beacon sym-` + symbol.toLowerCase() + `-s"></i>`:'')+`
             <span data-ref="eFilter" class="ag-header-icon ag-header-label-icon ag-filter-icon" aria-hidden="true"></span>
             <ag-sort-indicator data-ref="eSortIndicator"></ag-sort-indicator>
         </div>
@@ -228,7 +229,7 @@ function currencyHeaderTemplate(symbol: string) {
   };
 };
 
-export function currencyHeaders(api: GridApi, base: string, quote: string) {
+export function currencyHeaders(api: GridApi, base: string, quote: string, reversed: boolean = false) {
     if (!api) return;
 
     let colDef: ColDef[] = api.getColumnDefs();
@@ -236,9 +237,9 @@ export function currencyHeaders(api: GridApi, base: string, quote: string) {
     colDef.map((o: ColDef)  => {
       if (['price', 'value',   'Kprice', 'Kvalue',
            'delta', 'balance', 'spread', 'volume'].indexOf(o.field) > -1)
-        o.headerComponentParams = currencyHeaderTemplate(quote);
+        o.headerComponentParams = currencyHeaderTemplate(quote, reversed);
       else if (['quantity', 'Kqty'].indexOf(o.field) > -1)
-        o.headerComponentParams = currencyHeaderTemplate(base);
+        o.headerComponentParams = currencyHeaderTemplate(base, reversed);
       return o;
     });
 

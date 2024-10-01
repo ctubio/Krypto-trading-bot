@@ -1244,7 +1244,7 @@ namespace ₿ {
                   warn.emplace_back("Unable to encrypt web clients using internal cert because it seems to be out of date, will fallback to plain text");
                 } else  
                   warn.emplace_back("Connected web clients will enjoy unsecure SSL encryption.." ANSI_NEW_LINE
-                    "(because the private key is visible in the source!). See --help argument to setup your own SSL");
+                    "(because the key is visible in the source) See --help argument to setup your own SSL");
               } else {
                 if (access(crt.data(), R_OK) == -1)
                   warn.emplace_back("Unable to read SSL .crt file at " + crt);
@@ -1303,6 +1303,9 @@ namespace ₿ {
               SSL_set_fd(ssl, clientfd);
               SSL_set_mode(ssl, SSL_MODE_RELEASE_BUFFERS);
             }
+            hello(clientfd, loopfd, ssl);
+          };
+          void hello(const curl_socket_t &clientfd, const curl_socket_t &loopfd, SSL *ssl) {
             requests.emplace_back(clientfd, loopfd, ssl, &session);
           };
           void socket(const int &domain, const int &type, const int &protocol) {

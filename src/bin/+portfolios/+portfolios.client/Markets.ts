@@ -95,7 +95,7 @@ export class MarketsComponent {
 
   private onGridReady($event: any) {
     if ($event.api) this.api = $event.api;
-    Shared.currencyHeaders(this.api, this.settings.currency, this.settings.currency);
+    Shared.currencyHeaders(this.api, this.settings.currency, this.settings.currency, true);
   };
 
   private onFirstDataRendered() {

@@ -7,11 +7,9 @@ import {Socket, Models} from 'lib/K';
   template: `<div class="row">
       <div class="col-md-12 col-xs-12">
           <div class="row">
-            <div hidden="true">
-              <settings
-                [product]="product"
-                [settings]="settings"></settings>
-            </div>
+            <settings
+              [product]="product"
+              [settings]="settings"></settings>
             <wallets
               [wallets]="wallets"
               [markets]="markets"

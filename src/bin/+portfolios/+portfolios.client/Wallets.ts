@@ -17,6 +17,7 @@ import {Shared, Models} from 'lib/K';
     class="ag-theme-alpine ag-theme-big"
     style="width: 100%;"
     (window:resize)="onGridReady($event)"
+    (filterChanged)="onFilterChanged($event)"
     (gridReady)="onGridReady($event)"
     (rowClicked)="onRowClicked($event)"
     [gridOptions]="grid"></ag-grid-angular>`
@@ -29,8 +30,6 @@ export class WalletsComponent {
   private market: any = null;
 
   private selection: string = "";
-
-  private pattern: string = "";
 
   @Input() markets: any;
 
@@ -48,7 +47,7 @@ export class WalletsComponent {
     if (!$event.data.currency) return;
     if (this.selection == $event.data.currency) {
       this.api.deselectAll();
-      this.selection = null;
+      this.selection = "";
     }
     else this.selection = $event.data.currency;
   };
@@ -63,7 +62,11 @@ export class WalletsComponent {
     headerHeight:35,
     domLayout: 'autoHeight',
     animateRows:true,
-    rowSelection:'single',
+    rowSelection: {
+      mode: "singleRow",
+      checkboxes: false,
+      enableClickSelection: true
+    },
     enableCellTextSelection: true,
     onSelectionChanged: () => {
       this.markets_view = false;
@@ -74,15 +77,23 @@ export class WalletsComponent {
       var node: any = this.api.getSelectedNodes().reverse().pop();
       if (!node) return this.api.onRowHeightChanged();
       this.deferredRender = () => {
-        document.querySelector("#portfolios div[row-id='" + node.data.currency + "'] div[aria-colindex='4']").appendChild(document.querySelector('#markets'));
-        var style = (<HTMLElement>document.querySelector('#markets')).style;
-        node.setRowHeight(
-          this.grid.rowHeight
-          + parseInt(style.marginTop)
-          + parseInt(style.marginBottom)
-          + (<HTMLElement>document.querySelector('#markets div')).offsetHeight
-        );
-        this.api.onRowHeightChanged();
+        var main = document.getElementById('portfolios');
+        var detail = document.getElementById('markets');
+        if (main && detail) {
+          var isdark = main.classList.value.indexOf('-dark');
+          detail.classList.add('ag-theme-alpine' + (isdark?'-dark':''));
+          detail.classList.remove('ag-theme-alpine' + (isdark?'':'-dark'));
+          var row = document.querySelector("#portfolios div[row-id='" + node.data.currency + "'] div[aria-colindex='4']");
+          if (row) row.appendChild(detail);
+          var style = (<HTMLElement>detail).style;
+          node.setRowHeight(
+            this.grid.rowHeight
+            + parseInt(style.marginTop)
+            + parseInt(style.marginBottom)
+            + (<HTMLElement>document.querySelector('#markets div.ag-root-wrapper')).offsetHeight
+          );
+          this.api.onRowHeightChanged();
+        }
       };
       setTimeout(() => {
         this.markets_view = true;
@@ -91,13 +102,11 @@ export class WalletsComponent {
         }, 0);
       }, 0);
     },
-    isExternalFilterPresent: () => !this.settings.zeroed || !!this.pattern,
+    isExternalFilterPresent: () => !this.settings.zeroed,
     doesExternalFilterPass: (node) => (
-      this.settings.zeroed || !!parseFloat(node.data.total)
-    ) && (
-      !this.pattern || node.data.currency.toUpperCase().indexOf(this.pattern) > -1
+      this.settings.zeroed || parseFloat(node.data.total) > 0.0000001
     ),
-    getRowId: (params: any) => params.data.currency,
+    getRowId: (params: any) => params.data.currency || "TOTALS",
     columnDefs: [{
       width: 220,
       field: 'held',
@@ -144,10 +153,9 @@ export class WalletsComponent {
       width: 130,
       field: 'currency',
       headerName: 'currency',
+      filter: true,
       cellRenderer: (params) => params.node.rowPinned == 'top'
-        ? `<input type="text" class="form-control"
-        style="background: #0000005c;width: 100%;height: 26px;font-size: 19px;margin-top: -1px;"
-        title="filter" id="filter_pattern" />`
+        ? ``
         : '<span class="row_title"><i class="beacon sym-_default-s sym-' + params.value.toLowerCase() + '-s" ></i> ' + params.value + '</span>',
       cellClassRules: {
         'text-muted': '!parseFloat(data.total)'
@@ -173,9 +181,9 @@ export class WalletsComponent {
       sort: 'desc',
       type: 'rightAligned',
       cellRenderer: (params) => params.node.rowPinned == 'top'
-        ? `<span class="kira" id="balance_pin"></span><span id="total_pin" class="balance_percent"></span>`
+        ? `<span class="kira" id ="balance_pin"></span><span id="total_pin" class="balance_percent"></span>`
         : `<span class="val">` + params.value + `</span>`
-            + `<small class="balance_percent" id="balance_percent_` + params.data.currency + `"></small>`,
+            + `<small class="balance_percent">` + (params.data.balance_percent||'0.00') + `</small>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
         'up-data': 'data.dir_balance == "up-data"',
@@ -187,46 +195,10 @@ export class WalletsComponent {
 
   private onGridReady($event: any) {
     if ($event.api) this.api = $event.api;
-    Shared.currencyHeaders(this.api, this.settings.currency, this.settings.currency);
-
-    this.pin();
+    Shared.currencyHeaders(this.api, this.settings.currency, this.settings.currency, true);
   };
 
-  private pin = () => {
-    if (this.api && !this.api.getPinnedTopRowCount()) {
-      this.api.setGridOption('pinnedTopRowData', [{}]);
-
-      var pin = (pin) => {
-        if (document.getElementById("filter_pattern")
-          && document.getElementById("price_pin")
-          && document.getElementById("total_pin")
-        ) {
-          document.getElementById("zeroed_checkbox").addEventListener("change", event => {
-            this.cleanSelection();
-          });
-
-          document.getElementById("filter_pattern").addEventListener("keyup", event => {
-            this.pattern =
-            (<HTMLInputElement>event.target).value = (<HTMLInputElement>event.target).value.toUpperCase();
-            this.api.onFilterChanged();
-            this.cleanSelection();
-          });
-
-          document.getElementById("price_pin").appendChild(
-            document.getElementById("base_select")
-          );
-
-          document.getElementById("total_pin").appendChild(
-            document.getElementById("zeroed_checkbox")
-          );
-        } else setTimeout(() => pin(pin), 69);
-      }
-
-      pin(pin);
-    }
-  };
-
-  private cleanSelection = () => {
+  private onFilterChanged = ($event: any) => {
     if (!this.selection) return;
     var node: any = this.api.getRowNode(this.selection);
     if (node && !this.grid.doesExternalFilterPass(node))
@@ -238,7 +210,7 @@ export class WalletsComponent {
     var sum = 0;
     if (o === null) {
       this.api.setGridOption('rowData', []);
-      this.selection = null;
+      this.selection = "";
     }
     else o.forEach(o => {
       const amount  = Shared.str(o.wallet.amount,                 8);
@@ -273,17 +245,23 @@ export class WalletsComponent {
     if (!this.api.getSelectedNodes().length)
       this.api.onSortChanged();
 
-    var pin_sum = document.getElementById('balance_pin');
-    if (pin_sum) {
-      pin_sum.innerHTML = Shared.str(sum, 8);
+    
+    this.api.forEachNode((node: RowNode) => {
+      node.data.balance_percent = Shared.str(Shared.num(node.data.balance) / sum * 100, 2);
+    });
 
-      this.api.forEachNode((node: RowNode) => {
-        var el = document.getElementById('balance_percent_' + node.data.currency);
-        if (el) {
-          var val = Shared.str(Shared.num(node.data.balance) / sum * 100, 2);
-          if (val != el.innerHTML) el.innerHTML = val;
-        }
-      });
+    if (!this.api.getPinnedTopRowCount()) {
+      this.api.setGridOption('pinnedTopRowData', [{}]);
+    }
+
+    var el = document.getElementById('balance_pin');
+    if (el) {
+      el.innerHTML = Shared.str(sum, 8);
+      var sel = document.getElementById("portfolios_settings");
+      if (sel) {
+        var parent = el.closest('.ag-cell') as HTMLElement;
+        sel.style.right = (20 + (parent.offsetWidth || 250)) + 'px';
+      }
     }
   };
 };

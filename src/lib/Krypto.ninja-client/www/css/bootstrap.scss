@@ -5203,17 +5203,25 @@ div.ag-header-cell .ag-header-cell-label i {
 
 #zeroed_checkbox {
   zoom: 200%;
-  margin-top: 0px;
-  position: absolute;
-  top: 2px;
-  right: 4px;
+  margin-top: 2px;
+  display: inline-block;
 }
 
 #base_select{
   width: 121px;
-  margin-top: -1px;
   height: 26px;
   font-size: 19px;
+  display: inline-block;
+  position: relative;
+  top: -10px;
+  margin-right: 20px;
+}
+
+#portfolios_settings {
+  position: fixed;
+  z-index: 1;
+  top: 48px;
+  right: 250px;
 }
 
 #portfolios.ag-theme-big {
