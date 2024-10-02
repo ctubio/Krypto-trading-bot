@@ -1310,9 +1310,6 @@ namespace ₿ {
               SSL_set_fd(ssl, clientfd);
               SSL_set_mode(ssl, SSL_MODE_RELEASE_BUFFERS);
             }
-            hello(clientfd, loopfd, ssl);
-          };
-          void hello(const curl_socket_t &clientfd, const curl_socket_t &loopfd, SSL *ssl) {
             requests.emplace_back(clientfd, loopfd, ssl, &session);
           };
           void socket(const int &domain, const int &type, const int &protocol) {

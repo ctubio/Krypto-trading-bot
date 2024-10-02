@@ -120,10 +120,11 @@ namespace ₿ {
         const string mods = changelog();
         if (mods.empty()) {
           epilogue += "(Three-Headed Monkey found):" ANSI_NEW_LINE + epitaph
-            + "- binbuild: " K_SOURCE " " K_CHOST   ANSI_NEW_LINE
-              "- lastbeat: " + to_string(Tspent)  + ANSI_NEW_LINE
+            + "- binbuild: " K_SOURCE " " K_CHOST    ANSI_NEW_LINE
+            + "- numpatch: " K_BUILD                 ANSI_NEW_LINE
+              "- lastbeat: " + to_string(Tspent)   + ANSI_NEW_LINE
 #ifndef _WIN32
-            + "- tracelog: " ANSI_NEW_LINE;
+            + "- tracelog: "                         ANSI_NEW_LINE;
           void *k[69];
           size_t jumps = backtrace(k, sizeof(k) / sizeof(void*));
           char **trace = backtrace_symbols(k, jumps);
