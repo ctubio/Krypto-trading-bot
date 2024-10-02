@@ -646,7 +646,7 @@ namespace ₿ {
           error("SH", string("Unable to launch another \"keylogger\" thread"));
         keylogger.callback([&](const char &ch) { keylog(ch); });
         keylogger.wait_for(loop, [&]() { return sync_keylogger(); });
-        keylogger.ask_for();
+        keylogger.ask_for(false);
       };
     private:
       void keymap(const char &ch, function<void()> fn) const {
@@ -657,7 +657,7 @@ namespace ₿ {
       void keylog(const char &ch) {
         if (maps.contains(ch))
           maps.at(ch)();
-        keylogger.ask_for();
+        keylogger.ask_for(false);
       };
       vector<char> sync_keylogger() {
         int ch =

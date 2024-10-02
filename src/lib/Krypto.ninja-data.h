@@ -180,8 +180,14 @@ namespace ₿ {
                     for (const T &it : data.get()) try_write(it);
                 });
               };
-              void ask_for() {
-                if (!data.valid())
+              void ask_for(const bool &samethread = true) {
+                if (data.valid()) return;
+                if (samethread) {
+                  Wakeup again(event);
+                  data = ::async(launch::deferred, [&]() {
+                    return job();
+                  });
+                } else
                   data = ::async(launch::async, [&]() {
                     Wakeup again(event);
                     return job();
@@ -964,15 +970,15 @@ namespace ₿ {
             ) {
               if (addr.empty())
                 addr = address();
-              const string IN     = Text::strU(in);
+              const string iN     = Text::strU(in);
               const string path   = in.substr(4, in.find(" HTTP/") - 4);
-              const size_t papers = IN.find("AUTHORIZATION: BASIC ");
+              const size_t papers = iN.find("AUTHORIZATION: BASIC ");
               string auth;
               if (papers != string::npos) {
                 auth = in.substr(papers + 21);
                 auth = auth.substr(0, auth.find(ANSI_NEW_LINE));
               }
-              const size_t key = IN.find("SEC-WEBSOCKET-KEY: ");
+              const size_t key = iN.find("SEC-WEBSOCKET-KEY: ");
               int allowed = 1;
               if (key == string::npos) {
                 out = session->response(path, auth, addr);
@@ -980,10 +986,10 @@ namespace ₿ {
                   shutdown();
                 else change(EPOLLIN | EPOLLOUT);
               } else if ((session->auth.empty() or auth == session->auth)
-                and IN.find(ANSI_NEW_LINE "UPGRADE: WEBSOCKET") != string::npos
-                and IN.find(ANSI_NEW_LINE "CONNECTION: ")       != string::npos
-                and IN.find(" UPGRADE")                         != string::npos
-                and (IN.find("SEC-WEBSOCKET-VERSION: 13")       != string::npos)
+                and iN.find(ANSI_NEW_LINE "UPGRADE: WEBSOCKET") != string::npos
+                and iN.find(ANSI_NEW_LINE "CONNECTION: ")       != string::npos
+                and iN.find(" UPGRADE")                         != string::npos
+                and (iN.find("SEC-WEBSOCKET-VERSION: 13")       != string::npos)
                 and (allowed = session->upgrade(allowed, addr))
               ) {
                 time = 0;
