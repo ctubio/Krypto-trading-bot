@@ -34,16 +34,16 @@ SCENARIO_METHOD(TradingBot, "ANY BTC/EUR") {
       REQUIRE_NOTHROW(engine.qp.fvModel = tribeca::FairValueModel::BBO);
       vector<string> randIds;
       REQUIRE_NOTHROW(randIds.push_back(Random::uuid36Id()));
-      REQUIRE_NOTHROW(engine.orders.update({(Side)0, 0, 0, Tstamp, false, randIds.back(), "", Status::Working, 0}));
+      REQUIRE_NOTHROW(engine.orders.update({"", (Side)0, 0, 0, Tstamp, false, randIds.back(), "", Status::Working, 0}));
       REQUIRE_NOTHROW(randIds.push_back(Random::uuid36Id()));
-      REQUIRE_NOTHROW(engine.orders.update({Side::Bid, 1234.52, 0.23456789, Tstamp, false, randIds.back()}));
-      REQUIRE_NOTHROW(engine.orders.update({(Side)0, 0, 0, Tstamp, false, randIds.back(), "", Status::Working, 0}));
+      REQUIRE_NOTHROW(engine.orders.update({"", Side::Bid, 1234.52, 0.23456789, Tstamp, false, randIds.back()}));
+      REQUIRE_NOTHROW(engine.orders.update({"", (Side)0, 0, 0, Tstamp, false, randIds.back(), "", Status::Working, 0}));
       REQUIRE_NOTHROW(randIds.push_back(Random::uuid36Id()));
-      REQUIRE_NOTHROW(engine.orders.update({Side::Bid, 1234.55, 0.01234567, Tstamp, false, randIds.back()}));
-      REQUIRE_NOTHROW(engine.orders.update({(Side)0, 0, 0, Tstamp, false, randIds.back(), "", Status::Working, 0}));
+      REQUIRE_NOTHROW(engine.orders.update({"", Side::Bid, 1234.55, 0.01234567, Tstamp, false, randIds.back()}));
+      REQUIRE_NOTHROW(engine.orders.update({"", (Side)0, 0, 0, Tstamp, false, randIds.back(), "", Status::Working, 0}));
       REQUIRE_NOTHROW(randIds.push_back(Random::uuid36Id()));
-      REQUIRE_NOTHROW(engine.orders.update({Side::Ask, 1234.69, 0.01234568, Tstamp, false, randIds.back()}));
-      REQUIRE_NOTHROW(engine.orders.update({(Side)0, 0, 0, Tstamp, false, randIds.back(), "", Status::Working, 0}));
+      REQUIRE_NOTHROW(engine.orders.update({"", Side::Ask, 1234.69, 0.01234568, Tstamp, false, randIds.back()}));
+      REQUIRE_NOTHROW(engine.orders.update({"", (Side)0, 0, 0, Tstamp, false, randIds.back(), "", Status::Working, 0}));
       REQUIRE_NOTHROW(engine.levels.read_from_gw({
         { {1234.50, 0.12345678}, {1234.55, 0.01234567} },
         { {1234.60, 1.23456789}, {1234.69, 0.11234569} }
@@ -412,22 +412,22 @@ SCENARIO_METHOD(TradingBot, "ANY BTC/EUR") {
       vector<string> randIds;
       const Clock time = Tstamp;
       REQUIRE_NOTHROW(randIds.push_back(Random::uuid36Id()));
-      REQUIRE_NOTHROW(engine.orders.update({Side::Bid, 1234.50, 0.12345678, time-69, false, randIds.back()}));
-      REQUIRE_NOTHROW(engine.orders.update({(Side)0, 0, 0, time, false, randIds.back(), "", Status::Working, 0}));
+      REQUIRE_NOTHROW(engine.orders.update({"BTC-EUR", Side::Bid, 1234.50, 0.12345678, time-69, false, randIds.back()}));
+      REQUIRE_NOTHROW(engine.orders.update({"BTC-EUR", (Side)0, 0, 0, time, false, randIds.back(), "", Status::Working, 0}));
       REQUIRE_NOTHROW(randIds.push_back(Random::uuid36Id()));
-      REQUIRE_NOTHROW(engine.orders.update({Side::Bid, 1234.51, 0.12345679, time-69, false, randIds.back()}));
-      REQUIRE_NOTHROW(engine.orders.update({(Side)0, 0, 0, time, false, randIds.back(), "", Status::Working, 0}));
+      REQUIRE_NOTHROW(engine.orders.update({"BTC-EUR", Side::Bid, 1234.51, 0.12345679, time-69, false, randIds.back()}));
+      REQUIRE_NOTHROW(engine.orders.update({"BTC-EUR", (Side)0, 0, 0, time, false, randIds.back(), "", Status::Working, 0}));
       REQUIRE_NOTHROW(randIds.push_back(Random::uuid36Id()));
-      REQUIRE_NOTHROW(engine.orders.update({Side::Bid, 1234.52, 0.12345680, time-69, false, randIds.back()}));
-      REQUIRE_NOTHROW(engine.orders.update({(Side)0, 0, 0, time, false, randIds.back(), "", Status::Working, 0}));
+      REQUIRE_NOTHROW(engine.orders.update({"BTC-EUR", Side::Bid, 1234.52, 0.12345680, time-69, false, randIds.back()}));
+      REQUIRE_NOTHROW(engine.orders.update({"BTC-EUR", (Side)0, 0, 0, time, false, randIds.back(), "", Status::Working, 0}));
       REQUIRE_NOTHROW(randIds.push_back(Random::uuid36Id()));
-      REQUIRE_NOTHROW(engine.orders.update({Side::Ask, 1234.50, 0.12345678, time-69, false, randIds.back()}));
-      REQUIRE_NOTHROW(engine.orders.update({(Side)0, 0, 0, time, false, randIds.back(), "", Status::Working, 0}));
+      REQUIRE_NOTHROW(engine.orders.update({"BTC-EUR", Side::Ask, 1234.50, 0.12345678, time-69, false, randIds.back()}));
+      REQUIRE_NOTHROW(engine.orders.update({"BTC-EUR", (Side)0, 0, 0, time, false, randIds.back(), "", Status::Working, 0}));
       REQUIRE_NOTHROW(randIds.push_back(Random::uuid36Id()));
-      REQUIRE_NOTHROW(engine.orders.update({Side::Ask, 1234.51, 0.12345679, time-69, false, randIds.back()}));
-      REQUIRE_NOTHROW(engine.orders.update({(Side)0, 0, 0, time, false, randIds.back(), "", Status::Working, 0}));
+      REQUIRE_NOTHROW(engine.orders.update({"BTC-EUR", Side::Ask, 1234.51, 0.12345679, time-69, false, randIds.back()}));
+      REQUIRE_NOTHROW(engine.orders.update({"BTC-EUR", (Side)0, 0, 0, time, false, randIds.back(), "", Status::Working, 0}));
       REQUIRE_NOTHROW(randIds.push_back(Random::uuid36Id()));
-      REQUIRE_NOTHROW(engine.orders.update({Side::Ask, 1234.52, 0.12345680, time, false, randIds.back()}));
+      REQUIRE_NOTHROW(engine.orders.update({"BTC-EUR", Side::Ask, 1234.52, 0.12345680, time, false, randIds.back()}));
       THEN("held amount") {
         Order order;
         engine.orders.last = &order;
@@ -440,13 +440,14 @@ SCENARIO_METHOD(TradingBot, "ANY BTC/EUR") {
         REQUIRE(engine.wallet.quote.held == Approx(457.22592546));
       }
       THEN("to json") {
+        cout << engine.orders.blob() << endl;
         REQUIRE(string::npos == engine.orders.blob().dump().find("\"status\":0"));
         REQUIRE(string::npos == engine.orders.blob().dump().find("\"status\":2"));
-        REQUIRE(string::npos != engine.orders.blob().dump().find("{\"exchangeId\":\"\",\"isPong\":false,\"latency\":69,\"orderId\":\"" + randIds[0] + "\",\"price\":1234.5,\"quantity\":0.12345678,\"side\":0,\"status\":1,\"time\":" + to_string(time) + ",\"timeInForce\":0,\"type\":0}"));
-        REQUIRE(string::npos != engine.orders.blob().dump().find("{\"exchangeId\":\"\",\"isPong\":false,\"latency\":69,\"orderId\":\"" + randIds[1] + "\",\"price\":1234.51,\"quantity\":0.12345679,\"side\":0,\"status\":1,\"time\":" + to_string(time) + ",\"timeInForce\":0,\"type\":0}"));
-        REQUIRE(string::npos != engine.orders.blob().dump().find("{\"exchangeId\":\"\",\"isPong\":false,\"latency\":69,\"orderId\":\"" + randIds[2] + "\",\"price\":1234.52,\"quantity\":0.1234568,\"side\":0,\"status\":1,\"time\":" + to_string(time) + ",\"timeInForce\":0,\"type\":0}"));
-        REQUIRE(string::npos != engine.orders.blob().dump().find("{\"exchangeId\":\"\",\"isPong\":false,\"latency\":69,\"orderId\":\"" + randIds[3] + "\",\"price\":1234.5,\"quantity\":0.12345678,\"side\":1,\"status\":1,\"time\":" + to_string(time) + ",\"timeInForce\":0,\"type\":0}"));
-        REQUIRE(string::npos != engine.orders.blob().dump().find("{\"exchangeId\":\"\",\"isPong\":false,\"latency\":69,\"orderId\":\"" + randIds[4] + "\",\"price\":1234.51,\"quantity\":0.12345679,\"side\":1,\"status\":1,\"time\":" + to_string(time) + ",\"timeInForce\":0,\"type\":0}"));
+        REQUIRE(string::npos != engine.orders.blob().dump().find("{\"exchangeId\":\"\",\"isPong\":false,\"latency\":69,\"orderId\":\"" + randIds[0] + "\",\"price\":1234.5,\"quantity\":0.12345678,\"side\":0,\"status\":1,\"symbol\":\"BTC-EUR\",\"time\":" + to_string(time) + ",\"timeInForce\":0,\"type\":0}"));
+        REQUIRE(string::npos != engine.orders.blob().dump().find("{\"exchangeId\":\"\",\"isPong\":false,\"latency\":69,\"orderId\":\"" + randIds[1] + "\",\"price\":1234.51,\"quantity\":0.12345679,\"side\":0,\"status\":1,\"symbol\":\"BTC-EUR\",\"time\":" + to_string(time) + ",\"timeInForce\":0,\"type\":0}"));
+        REQUIRE(string::npos != engine.orders.blob().dump().find("{\"exchangeId\":\"\",\"isPong\":false,\"latency\":69,\"orderId\":\"" + randIds[2] + "\",\"price\":1234.52,\"quantity\":0.1234568,\"side\":0,\"status\":1,\"symbol\":\"BTC-EUR\",\"time\":" + to_string(time) + ",\"timeInForce\":0,\"type\":0}"));
+        REQUIRE(string::npos != engine.orders.blob().dump().find("{\"exchangeId\":\"\",\"isPong\":false,\"latency\":69,\"orderId\":\"" + randIds[3] + "\",\"price\":1234.5,\"quantity\":0.12345678,\"side\":1,\"status\":1,\"symbol\":\"BTC-EUR\",\"time\":" + to_string(time) + ",\"timeInForce\":0,\"type\":0}"));
+        REQUIRE(string::npos != engine.orders.blob().dump().find("{\"exchangeId\":\"\",\"isPong\":false,\"latency\":69,\"orderId\":\"" + randIds[4] + "\",\"price\":1234.51,\"quantity\":0.12345679,\"side\":1,\"status\":1,\"symbol\":\"BTC-EUR\",\"time\":" + to_string(time) + ",\"timeInForce\":0,\"type\":0}"));
       }
     }
     WHEN("ready") {
