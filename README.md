@@ -28,19 +28,22 @@ Our bots run on unix-like systems. Persistence is achieved through a built-in se
 
 The web UI is compatible with most web browsers/resolutions, but Brave or Firefox at 1600px are recommended.<br />Doesn't require configuration of any web server (unless installed behind your own reverse proxy).
 
-#### K-trading-bot <sup>(Admin UI + CLI)</sup>
-to control a fully configurable high frequency trading engine, with all features suggested by the community:
+<details><summary><b>K-trading-bot</b> <sup>(web UI + CLI)</sup></summary>
+to control a fully configurable high frequency trading engine, with all features suggested by the community:<br />
 
 ![trading-bot UI Preview](https://user-images.githubusercontent.com/1634027/44740469-d5c7ff00-aafa-11e8-9252-73b9c1283adb.png)
+</details>
 
-#### K-+portfolios <sup>(Admin UI + CLI)</sup>
-to show all balances and orders from one exchange, with buttons to cancel orders and links to go to markets:
+<details><summary><b>K-+portfolios</b> <sup>(web UI + CLI)</sup></summary>
+to show all balances and orders from one exchange, with buttons to cancel orders and links to go to markets:<br />
 
 ![+portfolios UI Preview](https://github.com/user-attachments/assets/6df39eac-bc19-480a-8758-e94ee62a934b)
+</details>
 
-#### K-hello-world <sup>(CLI)</sup>
-to print the current value of a given currency to stdout:
-```
+<details><summary><b>K-hello-world</b> <sup>(CLI)</sup></summary>
+to print the current value of a given currency to stdout:<br />
+
+<pre>
  _________________________________________
 / Hello, WORLD!                           \
 |                                         |
@@ -51,10 +54,12 @@ to print the current value of a given currency to stdout:
             (__)\       )\/\
                 ||----w |
                 ||     ||
-```
+</pre>
+</details>
 
-#### K-scaling-bot, K-stable--bot <sup>(CLI)</sup>
+<details><summary><b>K-scaling-bot, K-stable--bot</b> <sup>(CLI)</sup></summary>
 to easy mod and start developing a new custom bot.
+</details>
 
 ### Compatible Exchanges
 
