@@ -26,9 +26,32 @@ you can fund liquidity pools of automated market makers at [tinyman.org](https:/
 
 Our bots run on unix-like systems. Persistence is achieved through a built-in server-less SQLite C++ interface.<br>Data transfers are directly done from your machine to the exchange using the latest CURL and OpenSSL versions.<br>Installation in a dedicated [Debian](https://cdimage.debian.org/cdimage/release/current/), [Raspberry](https://www.raspberrypi.com/software/), [Red Hat](https://developers.redhat.com/products/rhel/download), [CentOS](https://www.centos.org/download/) or macOS instance without Docker is recommended.
 
-![Web UI Preview](https://user-images.githubusercontent.com/1634027/44740469-d5c7ff00-aafa-11e8-9252-73b9c1283adb.png)
+The web UI is compatible with most web browsers/resolutions, but Brave or Firefox at 1600px are recommended.<br />Doesn't require configuration of any web server (unless installed behind your own reverse proxy).
 
-The web UI is compatible with most web browsers/resolutions, but Brave or Firefox at 1600px are recommended. Doesn't require configuration of any web server (unless installed behind your own reverse proxy).
+## K-trading-bot
+![trading-bot UI Preview](https://user-images.githubusercontent.com/1634027/44740469-d5c7ff00-aafa-11e8-9252-73b9c1283adb.png)
+
+## K-+portfolios
+Shows all balances and orders from one exchange, with buttons to cancel orders and links to go to markets.
+![+portfolios UI Preview](https://github.com/user-attachments/assets/6df39eac-bc19-480a-8758-e94ee62a934b)
+
+## K-hello-world
+Prints the current value of a given currency to stdout.
+```
+ _________________________________________
+/ Hello, WORLD!                           \
+|                                         |
+\ pssst.. 1.00000000 BTC = 56683.49 EUR.  /
+ -----------------------------------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+```
+
+## K-scaling-bot, K-stable--bot
+Minimal engines without web UI, controlled with the command-line, easy to mod to start developing a new custom bot.
 
 ### Compatible Exchanges
 

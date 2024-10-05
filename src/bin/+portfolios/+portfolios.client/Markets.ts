@@ -7,11 +7,11 @@ import {Shared, Models} from 'lib/K';
 @Component({
   selector: 'markets',
   template: `<ag-grid-angular id="markets"
+    [hidden]="!(api ? api.getDisplayedRowCount() : 0)"
     class="ag-theme-alpine ag-theme-big"
     style="width: 560px;margin: 6px 0px;"
     (window:resize)="onGridReady($event)"
     (gridReady)="onGridReady($event)"
-    (firstDataRendered)="onFirstDataRendered()"
     [gridOptions]="grid"></ag-grid-angular>`
 })
 export class MarketsComponent {
@@ -98,10 +98,6 @@ export class MarketsComponent {
     Shared.currencyHeaders(this.api, this.settings.currency, this.settings.currency, true);
   };
 
-  private onFirstDataRendered() {
-    this.rendered.emit(true);
-  };
-
   private addRowData = () => {
     if (!this.api) return;
     if (!this._market || !this._markets)
@@ -138,5 +134,7 @@ export class MarketsComponent {
     }
 
     this.api.onSortChanged();
+
+    this.rendered.emit(true);
   };
 };

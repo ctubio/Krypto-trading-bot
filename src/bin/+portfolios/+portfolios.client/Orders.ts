@@ -17,7 +17,7 @@ import {Socket, Models} from 'lib/K';
     <ag-grid-angular
       [hidden]="!filter"
       class="ag-theme-alpine ag-theme-big"
-      style="width: 100%;height: 400px;"
+      style="width: 100%;"
       (window:resize)="onGridReady($event)"
       (gridReady)="onGridReady($event)"
       (cellClicked)="onCellClicked($event)"
@@ -44,6 +44,7 @@ export class OrdersComponent {
     defaultColDef: { sortable: true, resizable: true, flex: 1 },
     rowHeight:35,
     headerHeight:35,
+    domLayout: 'autoHeight',
     isExternalFilterPresent: () => !!this.filter,
     doesExternalFilterPass: (node) => (
       !this.filter || node.data.symbol == this.filter

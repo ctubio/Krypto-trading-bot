@@ -7,7 +7,7 @@ import {Shared, Models} from 'lib/K';
 @Component({
   selector: 'wallets',
   template: `<div hidden="true">
-    <markets *ngIf="markets_view"
+    <markets
       (rendered)="onRendered($event)"
       [settings]="settings"
       [markets]="markets"
@@ -26,7 +26,6 @@ export class WalletsComponent {
 
   private deferredRender: any = null;
 
-  private markets_view: boolean = false;
   private market: any = null;
 
   private selection: string = "";
@@ -69,22 +68,23 @@ export class WalletsComponent {
     },
     enableCellTextSelection: true,
     onSelectionChanged: () => {
-      this.markets_view = false;
       this.market = null;
       this.api.forEachNode((node: RowNode) => {
         node.setRowHeight(this.grid.rowHeight);
       });
       var node: any = this.api.getSelectedNodes().reverse().pop();
       if (!node) return this.api.onRowHeightChanged();
+      var main = document.getElementById('portfolios');
+      var detail = document.getElementById('markets');
+      if (main && detail) {
+        var isdark = main.classList.value.indexOf('-dark');
+        detail.classList.add('ag-theme-alpine' + (isdark?'-dark':''));
+        detail.classList.remove('ag-theme-alpine' + (isdark?'':'-dark'));
+        var row = document.querySelector("#portfolios div[row-id='" + node.data.currency + "'] div[aria-colindex='4']");
+        if (row) row.appendChild(detail);
+      }
       this.deferredRender = () => {
-        var main = document.getElementById('portfolios');
-        var detail = document.getElementById('markets');
-        if (main && detail) {
-          var isdark = main.classList.value.indexOf('-dark');
-          detail.classList.add('ag-theme-alpine' + (isdark?'-dark':''));
-          detail.classList.remove('ag-theme-alpine' + (isdark?'':'-dark'));
-          var row = document.querySelector("#portfolios div[row-id='" + node.data.currency + "'] div[aria-colindex='4']");
-          if (row) row.appendChild(detail);
+        if (detail) {
           var style = (<HTMLElement>detail).style;
           node.setRowHeight(
             this.grid.rowHeight
@@ -96,10 +96,7 @@ export class WalletsComponent {
         }
       };
       setTimeout(() => {
-        this.markets_view = true;
-        setTimeout(() => {
-          this.market = node.data.currency;
-        }, 0);
+        this.market = node.data.currency;
       }, 0);
     },
     isExternalFilterPresent: () => !this.settings.zeroed,
