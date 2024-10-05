@@ -779,11 +779,10 @@ namespace ₿ {
         string output(buf->data, buf->length);
         if (urlsafe) {
           string::size_type n = 0;
-          while ((n = output.find("+", n)) != string::npos)
-            output.replace(n++, 1, "-");
-          n = 0;
-          while ((n = output.find("/", n)) != string::npos)
-            output.replace(n++, 1, "_");
+          while ((n = output.find("+")) != string::npos)
+            output.replace(n, 1, "-");
+          while ((n = output.find("/")) != string::npos)
+            output.replace(n, 1, "_");
           while (output.back() == '=')
             output.erase(output.length() - 1);
         }
@@ -793,11 +792,10 @@ namespace ₿ {
         if (urlsafe) {
           string output = input;
           string::size_type n = 0;
-          while ((n = output.find("-", n)) != string::npos)
-            output.replace(n++, 1, "+");
-          n = 0;
-          while ((n = output.find("_", n)) != string::npos)
-            output.replace(n++, 1, "/");
+          while ((n = output.find("-")) != string::npos)
+            output.replace(n, 1, "+");
+          while ((n = output.find("_")) != string::npos)
+            output.replace(n, 1, "/");
           output += string(4 - (output.length() % 4), '=');
           return B64_decode(output + string(4 - (output.length() % 4), '='));
         }

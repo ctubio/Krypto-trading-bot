@@ -2514,6 +2514,7 @@ namespace tribeca {
         if (replace)
           K.replace(quote.price, quote.isPong, abandoned.back());
         else K.place({
+          K.gateway->symbol,
           quote.side,
           quote.price,
           quote.size,

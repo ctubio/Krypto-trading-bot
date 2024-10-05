@@ -5217,10 +5217,14 @@ div.ag-header-cell .ag-header-cell-label i {
   margin-right: 20px;
 }
 
+#portfolios {
+  margin-top: 7px;
+}
+
 #portfolios_settings {
-  position: fixed;
+  position: absolute;
   z-index: 1;
-  top: 48px;
+  margin-top: 41px;
   right: 250px;
 }
 

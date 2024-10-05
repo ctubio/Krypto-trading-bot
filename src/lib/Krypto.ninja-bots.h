@@ -1346,6 +1346,8 @@ namespace ₿ {
               };
           } zombies;
           Order *last = nullptr;
+        protected:
+          bool withExternal = false;
         private:
           unordered_map<string, Order> orders;
         private_ref:
@@ -1447,7 +1449,13 @@ namespace ₿ {
               if (it != orders.end())
                 return &it->second;
             }
-            return find(raw.orderId);
+            Order *found = find(raw.orderId);
+            if (!found and withExternal and raw.status == Status::Working) {
+              Order external = raw;
+              external.status = Status::Waiting;
+              found = findsert(external);
+            }
+            return found;
           };
       };
     public:

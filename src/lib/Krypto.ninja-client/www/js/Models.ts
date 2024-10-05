@@ -112,7 +112,8 @@ export class Trade {
 }
 
 export class Order {
-    constructor(public orderId: string,
+    constructor(public symbol: string,
+                public orderId: string,
                 public exchangeId: string,
                 public side: Side,
                 public quantity: number,

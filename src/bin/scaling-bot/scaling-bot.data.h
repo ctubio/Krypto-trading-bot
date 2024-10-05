@@ -510,6 +510,7 @@ namespace analpaper {
           and orders.last->qtyFilled
           and K.arg<double>("pong-width")
         ) pending.push_back({
+            K.gateway->symbol,
             orders.last->side == Side::Bid
               ? Side::Ask
               : Side::Bid,
@@ -572,6 +573,7 @@ namespace analpaper {
         if (quote.empty()) return;
         if (replace) K.replace(quote.price, quote.isPong, abandoned.back());
         else K.place({
+          K.gateway->symbol,
           quote.side,
           quote.price,
           quote.size,

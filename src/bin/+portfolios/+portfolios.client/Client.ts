@@ -7,6 +7,10 @@ import {Socket, Models} from 'lib/K';
   template: `<div class="row">
       <div class="col-md-12 col-xs-12">
           <div class="row">
+            <orders
+             [orders]="orders"></orders>
+          </div>
+          <div class="row">
             <settings
               [product]="product"
               [settings]="settings"></settings>
@@ -23,6 +27,8 @@ export class ClientComponent implements OnInit {
   private wallets: any = null;
 
   private markets: any = null;
+
+  private orders: Models.Order[] = [];
 
   private settings: Models.PortfolioParameters = new Models.PortfolioParameters();
 
@@ -45,5 +51,9 @@ export class ClientComponent implements OnInit {
     new Socket.Subscriber(Models.Topics.Position)
       .registerSubscriber((o: any[]) => { this.wallets = o; })
       .registerDisconnectedHandler(() => { this.wallets = null; });
+
+    new Socket.Subscriber(Models.Topics.OrderStatusReports)
+      .registerSubscriber((o: Models.Order[]) => { this.orders = o; })
+      .registerDisconnectedHandler(() => { this.orders = []; });
   };
 };

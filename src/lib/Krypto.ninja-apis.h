@@ -123,6 +123,7 @@ namespace ₿ {
   };
 
   struct Order {
+         string symbol      = "";
            Side side        = (Side)0;
           Price price       = 0;
          Amount quantity    = 0;
@@ -171,6 +172,7 @@ namespace ₿ {
     j = {
       {    "orderId", k.orderId    },
       { "exchangeId", k.exchangeId },
+      {     "symbol", k.symbol     },
       {       "side", k.side       },
       {   "quantity", k.quantity   },
       {       "type", k.type       },
