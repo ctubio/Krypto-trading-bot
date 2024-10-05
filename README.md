@@ -29,17 +29,17 @@ Our bots run on unix-like systems. Persistence is achieved through a built-in se
 The web UI is compatible with most web browsers/resolutions, but Brave or Firefox at 1600px are recommended.<br />Doesn't require configuration of any web server (unless installed behind your own reverse proxy).
 
 #### K-trading-bot <sup>(Admin UI + CLI)</sup>
-to control a fully configurable high frequency trading engine, with all features suggested by the community.
+to control a fully configurable high frequency trading engine, with all features suggested by the community:
 
 ![trading-bot UI Preview](https://user-images.githubusercontent.com/1634027/44740469-d5c7ff00-aafa-11e8-9252-73b9c1283adb.png)
 
 #### K-+portfolios <sup>(Admin UI + CLI)</sup>
-to show all balances and orders from one exchange, with buttons to cancel orders and links to go to markets.
+to show all balances and orders from one exchange, with buttons to cancel orders and links to go to markets:
 
 ![+portfolios UI Preview](https://github.com/user-attachments/assets/6df39eac-bc19-480a-8758-e94ee62a934b)
 
 #### K-hello-world <sup>(CLI)</sup>
-to print the current value of a given currency to stdout.
+to print the current value of a given currency to stdout:
 ```
  _________________________________________
 / Hello, WORLD!                           \
