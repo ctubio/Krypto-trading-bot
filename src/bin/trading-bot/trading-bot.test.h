@@ -621,7 +621,7 @@ SCENARIO_METHOD(TradingBot, "ANY BTC/EUR") {
         baseSign = (order.side == Side::Bid) ? 1 : -1;
         expectedBaseDelta += baseSign * order.qtyFilled;
         expectedQuoteDelta -= baseSign * order.qtyFilled * order.price;
-        struct timeval tv = {2, 0};
+        struct timeval tv = {0, 2000};
         ::select(0, nullptr, nullptr, nullptr, &tv);
         engine.wallet.safety.trades.insert(order);
         Amount actualBaseDelta = 0;

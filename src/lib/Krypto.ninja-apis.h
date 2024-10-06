@@ -914,15 +914,18 @@ class GwApiWsFix: public GwApiWs,
             report += it.value("base_currency_id", "") + "/" + it.value("quote_currency_id", "") + ANSI_NEW_LINE;
       };
       json handshake() const override {
-        const json reply = xfer(http + "/products/" + base + "-" + quote);
+        const json reply1 = xfer(http + "/products/" + base + "-" + quote);
+        const json reply2 = fees();
         return {
-          {     "base", base                                     },
-          {    "quote", quote                                    },
-          {   "symbol", base + "-" + quote                       },
-          {"tickPrice", stod(reply.value("quote_increment", "0"))},
-          { "tickSize", stod(reply.value("base_increment", "0")) },
-          {  "minSize", stod(reply.value("base_min_size", "0"))  },
-          {    "reply", reply                                    }
+          {     "base", base                                      },
+          {    "quote", quote                                     },
+          {   "symbol", base + "-" + quote                        },
+          {"tickPrice", stod(reply1.value("quote_increment", "0"))},
+          { "tickSize", stod(reply1.value("base_increment", "0")) },
+          {  "minSize", stod(reply1.value("base_min_size", "0"))  },
+          {  "makeFee", stod(reply2.value("maker_fee_rate", "0")) },
+          {  "takeFee", stod(reply2.value("taker_fee_rate", "0")) },
+          {    "reply", {reply1, reply2}                         }
         };
       };
       string twin(const string &ws) const override {
@@ -933,7 +936,18 @@ class GwApiWsFix: public GwApiWs,
           "Content-Type: application/json",
           "Authorization: Bearer " + token(crud, url)
         });
-    };
+      };
+    private:
+      json fees() const {
+        const json reply = xfer(http + "/transaction_summary?product_type=SPOT");
+        if (!reply.is_object()
+          or !reply.contains("fee_tier")
+        ) {
+          print("Error while reading fees: " + reply.dump());
+          return json::object();
+        }
+        return reply.at("fee_tier");
+      };
   };
   class GwBitfinex: public GwApiWs {
     protected:
