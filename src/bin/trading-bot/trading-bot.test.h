@@ -99,7 +99,8 @@ SCENARIO_METHOD(TradingBot, "ANY BTC/EUR") {
         REQUIRE_FALSE(engine.levels.diff.empty());
         THEN("broadcast") {
           REQUIRE_NOTHROW(engine.qp.delayUI = 0);
-          this_thread::sleep_for(chrono::milliseconds(370));
+          struct timeval tv = {0, 370000};
+          ::select(0, nullptr, nullptr, nullptr, &tv);
           REQUIRE_NOTHROW(engine.levels.diff.read = [&]() {
             REQUIRE(engine.levels.diff.blob().dump() == "{"
               "\"asks\":[{\"price\":1234.69,\"size\":0.11234566}],"
@@ -178,7 +179,8 @@ SCENARIO_METHOD(TradingBot, "ANY BTC/EUR") {
             REQUIRE_FALSE(engine.wallet.safety.recentTrades.sumSells);
           }
           THEN("expired") {
-            this_thread::sleep_for(chrono::milliseconds(1001));
+            struct timeval tv = {1, 1000};
+            ::select(0, nullptr, nullptr, nullptr, &tv);
             REQUIRE_NOTHROW(engine.qp.tradeRateSeconds = 1);
             REQUIRE_NOTHROW(engine.wallet.safety.recentTrades.expire());
             REQUIRE(engine.wallet.safety.recentTrades.lastBuyPrice == 1234.50);
@@ -440,7 +442,6 @@ SCENARIO_METHOD(TradingBot, "ANY BTC/EUR") {
         REQUIRE(engine.wallet.quote.held == Approx(457.22592546));
       }
       THEN("to json") {
-        cout << engine.orders.blob() << endl;
         REQUIRE(string::npos == engine.orders.blob().dump().find("\"status\":0"));
         REQUIRE(string::npos == engine.orders.blob().dump().find("\"status\":2"));
         REQUIRE(string::npos != engine.orders.blob().dump().find("{\"exchangeId\":\"\",\"isPong\":false,\"latency\":69,\"orderId\":\"" + randIds[0] + "\",\"price\":1234.5,\"quantity\":0.12345678,\"side\":0,\"status\":1,\"symbol\":\"BTC-EUR\",\"time\":" + to_string(time) + ",\"timeInForce\":0,\"type\":0}"));
@@ -620,7 +621,8 @@ SCENARIO_METHOD(TradingBot, "ANY BTC/EUR") {
         baseSign = (order.side == Side::Bid) ? 1 : -1;
         expectedBaseDelta += baseSign * order.qtyFilled;
         expectedQuoteDelta -= baseSign * order.qtyFilled * order.price;
-        this_thread::sleep_for(chrono::milliseconds(2));
+        struct timeval tv = {2, 0};
+        ::select(0, nullptr, nullptr, nullptr, &tv);
         engine.wallet.safety.trades.insert(order);
         Amount actualBaseDelta = 0;
         Amount actualQuoteDelta = 0;

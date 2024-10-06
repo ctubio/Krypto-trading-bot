@@ -18,8 +18,6 @@ namespace ₿ {
     exit(prefix + ANSI_PUKE_RED + " Errrror: " + ANSI_HIGH_RED + reason);
   };
 
-  static mutex lock;
-
   class Rollout {
     public:
       Rollout() {
@@ -33,7 +31,7 @@ namespace ₿ {
 #ifndef NDEBUG
           json::object();
 #else
-          Curl::Web::xfer(lock, "https://api.github.com/repos/ctubio/"
+          Curl::Web::xfer("https://api.github.com/repos/ctubio/"
             "Krypto-trading-bot/compare/" K_HEAD "...HEAD");
 #endif
         if (diff.value("ahead_by", 0)
@@ -103,7 +101,7 @@ namespace ₿ {
       static void die(const int) {
         if (epilogue.empty())
           epilogue = "Excellent decision! "
-                   + Curl::Web::xfer(lock, "https://api.chucknorris.io/jokes/random?category=dev")
+                   + Curl::Web::xfer("https://api.chucknorris.io/jokes/random?category=dev")
                        .value("value", "let's plant a tree instead..");
         halt(
           epilogue.find("Errrror") == string::npos
@@ -1502,7 +1500,7 @@ namespace ₿ {
 #endif
       };
     protected:
-      void required_setup(const Option *const K, mutex &lock, const curl_socket_t &loopfd) {
+      void required_setup(const Option *const K, const curl_socket_t &loopfd) {
         if (!(gateway = Gw::new_Gw(K->arg<string>("exchange"))))
           error("CF",
             "Unable to configure a valid gateway using --exchange="
@@ -1526,7 +1524,6 @@ namespace ₿ {
         gateway->apikeyid  = K->arg<string>("apikeyid");
         gateway->maxLevel  = K->arg<int>("market-limit");
         gateway->debug     = K->arg<int>("debug-secret");
-        gateway->guard     = &lock;
         gateway->loopfd    = loopfd;
         gateway->printer   = [K](const string &prefix, const string &reason, const string &highlight) {
           if (reason.find("Error") != string::npos)
@@ -1594,13 +1591,13 @@ namespace ₿ {
         {
           ending([&]() { with_goodbye(); });
           optional_setup(argc, argv, proactive(), blackhole(), unmounted());
-          required_setup(this, lock, poll());
+          required_setup(this, poll());
         } {
           if (windowed())
             wait_for_keylog(this);
         } {
           log("CF", "Outbound IP address is",
-            wtfismyip = Curl::Web::xfer(lock, "https://wtfismyip.com/json")
+            wtfismyip = Curl::Web::xfer("https://wtfismyip.com/json")
                           .value("YourFuckingIPAddress", wtfismyip)
           );
         } {

@@ -176,8 +176,10 @@ export class OrdersComponent {
         pong: o.isPong,
         time: o.time
       });
-      if (this.symbols.indexOf(o.symbol) == -1)
+      if (this.symbols.indexOf(o.symbol) == -1) {
         this.symbols.push(o.symbol);
+        this.symbols.sort();
+      }
     });
 
     this.api.setGridOption('rowData', []);

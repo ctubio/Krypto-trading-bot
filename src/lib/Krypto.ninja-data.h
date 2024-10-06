@@ -463,12 +463,9 @@ namespace ₿ {
         private:
           string out;
           unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl;
-        private_ref:
-          mutex *const &lock;
         public:
-          Easy(mutex *const &l)
+          Easy()
             : curl(nullptr, curl_easy_cleanup)
-            , lock(l)
           {};
         protected:
           void cleanup() {
@@ -482,7 +479,6 @@ namespace ₿ {
             return sockfd;
           };
           CURLcode connect(const string &url, const string &header, const string &res1, const string &res2) {
-            lock_guard<mutex> guard(*lock);
             out = header;
             in.clear();
             CURLcode rc;
@@ -509,7 +505,6 @@ namespace ₿ {
             return rc;
           };
           CURLcode send_recv() {
-            lock_guard<mutex> guard(*lock);
             CURLcode rc = CURLE_COULDNT_CONNECT;
             if (curl
               and sockfd
@@ -521,7 +516,6 @@ namespace ₿ {
             return rc;
           };
           CURLcode emit(const string &data) {
-            lock_guard<mutex> guard(*lock);
             CURLcode rc = CURLE_OK;
             if (curl and sockfd) {
               out += data;
@@ -594,14 +588,12 @@ namespace ₿ {
       class Web {
         public:
           static json xfer(
-                  mutex          &lock,
             const string         &url,
             const string         &crud = "GET",
             const string         &post = "",
             const vector<string> &headers = {},
             const string         &auth = ""
           ) {
-            lock_guard<mutex> guard(lock);
             string reply;
             CURLcode rc = CURLE_FAILED_INIT;
             unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(
@@ -641,10 +633,6 @@ namespace ₿ {
       };
       class WebSocket: public Easy,
                        public WebSocketFrames {
-        public:
-          WebSocket(mutex *const &l)
-            : Easy(l)
-          {};
         private:
           using Easy::in;
         protected:
@@ -707,10 +695,6 @@ namespace ₿ {
           };
       };
       class WebSocketTwin: public WebSocket {
-        public:
-          WebSocketTwin(mutex *const &l)
-            : WebSocket(l)
-          {};
         protected:
           virtual string twin(const string&) const = 0;
       };
@@ -720,9 +704,8 @@ namespace ₿ {
           using Easy::in;
           unsigned long sequence = 0;
         public:
-          FixSocket(const string &t, const string &s, mutex *const &l)
-            : Easy(l)
-            , FixFrames(t, s)
+          FixSocket(const string &t, const string &s)
+            : FixFrames(t, s)
           {};
         protected:
           CURLcode connect(const string &uri, const string &logon) {

@@ -13,8 +13,6 @@
 #include <list>
 #include <ctime>
 #include <cmath>
-#include <mutex>
-#include <thread>
 #include <future>
 #include <chrono>
 #include <random>
