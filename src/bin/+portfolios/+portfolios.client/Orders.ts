@@ -9,10 +9,15 @@ import {Socket, Models} from 'lib/K';
   template: `<div id="openorders">
     <h2>
       <span [hidden]="!!symbols">0 open orders</span>
+      <a rel="noreferrer" target="_blank" title="{{ filter }} Market"
+        href="{{ orders_market }}" id="best_ask_bid" [hidden]="!filter">
+          <span class="sell" title="Best Ask Price on {{ filter }}">{{ best_ask }}</span>
+          <span class="buy" title="Best Bid Price on {{ filter }}">{{ best_bid }}</span>
+      </a>
       <a
         *ngFor="let x of symbols"
         (click)="applyFilter(x.symbol)"
-        [ngStyle]="{'cursor':'pointer','padding': '0px 20px 0px 10px', 'font-weight': filter==x.symbol?600:300}"
+        [ngStyle]="{'cursor':'pointer','padding': '0px 10px', 'font-weight': filter==x.symbol?600:300, 'opacity': filter==x.symbol?1.0:0.7}"
       >{{ x.symbol }}<sup title="{{x.count}} open orders">({{x.count}})</sup></a>
     </h2>
     <ag-grid-angular
@@ -30,6 +35,17 @@ export class OrdersComponent {
   private fireCxl: Socket.IFire<Models.OrderCancelRequestFromUI> = new Socket.Fire(Models.Topics.CancelOrder);
 
   @Input() product: Models.ProductAdvertisement;
+
+  private best_ask: number;
+  private best_bid: number;
+  private orders_market: string;
+
+  private _markets: any = null;
+
+  @Input() set markets(o: any) {
+    this._markets = o;
+    this.addAskBid();
+  };
 
   @Input() set orders(o: Models.Order[]) {
     this.addRowData(o);
@@ -144,11 +160,28 @@ export class OrdersComponent {
     this.fireCxl.fire(new Models.OrderCancelRequestFromUI($event.data.orderId, $event.data.exchange));
   };
 
+  private addAskBid = () => {
+    if (!this.filter || !this._markets) return;
+    loops: for (let x in this._markets)
+      for (let z in this._markets[x])
+        if (this.filter == this._markets[x][z].symbol) {
+          var ask = this._markets[x][z].ask;
+          var bid = this._markets[x][z].bid;
+          var len = Math.max(
+            (ask+'').indexOf('.') != -1 ? (ask+'').split('.')[1].length : 0,
+            (bid+'').indexOf('.') != -1 ? (bid+'').split('.')[1].length : 0
+          );
+          this.best_ask = ask.toFixed(len);
+          this.best_bid = bid.toFixed(len);
+          this.orders_market = this._markets[x][z].web;
+          break loops;
+        }
+  };
+
   private applyFilter = (filter) => {
-    if (this.filter && this.filter == filter)
-      this.filter = "";
-    else this.filter = filter;
+    this.filter = filter;
     this.api.onFilterChanged();
+    this.addAskBid();
   };
 
   private addRowData = (o: Models.Order[]) => {
@@ -167,7 +200,7 @@ export class OrdersComponent {
         value: (Math.round(o.quantity * o.price * 100) / 100), //.toFixed(this.product.tickPrice)
         type: Models.OrderType[o.type],
         tif: Models.TimeInForce[o.timeInForce],
-        lat: o.latency + 'ms',
+        lat: o.latency ? o.latency + 'ms' : 'loaded',
         quantity: o.quantity, //.toFixed(this.product.tickSize)
         pong: o.isPong,
         time: o.time
@@ -179,6 +212,10 @@ export class OrdersComponent {
     this.api.setGridOption('rowData', []);
 
     if (add.length) this.api.applyTransaction({add: add});
+
+    if (!this.filter && this.symbols.length) {
+      this.applyFilter(this.symbols[0].symbol)
+    }
   };
 
   private addSymbol(sym: string) {

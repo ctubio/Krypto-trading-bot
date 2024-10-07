@@ -65,21 +65,27 @@ namespace ₿ {
   };
 
   struct Ticker {
-    string base   = "";
-    string quote  = "";
-     Price price  = 0,
-           spread = 0;
-    double open   = 0;
-    Amount volume = 0;
+    string symbol  = "";
+    string base    = "";
+    string quote   = "";
+     Price price   = 0,
+           bestask = 0,
+           bestbid = 0,
+           spread  = 0;
+    double open    = 0;
+    Amount volume  = 0;
   };
   static void __attribute__ ((unused)) to_json(json &j, const Ticker &k) {
     j = {
-      {  "base", k.base  },
-      { "quote", k.quote },
-      { "price", k.price },
-      {"spread", k.spread},
-      {  "open", k.open  },
-      {"volume", k.volume}
+      { "symbol", k.symbol },
+      {   "base", k.base   },
+      {  "quote", k.quote  },
+      {  "price", k.price  },
+      {"bestask", k.bestask},
+      {"bestbid", k.bestbid},
+      { "spread", k.spread },
+      {   "open", k.open   },
+      { "volume", k.volume }
     };
   };
 

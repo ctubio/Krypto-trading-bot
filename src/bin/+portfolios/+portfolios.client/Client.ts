@@ -17,7 +17,8 @@ import {Socket, Models} from 'lib/K';
           </div>
           <div class="col-md-6">
             <orders
-             [orders]="orders"></orders>
+             [orders]="orders"
+             [markets]="markets"></orders>
           </div>
       </div>
   </div>`

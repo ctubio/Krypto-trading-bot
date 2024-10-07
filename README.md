@@ -37,7 +37,7 @@ to control a fully configurable high frequency trading engine, with all features
 <details><summary><b>K-+portfolios</b> <sup>(web UI + CLI)</sup></summary>
 to show all balances and orders from one exchange, with buttons to cancel orders and links to go to markets:<br />
 
-![+portfolios UI Preview](https://github.com/user-attachments/assets/6df39eac-bc19-480a-8758-e94ee62a934b)
+![+portfolios UI Preview](https://github.com/user-attachments/assets/3dd3488a-a466-4817-89f7-a6d581ddac9e)
 </details>
 
 <details><summary><b>K-hello-world</b> <sup>(CLI)</sup></summary>
