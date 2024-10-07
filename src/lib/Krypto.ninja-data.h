@@ -1290,6 +1290,7 @@ namespace ₿ {
               SSL_set_accept_state(ssl);
               SSL_set_fd(ssl, clientfd);
               SSL_set_mode(ssl, SSL_MODE_RELEASE_BUFFERS);
+              SSL_set_mode(ssl, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
             }
             requests.emplace_back(clientfd, loopfd, ssl, &session);
           };
