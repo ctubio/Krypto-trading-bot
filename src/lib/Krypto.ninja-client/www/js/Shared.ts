@@ -169,7 +169,7 @@ export class KComponent implements OnInit {
     if (this.product.source && this.product.source != o.source)
       window.location.reload();
     window.document.title = '[' + o.environment + ']';
-    this.exchange_icon = o.exchange.toLowerCase().replace('coinbase', 'coinbase-pro');
+    this.exchange_icon = o.exchange.toLowerCase();
     this.product = o;
     setTimeout(() => {window.dispatchEvent(new Event('resize'))}, 0);
     console.log(

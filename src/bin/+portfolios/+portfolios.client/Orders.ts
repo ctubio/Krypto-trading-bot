@@ -2,7 +2,7 @@ import {Component, Input} from '@angular/core';
 
 import {GridOptions, GridApi} from 'ag-grid-community';
 
-import {Socket, Models} from 'lib/K';
+import {Shared, Socket, Models} from 'lib/K';
 
 @Component({
   selector: 'orders',
@@ -17,8 +17,13 @@ import {Socket, Models} from 'lib/K';
       <a
         *ngFor="let x of symbols"
         (click)="applyFilter(x.symbol)"
-        [ngStyle]="{'cursor':'pointer','padding': '0px 10px', 'font-weight': filter==x.symbol?600:300, 'opacity': filter==x.symbol?1.0:0.7}"
-      >{{ x.symbol }}<sup title="{{x.count}} open orders">({{x.count}})</sup></a>
+        [ngStyle]="{'cursor':'pointer','padding': '0px 40px 0px 10px', 'font-weight': filter==x.symbol?600:300, 'opacity': filter==x.symbol?1.0:0.7}"
+      >{{ x.symbol }}<span class="fracwrap"><span class="frac">
+          <span title="{{x.asks}} open ask orders">{{ x.asks }}</span>
+          <span class="symbol">/</span>
+          <span title="{{x.bids}} open bid orders" class="bottom">{{ x.bids }}</span>
+        </span></span>
+       </a>
     </h2>
     <ag-grid-angular
       [hidden]="!filter || !symbols"
@@ -174,6 +179,7 @@ export class OrdersComponent {
           this.best_ask = ask.toFixed(len);
           this.best_bid = bid.toFixed(len);
           this.orders_market = this._markets[x][z].web;
+          Shared.currencyHeaders(this.api, this._markets[x][z].base, this._markets[x][z].quote);
           break loops;
         }
   };
@@ -188,7 +194,7 @@ export class OrdersComponent {
     if (!this.api) return;
 
     var add = [];
-    this.symbols.forEach(s => s.count = 0);
+    this.symbols.forEach(s => s.bids = s.asks = 0);
 
     o.forEach(o => {
       add.push({
@@ -206,7 +212,7 @@ export class OrdersComponent {
         time: o.time
       });
 
-      this.addSymbol(o.symbol);
+      this.addSymbol(o.symbol, o.side);
     });
 
     this.api.setGridOption('rowData', []);
@@ -218,17 +224,21 @@ export class OrdersComponent {
     }
   };
 
-  private addSymbol(sym: string) {
+  private addSymbol(sym: string, side: Models.Side) {
     if (!this.symbols.filter(s => s.symbol == sym).length) {
       this.symbols.push({
         symbol: sym,
-        count:  0
+        bids:  0,
+        asks:  0
       });
       this.symbols.sort((a,b) => a.symbol.localeCompare(b.symbol));
     }
     this.symbols.forEach(s => {
-      if (s.symbol == sym)
-        s.count++;
+      if (s.symbol == sym) {
+        if (side == Models.Side.Bid)
+          s.bids++;
+        else s.asks++;
+      }
     });
   };
 };

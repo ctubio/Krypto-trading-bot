@@ -5243,8 +5243,36 @@ div.ag-header-cell .ag-header-cell-label i {
   }
 }
 
-#openorders h2 {
-  padding-bottom: 7px;
+#openorders {
+
+  h2 {
+    padding-bottom: 7px;
+  }
+
+  .fracwrap {
+    position: absolute;
+  }
+
+  .frac {
+    font-size: 70%;
+    display: inline-block;
+    position: relative;
+    top: -15px;
+    left: 4px;
+    width: 1.4em;
+    vertical-align: middle;
+    text-align: center;
+  }
+  .frac > span {
+      display: block;
+      padding: 0.1em;
+  }
+  .frac span.bottom {
+      border-top: 2px solid;
+  }
+  .frac span.symbol {
+      display: none;
+  }
 }
 
 #openorders .ag-theme-big {

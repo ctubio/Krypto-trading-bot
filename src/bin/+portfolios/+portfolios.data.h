@@ -119,6 +119,8 @@ namespace analpaper {
 
   struct Market {
     string web,
+           base,
+           quote,
            symbol;
      Price spread,
            raw_spread,
@@ -131,6 +133,8 @@ namespace analpaper {
   static void to_json(json &j, const Market &k) {
     j = {
       {   "web", k.web   },
+      {  "base", k.base  },
+      { "quote", k.quote },
       {"symbol", k.symbol},
       {"spread", k.spread},
       {   "ask", k.ask   },
@@ -152,6 +156,8 @@ namespace analpaper {
       void add(const Ticker &raw) {
         market[raw.base][raw.quote] = {
           K.gateway->web(raw.base, raw.quote),
+          raw.base,
+          raw.quote,
           raw.symbol,
           0,
           raw.spread,
