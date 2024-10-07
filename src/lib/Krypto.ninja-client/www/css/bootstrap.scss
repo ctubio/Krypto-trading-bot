@@ -5204,6 +5204,7 @@ div.ag-header-cell .ag-header-cell-label i {
 #zeroed_checkbox {
   zoom: 200%;
   margin-top: 2px;
+  margin-right: 20px;
   display: inline-block;
 }
 
@@ -5217,18 +5218,45 @@ div.ag-header-cell .ag-header-cell-label i {
   margin-right: 20px;
 }
 
-#portfolios {
-  margin-top: 7px;
-}
 
 #portfolios_settings {
-  position: absolute;
-  z-index: 1;
-  margin-top: 41px;
-  right: 250px;
+  text-align: right;
+  
+  div {
+    display: inline-block;
+    padding-top: 9px;
+  }
+
+  h2 {
+    display: inline-block;
+    vertical-align: top;
+    padding-right: 10px;
+  }
 }
 
-#portfolios.ag-theme-big {
+#openorders h2 {
+  padding-bottom: 7px;
+}
+
+#openorders .ag-theme-big {
+  div.ag-row {
+    font-size: 21px !important;
+  }
+  div.ag-row .row_title i {
+    font-size: 25px;
+    vertical-align: text-top;
+  }
+  div.ag-cell[col-id=time] span {
+    font-size: 14px;
+  }
+  .ag-cell {
+    height: 34px!important;
+  }
+}
+
+#portfolios .ag-theme-big {
+  margin-top: 7px;
+
   div.ag-row {
     font-size: 21px !important;
   }

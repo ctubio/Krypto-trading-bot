@@ -6,21 +6,23 @@ import {Shared, Models} from 'lib/K';
 
 @Component({
   selector: 'wallets',
-  template: `<div hidden="true">
-    <markets
-      (rendered)="onRendered($event)"
-      [settings]="settings"
-      [markets]="markets"
-      [market]="market"></markets>
-  </div>
-  <ag-grid-angular id="portfolios"
-    class="ag-theme-alpine ag-theme-big"
-    style="width: 100%;"
-    (window:resize)="onGridReady($event)"
-    (filterChanged)="onFilterChanged($event)"
-    (gridReady)="onGridReady($event)"
-    (rowClicked)="onRowClicked($event)"
-    [gridOptions]="grid"></ag-grid-angular>`
+  template: `<div id="portfolios">
+    <div hidden="true">
+      <markets
+        (rendered)="onRendered($event)"
+        [settings]="settings"
+        [markets]="markets"
+        [market]="market"></markets>
+    </div>
+    <ag-grid-angular
+      class="ag-theme-alpine ag-theme-big"
+      style="width: 100%;"
+      (window:resize)="onGridReady($event)"
+      (filterChanged)="onFilterChanged($event)"
+      (gridReady)="onGridReady($event)"
+      (rowClicked)="onRowClicked($event)"
+      [gridOptions]="grid"></ag-grid-angular>
+  </div>`
 })
 export class WalletsComponent {
 
@@ -74,13 +76,12 @@ export class WalletsComponent {
       });
       var node: any = this.api.getSelectedNodes().reverse().pop();
       if (!node) return this.api.onRowHeightChanged();
-      var main = document.getElementById('portfolios');
       var detail = document.getElementById('markets');
-      if (main && detail) {
-        var isdark = main.classList.value.indexOf('-dark');
-        detail.classList.add('ag-theme-alpine' + (isdark?'-dark':''));
-        detail.classList.remove('ag-theme-alpine' + (isdark?'':'-dark'));
-        var row = document.querySelector("#portfolios div[row-id='" + node.data.currency + "'] div[aria-colindex='4']");
+      if (detail) {
+        var theme = document.getElementById("daynight") as HTMLLinkElement;
+        detail.classList.add('ag-theme-alpine' + (theme.href.indexOf('-dark')?'-dark':''));
+        detail.classList.remove('ag-theme-alpine' + (theme.href.indexOf('-dark')?'':'-dark'));
+        var row = document.querySelector("#portfolios ag-grid-angular div[row-id='" + node.data.currency + "'] div[aria-colindex='4']");
         if (row) row.appendChild(detail);
       }
       this.deferredRender = () => {
@@ -103,15 +104,13 @@ export class WalletsComponent {
     doesExternalFilterPass: (node) => (
       this.settings.zeroed || parseFloat(node.data.total) > 0.0000001
     ),
-    getRowId: (params: any) => params.data.currency || "TOTALS",
+    getRowId: (params: any) => params.data.currency,
     columnDefs: [{
       width: 220,
       field: 'held',
       headerName: 'held',
       type: 'rightAligned',
-      cellRenderer: (params) => params.node.rowPinned == 'top'
-        ? ``
-        : `<span class="val">` + params.value + `</span>`,
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
         'up-data': 'data.dir_held == "up-data"',
@@ -123,9 +122,7 @@ export class WalletsComponent {
       field: 'amount',
       headerName: 'available',
       type: 'rightAligned',
-      cellRenderer: (params) => params.node.rowPinned == 'top'
-        ? ``
-        : `<span class="val">` + params.value + `</span>`,
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
         'up-data': 'data.dir_amount == "up-data"',
@@ -137,9 +134,7 @@ export class WalletsComponent {
       field: 'total',
       headerName: 'total',
       type: 'rightAligned',
-      cellRenderer: (params) => params.node.rowPinned == 'top'
-        ? ``
-        : `<span class="val">` + params.value + `</span>`,
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
         'up-data': 'data.dir_total == "up-data"',
@@ -151,9 +146,7 @@ export class WalletsComponent {
       field: 'currency',
       headerName: 'currency',
       filter: true,
-      cellRenderer: (params) => params.node.rowPinned == 'top'
-        ? ``
-        : '<span class="row_title"><i class="beacon sym-_default-s sym-' + params.value.toLowerCase() + '-s" ></i> ' + params.value + '</span>',
+      cellRenderer: (params) => '<span class="row_title"><i class="beacon sym-_default-s sym-' + params.value.toLowerCase() + '-s" ></i> ' + params.value + '</span>',
       cellClassRules: {
         'text-muted': '!parseFloat(data.total)'
       }
@@ -162,9 +155,7 @@ export class WalletsComponent {
       field: 'price',
       headerName: 'price',
       type: 'rightAligned',
-      cellRenderer: (params) => params.node.rowPinned == 'top'
-        ? `<span id="price_pin"></span>`
-        : `<span class="val">` + params.value + `</span>`,
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
         'up-data': 'data.dir_price == "up-data"',
@@ -177,10 +168,8 @@ export class WalletsComponent {
       headerName: 'balance',
       sort: 'desc',
       type: 'rightAligned',
-      cellRenderer: (params) => params.node.rowPinned == 'top'
-        ? `<span class="kira" id ="balance_pin"></span><span id="total_pin" class="balance_percent"></span>`
-        : `<span class="val">` + params.value + `</span>`
-            + `<small class="balance_percent">` + (params.data.balance_percent||'0.00') + `</small>`,
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>`
+        + `<small class="balance_percent">` + (params.data.balance_percent||'0.00') + `</small>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
         'up-data': 'data.dir_balance == "up-data"',
@@ -241,24 +230,16 @@ export class WalletsComponent {
 
     if (!this.api.getSelectedNodes().length)
       this.api.onSortChanged();
-
     
     this.api.forEachNode((node: RowNode) => {
       node.data.balance_percent = Shared.str(Shared.num(node.data.balance) / sum * 100, 2);
     });
 
-    if (!this.api.getPinnedTopRowCount()) {
-      this.api.setGridOption('pinnedTopRowData', [{}]);
-    }
-
-    var el = document.getElementById('balance_pin');
+    var el = document.getElementById('full_balance');
     if (el) {
-      el.innerHTML = Shared.str(sum, 8);
-      var sel = document.getElementById("portfolios_settings");
-      if (sel) {
-        var parent = el.closest('.ag-cell') as HTMLElement;
-        sel.style.right = (20 + (parent.offsetWidth || 250)) + 'px';
-      }
+      var val = Shared.str(sum, 8);
+      if (el.innerHTML != val)
+        el.innerHTML = Shared.str(sum, 8);
     }
   };
 };

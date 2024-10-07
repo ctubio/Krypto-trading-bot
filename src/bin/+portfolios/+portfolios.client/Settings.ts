@@ -5,17 +5,24 @@ import {Socket, Models} from 'lib/K';
 @Component({
   selector: 'settings',
   template: `<div id="portfolios_settings">
-    <select class="form-control input-lg" id="base_select"
-      title="base currency"
-      [(ngModel)]="params.currency"
-      (ngModelChange)="submitSettings()">
-      <option [ngValue]="product.base">{{ product.base }}</option>
-      <option [ngValue]="product.quote">{{ product.quote }}</option>
-    </select>
-    <input type="checkbox" id="zeroed_checkbox"
-      title="show zeroed"
-      [(ngModel)]="params.zeroed"
-      (ngModelChange)="submitSettings()">
+    <div>
+      <select class="form-control input-lg" id="base_select"
+        title="base currency"
+        [(ngModel)]="params.currency"
+        (ngModelChange)="submitSettings()">
+        <option [ngValue]="product.base">{{ product.base }}</option>
+        <option [ngValue]="product.quote">{{ product.quote }}</option>
+      </select>
+      <input type="checkbox" id="zeroed_checkbox"
+        title="show zeroed balances"
+        [(ngModel)]="params.zeroed"
+        (ngModelChange)="submitSettings()">
+    </div>
+    <h2>
+      <a rel="noreferrer" target="_blank"
+        href="{{ product.webOrders }}"
+        id="full_balance" title="full balance">0.00000000</a>
+    </h2>
   </div>`
 })
 export class SettingsComponent {

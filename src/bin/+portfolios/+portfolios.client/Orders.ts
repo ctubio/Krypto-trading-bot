@@ -6,23 +6,24 @@ import {Socket, Models} from 'lib/K';
 
 @Component({
   selector: 'orders',
-  template: `<div>
+  template: `<div id="openorders">
     <h2>
+      <span [hidden]="!!symbols">0 open orders</span>
       <a
-        *ngFor="let symbol of symbols"
-        (click)="applyFilter(symbol)"
-        [ngStyle]="{'cursor':'pointer','padding': '0px 10px', 'font-weight': (filter==symbol?600:300), 'font-size': (filter==symbol?'120%':'100%')}"
-      >{{ symbol }}</a>
+        *ngFor="let x of symbols"
+        (click)="applyFilter(x.symbol)"
+        [ngStyle]="{'cursor':'pointer','padding': '0px 20px 0px 10px', 'font-weight': filter==x.symbol?600:300}"
+      >{{ x.symbol }}<sup title="{{x.count}} open orders">({{x.count}})</sup></a>
     </h2>
     <ag-grid-angular
-      [hidden]="!filter"
+      [hidden]="!filter || !symbols"
       class="ag-theme-alpine ag-theme-big"
       style="width: 100%;"
       (window:resize)="onGridReady($event)"
       (gridReady)="onGridReady($event)"
       (cellClicked)="onCellClicked($event)"
       [gridOptions]="grid"></ag-grid-angular>
-    </div>`
+  </div>`
 })
 export class OrdersComponent {
 
@@ -34,7 +35,7 @@ export class OrdersComponent {
     this.addRowData(o);
   };
 
-  private symbols: string[];
+  private symbols: any[] = [];
   private filter: string;
 
   private api: GridApi;
@@ -57,11 +58,6 @@ export class OrdersComponent {
       cellRenderer: (params) => `<button type="button" class="btn btn-danger btn-xs">
           <span data-action-type="remove"'>&times;</span>
         </button>`
-    }, {
-      width: 55,
-      field: 'symbol',
-      headerName: 'symbol',
-      suppressSizeToFit: true
     }, {
       width: 82,
       field: 'time',
@@ -159,7 +155,7 @@ export class OrdersComponent {
     if (!this.api) return;
 
     var add = [];
-    this.symbols = [];
+    this.symbols.forEach(s => s.count = 0);
 
     o.forEach(o => {
       add.push({
@@ -176,14 +172,26 @@ export class OrdersComponent {
         pong: o.isPong,
         time: o.time
       });
-      if (this.symbols.indexOf(o.symbol) == -1) {
-        this.symbols.push(o.symbol);
-        this.symbols.sort();
-      }
+
+      this.addSymbol(o.symbol);
     });
 
     this.api.setGridOption('rowData', []);
 
     if (add.length) this.api.applyTransaction({add: add});
+  };
+
+  private addSymbol(sym: string) {
+    if (!this.symbols.filter(s => s.symbol == sym).length) {
+      this.symbols.push({
+        symbol: sym,
+        count:  0
+      });
+      this.symbols.sort((a,b) => a.symbol.localeCompare(b.symbol));
+    }
+    this.symbols.forEach(s => {
+      if (s.symbol == sym)
+        s.count++;
+    });
   };
 };

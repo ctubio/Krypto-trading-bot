@@ -6,11 +6,7 @@ import {Socket, Models} from 'lib/K';
   selector: 'client',
   template: `<div class="row">
       <div class="col-md-12 col-xs-12">
-          <div class="row">
-            <orders
-             [orders]="orders"></orders>
-          </div>
-          <div class="row">
+          <div class="col-md-6">
             <settings
               [product]="product"
               [settings]="settings"></settings>
@@ -18,6 +14,10 @@ import {Socket, Models} from 'lib/K';
               [wallets]="wallets"
               [markets]="markets"
               [settings]="settings"></wallets>
+          </div>
+          <div class="col-md-6">
+            <orders
+             [orders]="orders"></orders>
           </div>
       </div>
   </div>`
