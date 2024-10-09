@@ -761,7 +761,7 @@ namespace ₿ {
         BIO_get_mem_ptr(bio.get(), &buf);
         string output(buf->data, buf->length);
         if (urlsafe) {
-          string::size_type n = 0;
+          size_t n = 0;
           while ((n = output.find("+")) != string::npos)
             output.replace(n, 1, "-");
           while ((n = output.find("/")) != string::npos)
@@ -774,7 +774,7 @@ namespace ₿ {
       static string B64_decode(const string &input, const bool &urlsafe = false) {
         if (urlsafe) {
           string output = input;
-          string::size_type n = 0;
+          size_t n = 0;
           while ((n = output.find("-")) != string::npos)
             output.replace(n, 1, "+");
           while ((n = output.find("_")) != string::npos)
@@ -1392,7 +1392,7 @@ namespace ₿ {
   class Files {
     public:
       static bool mkdirs(const string &file) {
-        string::size_type has_dir = file.find_last_of("/\\");
+        size_t has_dir = file.find_last_of("/\\");
         if (has_dir != string::npos) {
           string dir = file.substr(0, has_dir);
           if (access(dir.data(), R_OK) == -1) {

@@ -268,7 +268,7 @@ namespace ₿ {
       };
     private:
       string lines(string reason) const {
-        string::size_type n = 0;
+        size_t n = 0;
         while ((n = reason.find(ANSI_NEW_LINE, n + 2)) != string::npos)
           reason.insert(n + 2, ANSI_HIGH_RED);
         return ANSI_HIGH_RED + reason;
@@ -282,7 +282,7 @@ namespace ₿ {
           clog << puke;
 #endif
         if (display.terminal) {
-          string::size_type n = 0;
+          size_t n = 0;
           while ((n = puke.find(ANSI_NEW_LINE)) != string::npos) {
             clogs.emplace_back(puke.begin(), puke.begin() + n);
             puke.erase(0, n + 2);
@@ -502,7 +502,7 @@ namespace ₿ {
         args["base"]  = arg<string>("currency").substr(0, arg<string>("currency").find("/"));
         args["quote"] = arg<string>("currency").substr(1+ arg<string>("currency").find("/"));
         if (arg<string>("secret").find("EC PRIVATE KEY") != string::npos and arg<string>("secret").find(ANSI_NEW_LINE) == string::npos) {
-          string::size_type n = 0;
+          size_t n = 0;
           while ((n = arg<string>("secret").find("\\r", n)) != string::npos)
             args["secret"] = string(arg<string>("secret")).erase(n, 2);
           n = 0;
@@ -600,7 +600,7 @@ namespace ₿ {
               << it.name
               << string((11 - it.name.length()) / 2, ' ') << " █▓▒░";
           else {
-            string::size_type n = 0;
+            size_t n = 0;
             while ((n = usage.find(ANSI_NEW_LINE, n + 2)) != string::npos)
               usage.insert(n + 2, 28, ' ');
             const string example = "--" + it.name + (it.default_value ? "=" + it.defined_value : "");
@@ -1450,7 +1450,8 @@ namespace ₿ {
             Order *found = find(raw.orderId);
             if (!found and withExternal and raw.status == Status::Working) {
               Order external = raw;
-              external.status = Status::Waiting;
+              external.status  = Status::Waiting;
+              external.latency = -1;
               found = findsert(external);
             }
             return found;

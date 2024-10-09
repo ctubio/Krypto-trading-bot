@@ -102,9 +102,9 @@ export class OrdersComponent {
         'buy': 'data.side == "Bid"'
       },
       cellRenderer: (params) => (
-        params.data.pong
-          ? '&#10564;'
-          : '&#10140;'
+        params.value == "Ask"
+          ? '<span style="transform: rotate(180deg);display: inline-block;">&#10140;</span>'
+          : '<span style="display: inline-block;">&#10140;</span>'
         ) + params.value
     }, {
       width: 74,
@@ -206,7 +206,7 @@ export class OrdersComponent {
         value: (Math.round(o.quantity * o.price * 100) / 100), //.toFixed(this.product.tickPrice)
         type: Models.OrderType[o.type],
         tif: Models.TimeInForce[o.timeInForce],
-        lat: o.latency ? o.latency + 'ms' : 'loaded',
+        lat: o.latency < 0 ? 'loaded' : o.latency + 'ms',
         quantity: o.quantity, //.toFixed(this.product.tickSize)
         pong: o.isPong,
         time: o.time
