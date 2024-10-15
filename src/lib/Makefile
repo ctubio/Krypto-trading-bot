@@ -108,12 +108,12 @@ uv:
 
 pvs:
 ifndef V_PVS
-	$(MAKE) $@ V_PVS=$(shell curl -s https://pvs-studio.com/en/pvs-studio/download-all/ | grep x86_64.tgz | sed 's/.*href=\"\(.*\)\" .*/\1/' | cut -d '-' -f4 | head -n1)
+	$(MAKE) $@ V_PVS=$(shell curl -s https://pvs-studio.com/en/pvs-studio/download-all/ | grep x86_64.tgz | cut -d'"' -f2 | cut -d'.' -f-4 | cut -d'-' -f3- | head -n1)
 else
-	test -d $(KBUILD)/var/pvs-studio-$(V_PVS)-x86_64 || (                    \
-	curl -L https://files.pvs-studio.com/pvs-studio-$(V_PVS)-x86_64.tgz      \
-	| tar xz -C $(KBUILD)/var && cd $(KBUILD)/var/pvs-studio-$(V_PVS)-x86_64 \
-	&& chmod +x install.sh && sudo ./install.sh                              )
+	test -d $(KBUILD)/var/pvs-studio-$(V_PVS) || (                    \
+	curl -L https://files.pvs-studio.com/pvs-studio-$(V_PVS).tgz      \
+	| tar xz -C $(KBUILD)/var && cd $(KBUILD)/var/pvs-studio-$(V_PVS) \
+	&& chmod +x install.sh && sudo ./install.sh                       )
 endif
 
 lcov:
