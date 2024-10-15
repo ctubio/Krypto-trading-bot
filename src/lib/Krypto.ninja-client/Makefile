@@ -74,7 +74,7 @@ export define PACKAGE_JSON
     "@angular/platform-browser":         "^18.2.7",
     "@angular/platform-browser-dynamic": "^18.2.7",
     "@angular/router":                   "^18.2.7",
-    "@types/node": "^22.7.4",
+    "@types/node": "^22.7.5",
     "ag-grid-angular":   "^32.2.2",
     "ag-grid-community": "^32.2.2",
     "esbuild": "^0.24.0",
@@ -82,7 +82,7 @@ export define PACKAGE_JSON
     "highcharts-angular": "^4.0.1",
     "rxjs": "^7.8.1",
     "sass": "^1.79.4",
-    "typescript": "^5.6.2",
+    "typescript": "^5.6.3",
     "uglify-js": "^3.19.3",
     "zone.js": "^0.14.10"
   },

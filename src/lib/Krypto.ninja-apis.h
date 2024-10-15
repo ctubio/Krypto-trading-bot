@@ -899,7 +899,7 @@ class GwApiWsFix: public GwApiWs,
       };
     protected:
 //BO non-free Gw class member functions from lib build-*/lib/K-*.a (it just redefines all virtual gateway functions below).
-/**/  virtual string token(const string &crud = "", const string &url = "") const = 0;             // return logon message.
+/**/  virtual string token(const string &crud = "", const string &url = "") const = 0;                 // return jwt token.
 //EO non-free Gw class member functions from lib build-*/lib/K-*.a (it just redefines all virtual gateway functions above).
       string nonce() const override {
         return Random::char16Id();

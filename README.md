@@ -485,7 +485,7 @@ Pull Requests are welcome, but adhere to the Contributor License Agreement:
 We have already enough policemen,<br />if you like adventures choose to be a <a href="https://youtu.be/pT_GM35fM7I">brave firefighter</a>.
 <br /><br /><br /><br /><br />
 <img src="https://user-images.githubusercontent.com/1634027/32695988-22681724-c76b-11e7-8557-7f2b15b2686b.jpg" />
-<br /><br /><br /><br />Violence <a href="https://www.cnvc.org/learn-nvc/what-is-nvc">should not</a> be the answer to those who<br />are <a href="https://novact.org/about-us/activities/?lang=en">asking for</a> freedom.<br /><br /><br /><br /><br />
+<br /><br /><br /><br />Violence <a href="https://www.cnvc.org/about/purpose-of-nvc">should not</a> be the answer to those who<br />are <a href="https://novact.org/en/">asking for</a> freedom.<br /><br /><br /><br /><br />
 <img src="https://user-images.githubusercontent.com/1634027/29746351-7478d556-8ad7-11e7-8b27-445eefa8f960.jpg" />
 <br /><br /><br /><br /><br />
 <a href="https://hits.seeyoufarm.com"><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fctubio%2FKrypto-trading-bot%2FREADME.md&count_bg=%2379C83D&title_bg=%23555555&icon=known.svg&icon_color=%2306FF18&title=page+views&edge_flat=false"/></a></p>

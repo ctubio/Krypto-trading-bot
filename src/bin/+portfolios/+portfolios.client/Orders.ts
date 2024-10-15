@@ -67,6 +67,7 @@ export class OrdersComponent {
     rowHeight:35,
     headerHeight:35,
     domLayout: 'autoHeight',
+    getRowId: (params: any) => params.data.exchangeId,
     isExternalFilterPresent: () => !!this.filter,
     doesExternalFilterPass: (node) => (
       !this.filter || node.data.symbol == this.filter
@@ -193,11 +194,20 @@ export class OrdersComponent {
   private addRowData = (o: Models.Order[]) => {
     if (!this.api) return;
 
-    var add = [];
     this.symbols.forEach(s => s.bids = s.asks = 0);
 
+    var add: any[] = [],
+        update: any[] = [],
+        remove: any[] = [];
+
+    this.api.forEachNode((rowNode, index) => {
+      remove.push({exchangeId: rowNode.data.exchangeId});
+    });
+
     o.forEach(o => {
-      add.push({
+      (remove.filter(x => x.exchangeId == o.exchangeId).length
+        ? update : add
+      ).push({
         symbol: o.symbol,
         orderId: o.orderId,
         exchangeId: o.exchangeId,
@@ -212,12 +222,12 @@ export class OrdersComponent {
         time: o.time
       });
 
+      remove = remove.filter(x => x.exchangeId != o.exchangeId);
+
       this.addSymbol(o.symbol, o.side);
     });
 
-    this.api.setGridOption('rowData', []);
-
-    if (add.length) this.api.applyTransaction({add: add});
+    this.api.applyTransaction({add, update, remove});
 
     if (!this.filter && this.symbols.length) {
       this.applyFilter(this.symbols[0].symbol)
