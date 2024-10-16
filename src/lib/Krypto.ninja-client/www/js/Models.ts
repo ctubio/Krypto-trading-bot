@@ -13,6 +13,7 @@ export var Topics = {
   SubmitNewOrder: 'p',
   CancelOrder: 'q',
   MarketTrade: 'r',
+  EditOrder: 't',
   Trades: 's',
   QuoteStatus: 'u',
   TargetBasePosition: 'v',
@@ -123,7 +124,9 @@ export class Order {
                 public timeInForce: TimeInForce,
                 public status: OrderStatus,
                 public time: number,
-                public latency: number) {}
+                public latency: number,
+                public pricePrecision: number,
+                public quantityPrecision: number) {}
 }
 
 export class OrderSide {
@@ -173,6 +176,14 @@ export class AgreeRequestFromUI {
 export class OrderCancelRequestFromUI {
     constructor(public orderId: string,
                 public exchange: string) {}
+}
+
+export class OrderEditRequestFromUI {
+    constructor(public orderId: string,
+                public price: number,
+                public quantity: number,
+                public side: Side,
+                public symbol: string) {}
 }
 
 export class FairValue {

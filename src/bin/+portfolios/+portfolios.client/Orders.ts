@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 
-import {GridOptions, GridApi} from 'ag-grid-community';
+import {GridOptions, GridApi, CellValueChangedEvent} from 'ag-grid-community';
 
 import {Shared, Socket, Models} from 'lib/K';
 
@@ -32,12 +32,15 @@ import {Shared, Socket, Models} from 'lib/K';
       (window:resize)="onGridReady($event)"
       (gridReady)="onGridReady($event)"
       (cellClicked)="onCellClicked($event)"
+      (cellValueChanged)="onCellValueChanged($event)"
       [gridOptions]="grid"></ag-grid-angular>
   </div>`
 })
 export class OrdersComponent {
 
   private fireCxl: Socket.IFire<Models.OrderCancelRequestFromUI> = new Socket.Fire(Models.Topics.CancelOrder);
+
+  private editCxl: Socket.IFire<Models.OrderEditRequestFromUI> = new Socket.Fire(Models.Topics.EditOrder);
 
   @Input() product: Models.ProductAdvertisement;
 
@@ -112,6 +115,17 @@ export class OrdersComponent {
       field: 'price',
       headerName: 'price',
       sort: 'desc',
+      editable: true,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorSelector: (params) => {
+        return { params: {
+          min: 0,
+          precision: params.data.pricePrecision,
+          step: Math.pow(10, -params.data.pricePrecision),
+          showStepperButtons: true
+        } };
+      },
+      cellRenderer: (params) => '<span style="display: inline-block;">&#9998;</span>' + params.value,
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -121,6 +135,7 @@ export class OrdersComponent {
       field: 'quantity',
       headerName: 'qty',
       suppressSizeToFit: true,
+      cellRenderer: (params) => params.value.toFixed(params.data.quantityPrecision),
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -129,6 +144,7 @@ export class OrdersComponent {
       width: 74,
       field: 'value',
       headerName: 'value',
+      cellRenderer: (params) => params.value.toFixed(params.data.pricePrecision),
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -165,20 +181,25 @@ export class OrdersComponent {
     if ($event.event.target.getAttribute('data-action-type') != 'remove') return;
     this.fireCxl.fire(new Models.OrderCancelRequestFromUI($event.data.orderId, $event.data.exchange));
   };
+  
+  private onCellValueChanged = ($event: CellValueChangedEvent) => {
+    this.editCxl.fire(new Models.OrderEditRequestFromUI(
+      $event.data.orderId,
+      parseFloat($event.data.price),
+      $event.data.quantity,
+      $event.data.side,
+      $event.data.symbol
+    ));
+  };
 
   private addAskBid = () => {
     if (!this.filter || !this._markets) return;
     loops: for (let x in this._markets)
       for (let z in this._markets[x])
         if (this.filter == this._markets[x][z].symbol) {
-          var ask = this._markets[x][z].ask;
-          var bid = this._markets[x][z].bid;
-          var len = Math.max(
-            (ask+'').indexOf('.') != -1 ? (ask+'').split('.')[1].length : 0,
-            (bid+'').indexOf('.') != -1 ? (bid+'').split('.')[1].length : 0
-          );
-          this.best_ask = ask.toFixed(len);
-          this.best_bid = bid.toFixed(len);
+          var precision = this.symbols.filter(s => s.symbol == this.filter)[0].pricePrecision;
+          this.best_ask = this._markets[x][z].ask.toFixed(precision);
+          this.best_bid = this._markets[x][z].bid.toFixed(precision);
           this.orders_market = this._markets[x][z].web;
           Shared.currencyHeaders(this.api, this._markets[x][z].base, this._markets[x][z].quote);
           break loops;
@@ -212,19 +233,21 @@ export class OrdersComponent {
         orderId: o.orderId,
         exchangeId: o.exchangeId,
         side: Models.Side[o.side],
-        price: o.price, //.toFixed(this.product.tickPrice)
-        value: (Math.round(o.quantity * o.price * 100) / 100), //.toFixed(this.product.tickPrice)
+        price: o.price.toFixed(-Math.log10(o.pricePrecision)),
+        value: o.quantity * o.price,
         type: Models.OrderType[o.type],
         tif: Models.TimeInForce[o.timeInForce],
         lat: o.latency < 0 ? 'loaded' : o.latency + 'ms',
-        quantity: o.quantity, //.toFixed(this.product.tickSize)
+        quantity: o.quantity,
         pong: o.isPong,
-        time: o.time
+        time: o.time,
+        pricePrecision: -Math.log10(o.pricePrecision),
+        quantityPrecision: -Math.log10(o.quantityPrecision)
       });
 
       remove = remove.filter(x => x.exchangeId != o.exchangeId);
 
-      this.addSymbol(o.symbol, o.side);
+      this.addSymbol(o.symbol, o.side, -Math.log10(o.pricePrecision));
     });
 
     this.api.applyTransaction({add, update, remove});
@@ -234,10 +257,11 @@ export class OrdersComponent {
     }
   };
 
-  private addSymbol(sym: string, side: Models.Side) {
+  private addSymbol(sym: string, side: Models.Side, pricePrecision: number) {
     if (!this.symbols.filter(s => s.symbol == sym).length) {
       this.symbols.push({
         symbol: sym,
+        pricePrecision: pricePrecision,
         bids:  0,
         asks:  0
       });

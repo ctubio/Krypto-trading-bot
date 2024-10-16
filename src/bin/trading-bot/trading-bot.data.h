@@ -998,6 +998,7 @@ namespace tribeca {
         if (j.is_object() and j.value("price", 0.0) and j.value("quantity", 0.0)) {
           json order = j;
           order["manual"]  = true;
+          order["symbol"]  = K.gateway->symbol;
           order["orderId"] = K.gateway->randId();
           K.clicked(this, order);
         }
@@ -1015,7 +1016,7 @@ namespace tribeca {
         , K(bot)
       {};
       void click(const json &j) override {
-        if ((j.is_object() and !j.value("orderId", "").empty()))
+        if (j.is_object() and !j.value("orderId", "").empty())
           K.clicked(this, j.at("orderId").get<string>());
       };
       mMatter about() const override {
@@ -1076,7 +1077,7 @@ namespace tribeca {
         , K(bot)
       {};
       void click(const json &j) override {
-        if ((j.is_object() and !j.value("tradeId", "").empty()))
+        if (j.is_object() and !j.value("tradeId", "").empty())
           K.clicked(this, j.at("tradeId").get<string>());
       };
       mMatter about() const override {

@@ -384,18 +384,51 @@ namespace analpaper {
         , K(bot)
       {};
       void click(const json &j) override {
-        if ((j.is_object() and !j.value("orderId", "").empty()))
+        if (j.is_object() and !j.value("orderId", "").empty())
           K.clicked(this, j.at("orderId").get<string>());
       };
       mMatter about() const override {
         return mMatter::CancelOrder;
       };
   };
+  struct InputEditOrder: public Client::Clickable {
+    private_ref:
+      const KryptoNinja       &K;
+            ButtonCancelOrder &cancel;
+    public:
+      InputEditOrder(const KryptoNinja &bot, ButtonCancelOrder &c)
+        : Clickable(bot)
+        , K(bot)
+        , cancel(c)
+      {};
+      void click(const json &j) override {
+        cancel.click(j);
+        if (j.is_object()
+          and !j.value("symbol", "").empty()
+          and !j.value("side", "").empty()
+          and j.value("price", 0.0)
+          and j.value("quantity", 0.0)
+        ) K.clicked(this, Order(
+            j.value("symbol", ""),
+            j.value("side", "") == "Bid" ? Side::Bid : Side::Ask,
+            j.value("price", 0.0),
+            j.value("quantity", 0.0),
+            Tstamp,
+            false,
+            K.gateway->randId()
+          ));
+      };
+      mMatter about() const override {
+        return mMatter::EditOrder;
+      };
+  };
 
   struct Buttons {
-    ButtonCancelOrder          cancel;
+    ButtonCancelOrder cancel;
+    InputEditOrder    edit;
     Buttons(const KryptoNinja &bot)
       : cancel(bot)
+      , edit(bot, cancel)
     {};
   };
 
@@ -407,7 +440,8 @@ namespace analpaper {
     public:
       Broker(const KryptoNinja &bot, const Buttons &b)
         : Clicked(bot, {
-            {&b.cancel, [&](const json &j) { K.cancel(j); }}
+            {&b.cancel, [&](const json &j) { K.cancel(j); }},
+            {&b.edit, [&](const Order &o) { K.place(o); }}
           })
         , memory(bot)
         , semaphore(bot)
