@@ -20,6 +20,7 @@ import {Socket, Models} from 'lib/K';
         <wallets
           [wallets]="wallets"
           [markets]="markets"
+          [product]="product"
           [settings]="settings"></wallets>
       </div>
       <div class="col-md-6">

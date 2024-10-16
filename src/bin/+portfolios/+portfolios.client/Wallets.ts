@@ -32,6 +32,8 @@ export class WalletsComponent {
 
   private selection: string = "";
 
+  @Input() product: Models.ProductAdvertisement;
+
   @Input() markets: any;
 
   @Input() set wallets(o: any) {
@@ -202,7 +204,7 @@ export class WalletsComponent {
       const amount  = Shared.str(o.wallet.amount,                 8);
       const held    = Shared.str(o.wallet.held,                   8);
       const total   = Shared.str(o.wallet.amount + o.wallet.held, 8);
-      const balance = Shared.str(o.wallet.value,                  8);
+      const balance = Shared.str(o.wallet.value,                  this.settings.currency == this.product.quote ? this.product.tickPrice : this.product.tickSize);
       const price   = Shared.str(o.price,                         8);
       sum += o.wallet.value;
       var node: any = this.api.getRowNode(o.wallet.currency);
@@ -237,9 +239,8 @@ export class WalletsComponent {
 
     var el = document.getElementById('full_balance');
     if (el) {
-      var val = Shared.str(sum, 8);
-      if (el.innerHTML != val)
-        el.innerHTML = Shared.str(sum, 8);
+      var val = Shared.str(sum, this.settings.currency == this.product.quote ? this.product.tickPrice : this.product.tickSize);
+      if (el.innerHTML != val) el.innerHTML = val;
     }
   };
 };
