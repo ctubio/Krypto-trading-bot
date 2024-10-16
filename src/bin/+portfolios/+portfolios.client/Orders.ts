@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 
-import {GridOptions, GridApi, CellValueChangedEvent} from 'ag-grid-community';
+import {GridOptions, GridApi, CellValueChangedEvent, INumberCellEditorParams} from 'ag-grid-community';
 
 import {Shared, Socket, Models} from 'lib/K';
 
@@ -116,16 +116,15 @@ export class OrdersComponent {
       headerName: 'price',
       sort: 'desc',
       editable: true,
-      cellEditor: 'agNumberCellEditor',
       cellEditorSelector: (params) => {
-        return { params: {
-          min: 0,
+        return { component: "agNumberCellEditor", params: {
           precision: params.data.pricePrecision,
-          step: Math.pow(10, -params.data.pricePrecision),
+          min:  parseFloat(Math.pow(10, -params.data.pricePrecision).toFixed(params.data.pricePrecision)),
+          step: parseFloat(Math.pow(10, -params.data.pricePrecision).toFixed(params.data.pricePrecision)),
           showStepperButtons: true
-        } };
+        } as INumberCellEditorParams };
       },
-      cellRenderer: (params) => '<span style="display: inline-block;">&#9998;</span>' + params.value,
+      cellRenderer: (params) => '<span style="display: inline-block;">&#9998;</span>' + params.value.toFixed(params.data.pricePrecision),
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -233,7 +232,7 @@ export class OrdersComponent {
         orderId: o.orderId,
         exchangeId: o.exchangeId,
         side: Models.Side[o.side],
-        price: o.price.toFixed(-Math.log10(o.pricePrecision)),
+        price: o.price,
         value: o.quantity * o.price,
         type: Models.OrderType[o.type],
         tif: Models.TimeInForce[o.timeInForce],
