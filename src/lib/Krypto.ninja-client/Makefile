@@ -67,13 +67,13 @@ beacons:
 export define PACKAGE_JSON
 {
   "dependencies": {
-    "@angular/common":                   "^18.2.7",
-    "@angular/compiler":                 "^18.2.7",
-    "@angular/core":                     "^18.2.7",
-    "@angular/forms":                    "^18.2.7",
-    "@angular/platform-browser":         "^18.2.7",
-    "@angular/platform-browser-dynamic": "^18.2.7",
-    "@angular/router":                   "^18.2.7",
+    "@angular/common":                   "^18.2.8",
+    "@angular/compiler":                 "^18.2.8",
+    "@angular/core":                     "^18.2.8",
+    "@angular/forms":                    "^18.2.8",
+    "@angular/platform-browser":         "^18.2.8",
+    "@angular/platform-browser-dynamic": "^18.2.8",
+    "@angular/router":                   "^18.2.8",
     "@types/node": "^22.7.5",
     "ag-grid-angular":   "^32.2.2",
     "ag-grid-community": "^32.2.2",
@@ -81,7 +81,7 @@ export define PACKAGE_JSON
     "highcharts": "^11.4.8",
     "highcharts-angular": "^4.0.1",
     "rxjs": "^7.8.1",
-    "sass": "^1.79.4",
+    "sass": "^1.79.5",
     "typescript": "^5.6.3",
     "uglify-js": "^3.19.3",
     "zone.js": "^0.14.10"

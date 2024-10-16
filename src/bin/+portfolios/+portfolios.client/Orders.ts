@@ -76,40 +76,14 @@ export class OrdersComponent {
       !this.filter || node.data.symbol == this.filter
     ),
     columnDefs: [{
-      width: 30,
+      width: 20,
       field: "cancel",
+      flex: 0,
       headerName: 'cxl',
       suppressSizeToFit: true,
       cellRenderer: (params) => `<button type="button" class="btn btn-danger btn-xs">
           <span data-action-type="remove"'>&times;</span>
         </button>`
-    }, {
-      width: 82,
-      field: 'time',
-      headerName: 'time',
-      suppressSizeToFit: true,
-      cellRenderer: (params) => {
-        var d = new Date(params.value||0);
-        return (d.getHours()+'')
-          .padStart(2, "0")+':'+(d.getMinutes()+'')
-          .padStart(2, "0")+':'+(d.getSeconds()+'')
-          .padStart(2, "0")+','+(d.getMilliseconds()+'')
-          .padStart(3, "0");
-      }
-    }, {
-      width: 40,
-      field: 'side',
-      headerName: 'side',
-      suppressSizeToFit: true,
-      cellClassRules: {
-        'sell': 'data.side == "Ask"',
-        'buy': 'data.side == "Bid"'
-      },
-      cellRenderer: (params) => (
-        params.value == "Ask"
-          ? '<span style="transform: rotate(180deg);display: inline-block;">&#10140;</span>'
-          : '<span style="display: inline-block;">&#10140;</span>'
-        ) + params.value
     }, {
       width: 74,
       field: 'price',
@@ -124,7 +98,7 @@ export class OrdersComponent {
           showStepperButtons: true
         } };
       },
-      cellRenderer: (params) => '<span style="display: inline-block;">&#9998;</span>' + Shared.str(params.value, params.data.pricePrecision),
+      cellRenderer: (params) => Shared.str(params.value, params.data.pricePrecision) + ' <span style="transform: rotate(90deg);display: inline-block;">&#9998;</span>',
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -140,6 +114,20 @@ export class OrdersComponent {
         'buy': 'data.side == "Bid"'
       }
     }, {
+      width: 40,
+      field: 'side',
+      headerName: 'side',
+      suppressSizeToFit: true,
+      cellClassRules: {
+        'sell': 'data.side == "Ask"',
+        'buy': 'data.side == "Bid"'
+      },
+      cellRenderer: (params) => (
+        params.value == "Ask"
+          ? '<span style="transform: rotate(+90deg);display: inline-block;">&#10140;</span>'
+          : '<span style="transform: rotate(-90deg);display: inline-block;">&#10140;</span>'
+        ) + params.value
+    }, {
       width: 74,
       field: 'value',
       headerName: 'value',
@@ -147,6 +135,19 @@ export class OrdersComponent {
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
+      }
+    }, {
+      width: 82,
+      field: 'time',
+      headerName: 'time',
+      suppressSizeToFit: true,
+      cellRenderer: (params) => {
+        var d = new Date(params.value||0);
+        return (d.getHours()+'')
+          .padStart(2, "0")+':'+(d.getMinutes()+'')
+          .padStart(2, "0")+':'+(d.getSeconds()+'')
+          .padStart(2, "0")+','+(d.getMilliseconds()+'')
+          .padStart(3, "0");
       }
     }, {
       width: 55,

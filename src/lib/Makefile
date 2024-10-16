@@ -8,7 +8,7 @@ V_CURL  = 8.10.1
 V_SQL   = 3460100
 V_JSON  = 3.11.3
 V_CATCH = 2.13.10
-V_UV    = 1.49.0
+V_UV    = 1.49.1
 
 KBUILD := $(abspath ../../build-$(KHOST))
 
