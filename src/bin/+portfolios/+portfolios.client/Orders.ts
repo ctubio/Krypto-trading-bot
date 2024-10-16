@@ -44,8 +44,8 @@ export class OrdersComponent {
 
   @Input() product: Models.ProductAdvertisement;
 
-  private best_ask: number;
-  private best_bid: number;
+  private best_ask: string;
+  private best_bid: string;
   private orders_market: string;
 
   private _markets: any = null;
@@ -124,7 +124,7 @@ export class OrdersComponent {
           showStepperButtons: true
         } };
       },
-      cellRenderer: (params) => '<span style="display: inline-block;">&#9998;</span>' + params.value.toFixed(params.data.pricePrecision),
+      cellRenderer: (params) => '<span style="display: inline-block;">&#9998;</span>' + Shared.str(params.value, params.data.pricePrecision),
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -134,7 +134,7 @@ export class OrdersComponent {
       field: 'quantity',
       headerName: 'qty',
       suppressSizeToFit: true,
-      cellRenderer: (params) => params.value.toFixed(params.data.quantityPrecision),
+      cellRenderer: (params) => Shared.str(params.value, params.data.quantityPrecision),
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -143,7 +143,7 @@ export class OrdersComponent {
       width: 74,
       field: 'value',
       headerName: 'value',
-      cellRenderer: (params) => params.value.toFixed(params.data.pricePrecision),
+      cellRenderer: (params) => Shared.str(params.value, params.data.pricePrecision),
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -197,8 +197,8 @@ export class OrdersComponent {
       for (let z in this._markets[x])
         if (this.filter == this._markets[x][z].symbol) {
           var precision = this.symbols.filter(s => s.symbol == this.filter)[0].pricePrecision;
-          this.best_ask = this._markets[x][z].ask.toFixed(precision);
-          this.best_bid = this._markets[x][z].bid.toFixed(precision);
+          this.best_ask = Shared.str(this._markets[x][z].ask, precision);
+          this.best_bid = Shared.str(this._markets[x][z].bid, precision);
           this.orders_market = this._markets[x][z].web;
           Shared.currencyHeaders(this.api, this._markets[x][z].base, this._markets[x][z].quote);
           break loops;
