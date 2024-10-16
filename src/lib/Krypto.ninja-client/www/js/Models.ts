@@ -149,7 +149,8 @@ export class PositionReport {
 }
 
 export class OrderRequestFromUI {
-    constructor(public side: Side,
+    constructor(public symbol: string,
+                public side: Side,
                 public price: number,
                 public quantity: number,
                 public timeInForce: TimeInForce,

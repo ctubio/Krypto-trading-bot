@@ -995,10 +995,13 @@ namespace tribeca {
         , K(bot)
       {};
       void click(const json &j) override {
-        if (j.is_object() and j.value("price", 0.0) and j.value("quantity", 0.0)) {
+        if (j.is_object()
+          and !j.value("symbol", "").empty()
+          and j.value("price", 0.0)
+          and j.value("quantity", 0.0)
+        ) {
           json order = j;
           order["manual"]  = true;
-          order["symbol"]  = K.gateway->symbol;
           order["orderId"] = K.gateway->randId();
           K.clicked(this, order);
         }

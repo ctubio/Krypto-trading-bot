@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 
-import {GridOptions, GridApi, CellValueChangedEvent, INumberCellEditorParams} from 'ag-grid-community';
+import {GridOptions, GridApi} from 'ag-grid-community';
 
 import {Shared, Socket, Models} from 'lib/K';
 
@@ -122,7 +122,7 @@ export class OrdersComponent {
           min:  parseFloat(Math.pow(10, -params.data.pricePrecision).toFixed(params.data.pricePrecision)),
           step: parseFloat(Math.pow(10, -params.data.pricePrecision).toFixed(params.data.pricePrecision)),
           showStepperButtons: true
-        } as INumberCellEditorParams };
+        } };
       },
       cellRenderer: (params) => '<span style="display: inline-block;">&#9998;</span>' + params.value.toFixed(params.data.pricePrecision),
       cellClassRules: {
@@ -181,12 +181,12 @@ export class OrdersComponent {
     this.fireCxl.fire(new Models.OrderCancelRequestFromUI($event.data.orderId, $event.data.exchange));
   };
   
-  private onCellValueChanged = ($event: CellValueChangedEvent) => {
+  private onCellValueChanged = ($event) => {
     this.editCxl.fire(new Models.OrderEditRequestFromUI(
       $event.data.orderId,
       parseFloat($event.data.price),
       $event.data.quantity,
-      $event.data.side,
+      +($event.data.side == "Ask"),
       $event.data.symbol
     ));
   };

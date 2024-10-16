@@ -5,22 +5,29 @@ import {Socket, Models} from 'lib/K';
 @Component({
   selector: 'client',
   template: `<div class="row">
-      <div class="col-md-12 col-xs-12">
-          <div class="col-md-6">
-            <settings
-              [product]="product"
-              [settings]="settings"></settings>
-            <wallets
-              [wallets]="wallets"
-              [markets]="markets"
-              [settings]="settings"></wallets>
-          </div>
-          <div class="col-md-6">
-            <orders
-             [orders]="orders"
-             [markets]="markets"></orders>
-          </div>
+    <div class="col-md-12 col-xs-12" [hidden]="!showSubmitOrder">
+      <submit-order
+        [markets]="markets"></submit-order>
+    </div>
+    <div class="col-md-12 col-xs-12">
+      <div class="col-md-6">
+        <button type="button"
+          class="btn btn-default" style="position: absolute; top: 10px;"
+          (click)="showSubmitOrder = !showSubmitOrder">New Order</button>
+        <settings
+          [product]="product"
+          [settings]="settings"></settings>
+        <wallets
+          [wallets]="wallets"
+          [markets]="markets"
+          [settings]="settings"></wallets>
       </div>
+      <div class="col-md-6">
+        <orders
+          [orders]="orders"
+          [markets]="markets"></orders>
+      </div>
+    </div>
   </div>`
 })
 export class ClientComponent implements OnInit {
@@ -32,6 +39,8 @@ export class ClientComponent implements OnInit {
   private orders: Models.Order[] = [];
 
   private settings: Models.PortfolioParameters = new Models.PortfolioParameters();
+
+  private showSubmitOrder: boolean = false;
 
   @Input() addr: string;
 

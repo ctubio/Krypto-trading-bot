@@ -36,7 +36,6 @@ import {Socket, Shared, Models} from 'lib/K';
           <div>
             <button type="button"
               class="btn btn-default"
-              id="order_form"
               (click)="showSubmitOrder = !showSubmitOrder">Submit Order</button>
           </div>
           <div style="padding-top: 2px;padding-bottom: 2px;">
@@ -71,7 +70,6 @@ import {Socket, Shared, Models} from 'lib/K';
             <button type="button"
               class="btn btn-default"
               style="margin:14px 0px;"
-              id="order_form"
               (click)="toggleSettings()">Settings
             </button>
           </div>
