@@ -407,6 +407,7 @@ namespace ₿ {
       };
       void report(Report notes, const bool &nocache) {
         for (const auto &it : (Report){
+          {"tickers", to_string(precisions.size()) + " from " + exchange + " exchange"        },
           {"symbols", base + "/" + quote + " (" + decimal.amount.str(tickSize)
                         + "/" + decimal.price.str(tickPrice) + ")"                            },
           {"minSize", decimal.amount.str(minSize) + " " + base
@@ -722,7 +723,7 @@ class GwApiWsFix: public GwApiWs,
         return {
           {     "base", base                                      },
           {    "quote", quote                                     },
-          {   "symbol", reply1.value("symbol", 0.0)               },
+          {   "symbol", reply1.value("symbol", "")                },
           {"tickPrice", reply1.value("tickPrice", 0.0)            },
           { "tickSize", reply1.value("tickSize", 0.0)             },
           {  "minSize", reply1.value("minSize", 0.0)              },
