@@ -325,6 +325,39 @@ namespace ₿ {
          int maxLevel  = 0;
         bool debug     = false;
       Connectivity adminAgreement = Connectivity::Disconnected;
+      unordered_map<string, pair<double, double>> precisions;
+      void handshakes(const bool &nocache) {
+        json reply;
+        const string cache = (K_HOME "/cache/handshakes")
+          + ('.' + exchange)
+          +  '.' + "json";
+        if (!nocache and !Files::mkdirs(cache))
+          print("Error while writing into " + cache + ", please create the parent directory or change the permissions manually before try again.");
+        fstream file;
+        struct stat st;
+        if (!nocache
+          and access(cache.data(), R_OK) != -1
+          and !stat(cache.data(), &st)
+          and Tstamp - 25200e+3 < st.st_mtime * 1e+3
+        ) {
+          file.open(cache, fstream::in);
+          reply = json::parse(file);
+        } else
+          reply = handshakes();
+        if (reply.is_array())
+          for (auto &it : reply)
+            precisions[it.value("symbol", "")] = {
+              it.value("tickPrice", 0.0),
+              it.value("tickSize", 0.0)
+            };
+        if (!nocache and !file.is_open() and Files::mkdirs(cache)
+          and !precisions.empty()
+        ) {
+          file.open(cache, fstream::out | fstream::trunc);
+          file << reply.dump();
+        }
+        if (file.is_open()) file.close();
+      };
       json handshake(const bool &nocache) {
         json reply;
         const string cache = (K_HOME "/cache/handshake")
@@ -443,12 +476,12 @@ namespace ₿ {
           highlight
         );
       };
-      virtual   json handshake(const string&) const = 0;
     protected:
       string webMarket,
              webOrders;
       virtual   void disconnect()         = 0;
       virtual   bool connected()    const = 0;
+      virtual   json handshakes()   const = 0;
       virtual   json handshake()    const = 0;
       virtual   void pairs(string&) const = 0;
       virtual string nonce()        const = 0;
@@ -640,8 +673,34 @@ class GwApiWsFix: public GwApiWs,
       string web(const string &base, const string &quote) const override {
         return webMarket + base + "_" + quote + "?layout=pro";
       };
-      json handshake(const string &symbol) const override {
-        json reply1 = Curl::Web::xfer(http + "/api/v3/exchangeInfo?symbol="+ symbol);
+    protected:
+      string nonce() const override {
+        return to_string(Tstamp) + "&recvWindow=21000";
+      };
+      json handshakes() const override {
+        json tickers = json::array();
+        const json reply = Curl::Web::xfer(http + "/api/v3/exchangeInfo");
+        if (reply.contains("symbols") and reply.at("symbols").is_array())
+          for (auto &it : reply.at("symbols"))
+            if (it.contains("filters") and it.at("filters").is_array()) {
+              double tickPrice = 0,
+                     tickSize  = 0;
+              for (const json &it_ : it.at("filters")) {
+                if (it_.value("filterType", "") == "PRICE_FILTER")
+                  tickPrice = stod(it_.value("tickSize", "0"));
+                else if (it_.value("filterType", "") == "LOT_SIZE")
+                  tickSize = stod(it_.value("stepSize", "0"));
+              }
+              tickers.push_back({
+                {   "symbol", it.value("symbol", "")},
+                {"tickPrice", tickPrice             },
+                { "tickSize", tickSize              }
+              });
+            }
+        return tickers;
+      };
+      json handshake() const override {
+        json reply1 = Curl::Web::xfer(http + "/api/v3/exchangeInfo?symbol="+ base + quote);
         if (reply1.contains("symbols") and reply1.at("symbols").is_array())
           for (const json &it : reply1.at("symbols"))
             if (it.value("symbol", "") == base + quote) {
@@ -663,7 +722,7 @@ class GwApiWsFix: public GwApiWs,
         return {
           {     "base", base                                      },
           {    "quote", quote                                     },
-          {   "symbol", symbol                                    },
+          {   "symbol", reply1.value("symbol", 0.0)               },
           {"tickPrice", reply1.value("tickPrice", 0.0)            },
           { "tickSize", reply1.value("tickSize", 0.0)             },
           {  "minSize", reply1.value("minSize", 0.0)              },
@@ -672,10 +731,6 @@ class GwApiWsFix: public GwApiWs,
           {  "takeFee", stod(reply2.value("takerCommission", "0"))},
           {    "reply", {reply1, reply2}                          }
         };
-      };
-    protected:
-      string nonce() const override {
-        return to_string(Tstamp) + "&recvWindow=21000";
       };
       void pairs(string &report) const override {
         const json reply = Curl::Web::xfer(http + "/api/v3/exchangeInfo");
@@ -690,9 +745,6 @@ class GwApiWsFix: public GwApiWs,
           if (it.value("isSpotTradingAllowed", false)
             and it.value("status", "") == "TRADING"
           ) report += it.value("baseAsset", "") + "/" + it.value("quoteAsset", "") + ANSI_NEW_LINE;
-      };
-      json handshake() const override {
-        return handshake(base + quote);
       };
       json xfer(const string &url, const string &h1, const string &crud) const {
         return Curl::Web::xfer(url, crud, "", {
@@ -734,16 +786,32 @@ class GwApiWsFix: public GwApiWs,
       string web(const string &base, const string &quote) const override {
         return webMarket + base + quote;
       };
-      json handshake(const string &symbol) const override {
+    protected:
+      string nonce() const override {
+        return to_string(Tstamp);
+      };
+      json handshakes() const override {
+        json tickers = json::array();
+        const json reply = Curl::Web::xfer(http + "/instrument");
+        if (reply.is_array())
+          for (auto &it : reply)
+            tickers.push_back({
+              {   "symbol", it.value("symbol", "")   },
+              {"tickPrice", it.value("tickSize", 0.0)},
+              { "tickSize", it.value("lotSize", 0.0) }
+            });
+        return tickers;
+      };
+      json handshake() const override {
         json reply = {
-          {"object", Curl::Web::xfer(http + "/instrument?symbol=" + symbol)}
+          {"object", Curl::Web::xfer(http + "/instrument?symbol=" + base + "_" + quote)}
         };
         if (reply.at("object").is_array() and !reply.at("object").empty())
           reply = reply.at("object").at(0);
         return {
           {     "base", base                           },
           {    "quote", quote                          },
-          {   "symbol", symbol                         },
+          {   "symbol", reply.value("symbol", 0.0)     },
           {"tickPrice", reply.value("tickSize", 0.0)   },
           { "tickSize", reply.value("lotSize", 0.0)    },
           {  "minSize", reply.value("lotSize", 0.0)    },
@@ -751,10 +819,6 @@ class GwApiWsFix: public GwApiWs,
           {  "takeFee", reply.value("takerFee", 0.0)   },
           {    "reply", reply                          }
         };
-      };
-    protected:
-      string nonce() const override {
-        return to_string(Tstamp);
       };
       void pairs(string &report) const override {
         const json reply = Curl::Web::xfer(http + "/instrument?filter="+((json){
@@ -768,9 +832,6 @@ class GwApiWsFix: public GwApiWs,
         else for (const json &it : reply)
           if (!it.value("isInverse", false))
             report += it.value("symbol", "") + ANSI_NEW_LINE;
-      };
-      json handshake() const override {
-        return handshake(base + "_" + quote);
       };
       json xfer(const string &url, const string &h1, const string &h2, const string &h3, const string &post, const string &crud) const {
         return Curl::Web::xfer(url, crud, post, {
@@ -793,20 +854,36 @@ class GwApiWsFix: public GwApiWs,
       string web(const string &base, const string &quote) const override {
         return webMarket + base + "_" + quote;
       };
-      json handshake(const string &symbol) const override {
+    protected:
+      string nonce() const override {
+        return to_string(Tstamp / 1e+3);
+      };
+      json handshakes() const override {
+        json tickers = json::array();
+        const json reply = Curl::Web::xfer(http + "/spot/currency_pairs");
+        if (reply.is_array())
+          for (auto &it : reply)
+            tickers.push_back({
+              {   "symbol", it.value("id", "")                       },
+              {"tickPrice", pow(10, -it.value("precision", 0))       },
+              { "tickSize", pow(10, -it.value("amount_precision", 0))}
+            });
+        return tickers;
+      };
+      json handshake() const override {
         json reply = {
           {"object", Curl::Web::xfer(http + "/spot/currency_pairs")}
         };
         if (reply.at("object").is_array() and !reply.at("object").empty())
           for (const json &it : reply.at("object"))
-            if (it.value("id", "") == symbol) {
+            if (it.value("id", "") == base + "_" + quote) {
               reply = it;
               break;
             }
         return {
           {     "base", base                                            },
           {    "quote", quote                                           },
-          {   "symbol", symbol                                          },
+          {   "symbol", reply.value("id", "")                           },
           {"tickPrice", pow(10, -reply.value("precision", 0))           },
           { "tickSize", pow(10, -reply.value("amount_precision", 0))    },
           {  "minSize", stod(reply.value("min_base_amount", "0"))
@@ -818,10 +895,6 @@ class GwApiWsFix: public GwApiWs,
           {    "reply", reply                                           }
         };
       };
-    protected:
-      string nonce() const override {
-        return to_string(Tstamp / 1e+3);
-      };
       void pairs(string &report) const override {
         const json reply = Curl::Web::xfer(http + "/spot/currency_pairs");
         if (!reply.is_array()
@@ -832,9 +905,6 @@ class GwApiWsFix: public GwApiWs,
         else for (const json &it : reply)
           if (it.value("trade_status", "") == "tradable")
             report += it.value("base", "") + "/" + it.value("quote", "") + ANSI_NEW_LINE;
-      };
-      json handshake() const override {
-        return handshake(base + "_" + quote);
       };
       json xfer(const string &url, const string &h1, const string &h2, const string &h3, const string &post, const string &crud) const {
         return Curl::Web::xfer(url, crud, post, {
@@ -858,12 +928,28 @@ class GwApiWsFix: public GwApiWs,
       string web(const string &base, const string &quote) const override {
         return webMarket + base + "-to-" + quote;
       };
-      json handshake(const string &symbol) const override {
-        const json reply = Curl::Web::xfer(http + "/public/symbol/" + symbol);
+    protected:
+      string nonce() const override {
+        return randId() + randId();
+      };
+      json handshakes() const override {
+        json tickers = json::array();
+        const json reply = Curl::Web::xfer(http + "/public/symbol");
+        if (reply.is_array())
+          for (auto &it : reply)
+            tickers.push_back({
+              {   "symbol", it.value("id", "")                      },
+              {"tickPrice", stod(it.value("tickSize", "0"))         },
+              { "tickSize", stod(it.value("quantityIncrement", "0"))}
+            });
+        return tickers;
+      };
+      json handshake() const override {
+        const json reply = Curl::Web::xfer(http + "/public/symbol/" + base + quote);
         return {
           {     "base", base == "USDT" ? "USD" : base                 },
           {    "quote", quote == "USDT" ? "USD" : quote               },
-          {   "symbol", symbol                                        },
+          {   "symbol", reply.value("id", "")                         },
           {"tickPrice", stod(reply.value("tickSize", "0"))            },
           { "tickSize", stod(reply.value("quantityIncrement", "0"))   },
           {  "minSize", stod(reply.value("quantityIncrement", "0"))   },
@@ -871,10 +957,6 @@ class GwApiWsFix: public GwApiWs,
           {  "takeFee", stod(reply.value("takeLiquidityRate", "0"))   },
           {    "reply", reply                                         }
         };
-      };
-    protected:
-      string nonce() const override {
-        return randId() + randId();
       };
       void pairs(string &report) const override {
         const json reply = Curl::Web::xfer(http + "/public/symbol");
@@ -886,9 +968,6 @@ class GwApiWsFix: public GwApiWs,
         ) print("Error while reading pairs: " + reply.dump());
         else for (const json &it : reply)
           report += it.value("baseCurrency", "") + "/" + it.value("quoteCurrency", "") + ANSI_NEW_LINE;
-      };
-      json handshake() const override {
-        return handshake(base + quote);
       };
       string twin(const string &ws) const override {
         return ws.substr(0, ws.length() - 6) + "trading";
@@ -920,13 +999,33 @@ class GwApiWsFix: public GwApiWs,
       string web(const string &base, const string &quote) const override {
         return webMarket + base + "-" + quote;
       };
-      json handshake(const string &symbol) const override {
-        const json reply1 = xfer(http + "/products/" + symbol);
+    protected:
+//BO non-free Gw class member functions from lib build-*/lib/K-*.a (it just redefines all virtual gateway functions below).
+/**/  virtual string token(const string &crud = "", const string &url = "") const = 0;                 // return jwt token.
+//EO non-free Gw class member functions from lib build-*/lib/K-*.a (it just redefines all virtual gateway functions above).
+      string nonce() const override {
+        return Random::char16Id();
+      };
+      json handshakes() const override {
+        json tickers = json::array();
+        const json reply = xfer(http + "/products");
+        if (reply.contains("products")
+          and reply.at("products").is_array()
+        ) for (auto &it : reply.at("products"))
+            tickers.push_back({
+              {   "symbol", it.value("product_id", "")            },
+              {"tickPrice", stod(it.value("quote_increment", "0"))},
+              { "tickSize", stod(it.value("base_increment", "0")) }
+            });
+        return tickers;
+      };
+      json handshake() const override {
+        const json reply1 = xfer(http + "/products/" + base + "-" + quote);
         const json reply2 = fees();
         return {
           {     "base", base                                      },
           {    "quote", quote                                     },
-          {   "symbol", symbol                        },
+          {   "symbol", reply1.value("product_id", "")            },
           {"tickPrice", stod(reply1.value("quote_increment", "0"))},
           { "tickSize", stod(reply1.value("base_increment", "0")) },
           {  "minSize", stod(reply1.value("base_min_size", "0"))  },
@@ -934,13 +1033,6 @@ class GwApiWsFix: public GwApiWs,
           {  "takeFee", stod(reply2.value("taker_fee_rate", "0")) },
           {    "reply", {reply1, reply2}                         }
         };
-      };
-    protected:
-//BO non-free Gw class member functions from lib build-*/lib/K-*.a (it just redefines all virtual gateway functions below).
-/**/  virtual string token(const string &crud = "", const string &url = "") const = 0;                 // return jwt token.
-//EO non-free Gw class member functions from lib build-*/lib/K-*.a (it just redefines all virtual gateway functions above).
-      string nonce() const override {
-        return Random::char16Id();
       };
       void pairs(string &report) const override {
         const json reply = xfer(http + "/products");
@@ -956,9 +1048,6 @@ class GwApiWsFix: public GwApiWs,
         else for (const json &it : reply.at("products"))
           if (!it.value("trading_disabled", true) and it.value("status", "") == "online")
             report += it.value("base_currency_id", "") + "/" + it.value("quote_currency_id", "") + ANSI_NEW_LINE;
-      };
-      json handshake() const override {
-        return handshake(base + "-" + quote);
       };
       string twin(const string &ws) const override {
         return string(ws).insert(ws.find("ws.") + 2, "-user");
@@ -987,7 +1076,7 @@ class GwApiWsFix: public GwApiWs,
     public:
       GwBitfinex()
       {
-        http   = "https://api.bitfinex.com/v2";
+        http   = "https://api-pub.bitfinex.com/v2";
         ws     = "wss://api.bitfinex.com/ws/2";
         randId = Random::int45Id;
         askForReplace = true;
@@ -997,9 +1086,27 @@ class GwApiWsFix: public GwApiWs,
       string web(const string &base, const string &quote) const override {
         return webMarket + base + quote;
       };
-      json handshake(const string &symbol) const override {
+    protected:
+      string nonce() const override {
+        return to_string(Tstamp * 1e+3);
+      };
+      json handshakes() const override {
+        json tickers = json::array();
+        const json reply = Curl::Web::xfer(http + "/tickers");
+        if (reply.is_array())
+          for (auto &it : reply)
+            tickers.push_back({
+              {   "symbol", it.at(0).get<string>()   },
+              {"tickPrice", pow(10, fmax((int)log10(
+                it.at(6).get<double>()
+              ), -4) -4)                             },
+              { "tickSize", 1e-8                     }
+            });
+        return tickers;
+      };
+      json handshake() const override {
         json reply1 = {
-          {"object", Curl::Web::xfer(http + "/ticker/t" + symbol)}
+          {"object", Curl::Web::xfer(http + "/ticker/t" + base + quote)}
         };
         if (reply1.at("object").is_array()
           and reply1.at("object").size() > 6
@@ -1028,16 +1135,12 @@ class GwApiWsFix: public GwApiWs,
         return {
           {     "base", base                          },
           {    "quote", quote                         },
-          {   "symbol", symbol                        },
+          {   "symbol", base + quote                  },
           {"tickPrice", reply1.value("tickPrice", 0.0)},
           { "tickSize", 1e-8                          },
           {  "minSize", reply2.value("minSize", 0.0)  },
           {    "reply", {reply1, reply2}              }
         };
-      };
-    protected:
-      string nonce() const override {
-        return to_string(Tstamp * 1e+3);
       };
       void pairs(string &report) const override {
         const json reply = Curl::Web::xfer(http + "/conf/pub:list:pair:" + trading);
@@ -1054,9 +1157,6 @@ class GwApiWsFix: public GwApiWs,
           else
             report += it.get<string>().substr(0, 3) + "/"
                     + it.get<string>().substr(3)    + ANSI_NEW_LINE;
-      };
-      json handshake() const override {
-        return handshake(base + quote);
       };
       json xfer(const string &url, const string &post, const string &h1, const string &h2, const string &h3) const {
         return Curl::Web::xfer(url, "GET", post, {
@@ -1090,11 +1190,27 @@ class GwApiWsFix: public GwApiWs,
       string web(const string &base, const string &quote) const override {
         return webMarket + base + "-" + quote;
       };
-      json handshake(const string &symbol) const override {
+    protected:
+      string nonce() const override {
+        return to_string(Tstamp);
+      };
+      json handshakes() const override {
+        json tickers = json::array();
+        const json reply = Curl::Web::xfer(http + "/api/v1/symbols");
+        if (reply.contains("data") and reply.at("data").is_array())
+          for (auto &it : reply.at("data"))
+            tickers.push_back({
+              {   "symbol", it.value("symbol", "")               },
+              {"tickPrice", stod(it.value("priceIncrement", "0"))},
+              { "tickSize", stod(it.value("baseIncrement", "0")) }
+            });
+        return tickers;
+      };
+      json handshake() const override {
         json reply1 = Curl::Web::xfer(http + "/api/v1/symbols");
         if (reply1.contains("data") and reply1.at("data").is_array())
           for (const json &it : reply1.at("data"))
-            if (it.value("symbol", "") == symbol) {
+            if (it.value("symbol", "") == base + "-" + quote) {
               reply1 = it;
               break;
             }
@@ -1102,7 +1218,7 @@ class GwApiWsFix: public GwApiWs,
         return {
           {     "base", base                                     },
           {    "quote", quote                                    },
-          {   "symbol", symbol                                   },
+          {   "symbol", reply1.value("symbol", "")               },
           {"tickPrice", stod(reply1.value("priceIncrement", "0"))},
           { "tickSize", stod(reply1.value("baseIncrement", "0")) },
           {  "minSize", stod(reply1.value("baseMinSize", "0"))   },
@@ -1110,10 +1226,6 @@ class GwApiWsFix: public GwApiWs,
           {  "takeFee", stod(reply2.value("takerFeeRate", "0"))  },
           {    "reply", {reply1, reply2}                         }
         };
-      };
-    protected:
-      string nonce() const override {
-        return to_string(Tstamp);
       };
       void pairs(string &report) const override {
         const json reply = Curl::Web::xfer(http + "/api/v1/symbols");
@@ -1127,9 +1239,6 @@ class GwApiWsFix: public GwApiWs,
         else for (const json &it : reply.at("data"))
           if (it.value("enableTrading", false))
             report += it.value("baseCurrency", "") + "/" + it.value("quoteCurrency", "") + ANSI_NEW_LINE;
-      };
-      json handshake() const override {
-        return handshake(base + "-" + quote);
       };
       json xfer(const string &url, const string &h1, const string &h2, const string &h3, const string &h4, const string &crud, const string &post = "") const {
         return Curl::Web::xfer(url, crud, post, {
@@ -1175,8 +1284,24 @@ class GwApiWsFix: public GwApiWs,
       string web(const string &base, const string &quote) const override {
         return webMarket + base + "-" + quote;
       };
-      json handshake(const string &symbol) const override {
-        json reply = Curl::Web::xfer(http + "/0/public/AssetPairs?pair=" + symbol);
+    protected:
+      string nonce() const override {
+        return to_string(Tstamp);
+      };
+      json handshakes() const override {
+        json tickers = json::array();
+        const json reply = Curl::Web::xfer(http + "/0/public/AssetPairs");
+        if (reply.contains("result"))
+          for (auto &it : reply.at("result"))
+            tickers.push_back({
+              {   "symbol", it.value("wsname", "")                },
+              {"tickPrice", pow(10, -it.value("pair_decimals", 0))},
+              { "tickSize", pow(10, -it.value("lot_decimals", 0)) }
+            });
+        return tickers;
+      };
+      json handshake() const override {
+        json reply = Curl::Web::xfer(http + "/0/public/AssetPairs?pair=" + base + quote);
         if (reply.contains("result"))
           for (const json &it : reply.at("result"))
             if (it.contains("pair_decimals")) {
@@ -1193,10 +1318,6 @@ class GwApiWsFix: public GwApiWs,
           {    "reply", reply                                    }
         };
       };
-    protected:
-      string nonce() const override {
-        return to_string(Tstamp);
-      };
       void pairs(string &report) const override {
         const json reply = Curl::Web::xfer(http + "/0/public/AssetPairs");
         if (!reply.is_object()
@@ -1206,9 +1327,6 @@ class GwApiWsFix: public GwApiWs,
         else for (const json &it : reply.at("result"))
           if (it.contains("wsname"))
             report += it.value("wsname", "") + ANSI_NEW_LINE;
-      };
-      json handshake() const override {
-        return handshake(base + quote);
       };
       string twin(const string &ws) const override {
         return string(ws).insert(ws.find("ws.") + 2, "-auth");
@@ -1233,23 +1351,35 @@ class GwApiWsFix: public GwApiWs,
       string web(const string &base, const string &quote) const override {
         return webMarket + quote + "_" + base;
       };
-      json handshake(const string &symbol) const override {
-        json reply = Curl::Web::xfer(http + "/markets/" + symbol);
+    protected:
+      string nonce() const override {
+        return to_string(Tstamp);
+      };
+      json handshakes() const override {
+        json tickers = json::array();
+        const json reply = Curl::Web::xfer(http + "/markets");
+        if (reply.is_array())
+          for (auto &it : reply)
+            tickers.push_back({
+              {   "symbol", it.at("symbolTradeLimit").value("symbol", "")                },
+              {"tickPrice", pow(10, -it.at("symbolTradeLimit").value("priceScale", 0))   },
+              { "tickSize", pow(10, -it.at("symbolTradeLimit").value("quantityScale", 0))}
+            });
+        return tickers;
+      };
+      json handshake() const override {
+        json reply = Curl::Web::xfer(http + "/markets/" + base + "_" + quote);
         if (reply.is_array() and !reply.empty() and reply.at(0).value("state", "") == "NORMAL" and reply.at(0).at("symbolTradeLimit").is_object())
           reply = reply.at(0).at("symbolTradeLimit");
         return {
           {     "base", base                                     },
           {    "quote", quote                                    },
-          {   "symbol", symbol                                   },
+          {   "symbol", reply.value("symbol", "")                },
           {"tickPrice", pow(10, -reply.value("priceScale", 0))   },
           { "tickSize", pow(10, -reply.value("quantityScale", 0))},
           {  "minSize", stod(reply.value("minQuantity", "0"))    },
           {    "reply", reply                                    }
         };
-      };
-    protected:
-      string nonce() const override {
-        return to_string(Tstamp);
       };
       void pairs(string &report) const override {
         const json reply = Curl::Web::xfer(http + "/markets");
@@ -1258,9 +1388,6 @@ class GwApiWsFix: public GwApiWs,
         else for (auto &it : reply)
           if (it.value("state", "") == "NORMAL")
             report += it.value("displayName", "") + ANSI_NEW_LINE;
-      };
-      json handshake() const override {
-        return handshake(base + "_" + quote);
       };
       json xfer(const string &url, const string &post, const string &h1, const string &h2, const string &h3) const {
         return Curl::Web::xfer(url, "GET", post, {

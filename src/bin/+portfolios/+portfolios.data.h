@@ -113,8 +113,9 @@ namespace analpaper {
   static void to_json(json &j, const Portfolios &k) {
     j = json::array();
     for (const auto &it : k.portfolio)
-      if (it.second.price)
-        j.push_back(it.second);
+      if (it.second.price
+        and (k.settings.zeroed or it.second.wallet.total)
+      ) j.push_back(it.second);
   };
 
   struct Market {

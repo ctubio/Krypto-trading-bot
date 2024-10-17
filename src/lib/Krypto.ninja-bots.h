@@ -1348,7 +1348,6 @@ namespace ₿ {
           bool withExternal = false;
         private:
           unordered_map<string, Order> orders;
-          unordered_map<string, vector<double>> handshakes;
         private_ref:
           const bool &debug;
           Gw *const &gateway;
@@ -1371,7 +1370,10 @@ namespace ₿ {
           };
           Order *update(const Order &raw, const string &reason = "  place") {
             Order *const order = Order::update(raw, findsert(raw));
-            if (order) precisions(order);
+            if (order and gateway->precisions.contains(order->symbol)) {
+              order->pricePrecision    = gateway->precisions.at(order->symbol).first;
+              order->quantityPrecision = gateway->precisions.at(order->symbol).second;
+            }
             if (debug) {
               gateway->print(reason + "(" + to_string(size()) + "): " + ((json)raw).dump());
               gateway->print("  saved(" + to_string(size()) + "): " + (order ? ((json)*order).dump() : "not found (external)"));
@@ -1436,17 +1438,6 @@ namespace ₿ {
               )[it.second.price] += it.second.quantity;
           };
         private:
-          void precisions(Order *const order) {
-            if (!handshakes.contains(order->symbol)) {
-              const json reply = gateway->handshake(order->symbol);
-              handshakes[order->symbol] = {
-                reply.value("tickPrice", 0.0),
-                reply.value("tickSize", 0.0)
-              };
-            }
-            order->pricePrecision    = handshakes.at(order->symbol)[0];
-            order->quantityPrecision = handshakes.at(order->symbol)[1];
-          };
           Order *findsert(const Order &raw) {
             if (raw.status == Status::Waiting and !raw.orderId.empty())
               return &(orders[raw.orderId] = raw);
@@ -1557,6 +1548,7 @@ namespace ₿ {
         return false;
       };
       void handshake(const GwExchange::Report &notes, const bool &nocache) {
+        gateway->handshakes(nocache);
         const json reply = gateway->handshake(nocache);
         if (!gateway->tickPrice or !gateway->tickSize or !gateway->minSize)
           error("GW", "Unable to fetch data from " + gateway->exchange
