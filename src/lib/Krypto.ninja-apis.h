@@ -325,7 +325,7 @@ namespace ₿ {
          int maxLevel  = 0;
         bool debug     = false;
       Connectivity adminAgreement = Connectivity::Disconnected;
-      unordered_map<string, pair<double, double>> precisions;
+      unordered_map<string, pair<Price, Amount>> precisions;
       void handshakes(const bool &nocache) {
         json reply;
         const string cache = (K_HOME "/cache/handshakes")

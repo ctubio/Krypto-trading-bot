@@ -51,12 +51,16 @@ namespace analpaper {
   struct Portfolio {
     Wallet wallet;
     unordered_map<string, Price> prices;
+    unordered_map<string, pair<Price, Amount>> precisions;
     Price price;
+    pair<Price, Amount> precision;
   };
   static void to_json(json &j, const Portfolio &k) {
     j = {
-      {"wallet", k.wallet},
-      { "price", k.price }
+      {         "wallet", k.wallet          },
+      {          "price", k.price           },
+      { "pricePrecision", k.precision.first },
+      {"amountPrecision", k.precision.second}
     };
   };
 
@@ -88,10 +92,13 @@ namespace analpaper {
         return 0;
       };
       void calc() {
-        for (auto &it : portfolio)
+        for (auto &it : portfolio) {
           portfolio.at(it.first).wallet.value = (
             portfolio.at(it.first).price = calc(it.first)
           ) * portfolio.at(it.first).wallet.total;
+          portfolio.at(it.first).precision = portfolio.at(it.first).precisions.contains(settings.currency)
+            ? portfolio.at(it.first).precisions.at(settings.currency) : (pair<Price, Amount>){1e-8, 1e-8};
+        }
         if (ratelimit()) return;
         broadcast();
         K.repaint(true);
@@ -190,18 +197,26 @@ namespace analpaper {
   struct Tickers: public Client::Clicked {
     Markets markets;
     private_ref:
-      Portfolios &portfolios;
+      const KryptoNinja &K;
+            Portfolios  &portfolios;
     public:
       Tickers(const KryptoNinja &bot, Portfolios &p)
         : Clicked(bot, {
             {&p.settings, [&]() { calc(); }}
           })
         , markets(bot)
+        , K(bot)
         , portfolios(p)
       {};
       void read_from_gw(const Ticker &raw) {
-        add(raw.base,  raw.quote,     raw.price);
-        add(raw.quote, raw.base,  1 / raw.price);
+        Price  pricePrecision  = 1e-8;
+        Amount amountPrecision = 1e-8;
+        if (K.gateway->precisions.contains(raw.symbol)) {
+          pricePrecision  = K.gateway->precisions.at(raw.symbol).first;
+          amountPrecision = K.gateway->precisions.at(raw.symbol).second;
+        }
+        add(raw.base,  raw.quote,     raw.price, pricePrecision, amountPrecision);
+        add(raw.quote, raw.base,  1 / raw.price, amountPrecision, pricePrecision);
         portfolios.calc();
         markets.add(raw);
         markets.calc(
@@ -224,8 +239,9 @@ namespace analpaper {
             );
           }
       };
-      void add(const string &base, const string &quote, const Price &price) {
+      void add(const string &base, const string &quote, const Price &price, const Price &pricePrecision, const Amount &amountPrecision) {
         portfolios.portfolio[base].prices[quote] = price;
+        portfolios.portfolio[base].precisions[quote] = {pricePrecision, amountPrecision};
         if (portfolios.portfolio.at(base).wallet.currency.empty())
           portfolios.portfolio.at(base).wallet.currency = base;
       };

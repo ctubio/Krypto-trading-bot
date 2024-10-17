@@ -201,11 +201,13 @@ export class WalletsComponent {
       this.selection = "";
     }
     else o.forEach(o => {
-      const amount  = Shared.str(o.wallet.amount,                 8);
-      const held    = Shared.str(o.wallet.held,                   8);
-      const total   = Shared.str(o.wallet.amount + o.wallet.held, 8);
-      const balance = Shared.str(o.wallet.value,                  this.settings.currency == this.product.quote ? this.product.tickPrice : this.product.tickSize);
-      const price   = Shared.str(o.price,                         8);
+      var settingsPrecision = this.settings.currency == this.product.quote ? this.product.tickPrice : this.product.tickSize;
+      var has_settingsPrecision = this.settings.currency == o.wallet.currency;
+      const amount  = Shared.str(o.wallet.amount,                 has_settingsPrecision ? settingsPrecision : -Math.log10(o.amountPrecision));
+      const held    = Shared.str(o.wallet.held,                   has_settingsPrecision ? settingsPrecision : -Math.log10(o.amountPrecision));
+      const total   = Shared.str(o.wallet.amount + o.wallet.held, has_settingsPrecision ? settingsPrecision : -Math.log10(o.amountPrecision));
+      const balance = Shared.str(o.wallet.value,                  settingsPrecision);
+      const price   = Shared.str(o.price,                         has_settingsPrecision ? settingsPrecision : -Math.log10(o.pricePrecision));
       sum += o.wallet.value;
       var node: any = this.api.getRowNode(o.wallet.currency);
       if (!node)
