@@ -11,8 +11,8 @@ import {Shared, Socket, Models} from 'lib/K';
       <span [hidden]="!!symbols">0 open orders</span>
       <a rel="noreferrer" target="_blank" title="{{ filter }} Market"
         href="{{ orders_market }}" id="best_ask_bid" [hidden]="!filter">
-          <span class="sell" title="Best Ask Price on {{ filter }}">{{ best_ask }}</span>
-          <span class="buy" title="Best Bid Price on {{ filter }}">{{ best_bid }}</span>
+          <span class="sell" title="Best Ask Price on {{ filter }}">{{ best_ask }}<i class="beacon sym-_default-s sym-{{ quote.toLowerCase() }}-s" ></i></span>
+          <span class="buy" title="Best Bid Price on {{ filter }}">{{ best_bid }}<i class="beacon sym-_default-s sym-{{ quote.toLowerCase() }}-s" ></i></span>
       </a>
       <a
         *ngFor="let x of symbols"
@@ -46,8 +46,8 @@ export class OrdersComponent {
 
   private best_ask: string;
   private best_bid: string;
-  private quote: string;
-  private base: string;
+  private quote: string = "";
+  private base: string = "";
   private orders_market: string;
 
   private _markets: any = null;

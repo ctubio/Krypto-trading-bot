@@ -21,7 +21,7 @@ import {Socket, Models} from 'lib/K';
     <h2>
       <a rel="noreferrer" target="_blank"
         href="{{ product.webOrders }}"
-        id="full_balance" title="full balance">0.00000000</a>
+        title="full balance"><span id="full_balance" >0.00000000</span><i class="beacon sym-_default-s sym-{{ params.currency.toLowerCase() }}-s" ></i></a>
     </h2>
   </div>`
 })
