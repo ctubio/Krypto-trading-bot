@@ -109,6 +109,7 @@ export class TradesComponent {
       width: 80,
       field:'price',
       headerValueGetter:(params) => this.headerNameMod + 'price',
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.product.quote.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'sell': 'data._side == "Ask"',
         'buy': 'data._side == "Bid"'
@@ -117,6 +118,7 @@ export class TradesComponent {
       width: 95,
       field:'quantity',
       headerValueGetter:(params) => this.headerNameMod + 'qty',
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.product.base.toLowerCase() + `-s" ></i>`,
       suppressSizeToFit: true,
       cellClassRules: {
         'sell': 'data._side == "Ask"',
@@ -126,6 +128,7 @@ export class TradesComponent {
       width: 69,
       field:'value',
       headerValueGetter:(params) => this.headerNameMod + 'value',
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.product.quote.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'sell': 'data._side == "Ask"',
         'buy': 'data._side == "Bid"'
@@ -134,6 +137,7 @@ export class TradesComponent {
       width: 75,
       field:'Kvalue',
       headerName:'⥄value',
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.product.quote.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'buy': 'data._side == "Ask"',
         'sell': 'data._side == "Bid"'
@@ -143,6 +147,7 @@ export class TradesComponent {
       field:'Kqty',
       headerName:'⥄qty',
       suppressSizeToFit: true,
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.product.base.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'buy': 'data._side == "Ask"',
         'sell': 'data._side == "Bid"'
@@ -151,6 +156,7 @@ export class TradesComponent {
       width: 80,
       field:'Kprice',
       headerName:'⥄price',
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.product.quote.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'buy': 'data._side == "Ask"',
         'sell': 'data._side == "Bid"'
@@ -163,14 +169,13 @@ export class TradesComponent {
         'kira': 'data.side == "&#10564;"'
       },
       cellRenderer: (params) => params.value
-        ? parseFloat(params.value.toFixed(8))
+        ? `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.product.quote.toLowerCase() + `-s" ></i>`
         : ''
     }]
   };
 
   private onGridReady($event: any) {
     if ($event.api) this.api = $event.api;
-    Shared.currencyHeaders(this.api, this.product.base, this.product.quote);
   };
 
   private onCellClicked = ($event) => {
@@ -210,13 +215,13 @@ export class TradesComponent {
       } else {
         var edit = {
           time: o.time,
-          quantity: o.quantity.toFixed(this.product.tickSize),
-          value: o.value.toFixed(this.product.tickPrice),
+          quantity: Shared.str(o.quantity, this.product.tickSize),
+          value: Shared.str(o.value, this.product.tickPrice),
           Ktime: o.Ktime,
-          Kqty: o.Kqty ? o.Kqty.toFixed(this.product.tickSize) : '',
-          Kprice: o.Kprice ? o.Kprice.toFixed(this.product.tickPrice) : '',
-          Kvalue: o.Kvalue ? o.Kvalue.toFixed(this.product.tickPrice) : '',
-          delta: o.delta,
+          Kqty: o.Kqty ? Shared.str(o.Kqty, this.product.tickSize) : '',
+          Kprice: o.Kprice ? Shared.str(o.Kprice, this.product.tickPrice) : '',
+          Kvalue: o.Kvalue ? Shared.str(o.Kvalue, this.product.tickPrice) : '',
+          delta: Shared.str(o.delta, 8),
           side: o.Kqty >= o.quantity ? '&#10564;' : (o.side === Models.Side.Ask ? "Ask" : "Bid"),
           _side: o.side === Models.Side.Ask ? "Ask" : "Bid",
         };
@@ -224,7 +229,7 @@ export class TradesComponent {
         if (node) node.setData(Object.assign(node.data, edit));
         else this.api.applyTransaction({add: [Object.assign(edit, {
           tradeId: o.tradeId,
-          price: o.price.toFixed(this.product.tickPrice)
+          price: Shared.str(o.price, this.product.tickPrice)
         })]});
 
         if (o.loadedFromDB === false) {

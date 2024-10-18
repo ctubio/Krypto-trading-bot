@@ -8,8 +8,8 @@ require('highcharts/highcharts-more')(Highcharts);
 export {Highcharts};
 import {HighchartsChartModule} from 'highcharts-angular';
 
-import {GridApi, ColDef, RowNode} from 'ag-grid-community';
-import {AgGridModule}             from 'ag-grid-angular';
+import {RowNode}      from 'ag-grid-community';
+import {AgGridModule} from 'ag-grid-angular';
 
 import {Socket, Models} from 'lib/K';
 
@@ -132,6 +132,12 @@ export class KComponent implements OnInit {
   };
 
   private setTheme = () => {
+    const rand = Math.random() * 360;
+    document.body.style.backgroundColor = this.system_theme=='dark' ? '#222' : '#FFF';
+    document.body.style.backgroundImage = this.system_theme=='dark'
+      ? 'radial-gradient(circle, #0a0b0d 0%, hwb('+rand+' 3% 87% / 0.69) 100%)'
+      : 'radial-gradient(circle, hwb('+rand+'deg 75% 15%) 0%, hwb('+(rand+50)+'deg 75% 15% / 0.69) 100%)';
+    document.getElementById('hud').style.backgroundImage = document.body.style.backgroundImage.replace('100%', '0%').replace(' 0.69) ', ' 1) ');    
     if (document.getElementById('daynight').getAttribute('href') != '/css/bootstrap-' + this.system_theme + '.min.css')
       document.getElementById('daynight').setAttribute('href', '/css/bootstrap-' + this.system_theme + '.min.css');
     [...document.getElementsByTagName('ag-grid-angular')].forEach(o => {
@@ -211,39 +217,6 @@ export function playAudio(basename: string) {
   let audio = new Audio('audio/' + basename + '.mp3');
   audio.volume = 0.5;
   audio.play();
-};
-
-function currencyHeaderTemplate(symbol: string, reversed: boolean) {
-  return {
-    template:`<div class="ag-cell-label-container" role="presentation">
-        <span data-ref="eMenu" class="ag-header-icon ag-header-cell-menu-button" aria-hidden="true"></span>
-        <span data-ref="eFilterButton" class="ag-header-icon ag-header-cell-filter-button" aria-hidden="true"></span>
-        <div data-ref="eLabel" class="ag-header-cell-label" role="presentation">
-            `+(reversed?`<i class="beacon sym-` + symbol.toLowerCase() + `-s"></i>`:'')+`
-            <span data-ref="eText" class="ag-header-cell-text"></span>
-            `+(!reversed?`<i class="beacon sym-` + symbol.toLowerCase() + `-s"></i>`:'')+`
-            <span data-ref="eFilter" class="ag-header-icon ag-header-label-icon ag-filter-icon" aria-hidden="true"></span>
-            <ag-sort-indicator data-ref="eSortIndicator"></ag-sort-indicator>
-        </div>
-    </div>`
-  };
-};
-
-export function currencyHeaders(api: GridApi, base: string, quote: string, reversed: boolean = false) {
-    if (!api) return;
-
-    let colDef: ColDef[] = api.getColumnDefs();
-
-    colDef.map((o: ColDef)  => {
-      if (['price', 'value',   'Kprice', 'Kvalue',
-           'delta', 'balance', 'spread', 'volume'].indexOf(o.field) > -1)
-        o.headerComponentParams = currencyHeaderTemplate(quote, reversed);
-      else if (['quantity', 'Kqty'].indexOf(o.field) > -1)
-        o.headerComponentParams = currencyHeaderTemplate(base, reversed);
-      return o;
-    });
-
-    api.setGridOption('columnDefs', colDef);
 };
 
 export function resetRowData(name: string, val: string, node: RowNode): string[] {

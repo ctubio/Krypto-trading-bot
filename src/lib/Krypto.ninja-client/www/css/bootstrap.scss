@@ -527,10 +527,6 @@ a.bg-primary:hover {
   background-color: #286090;
 }
 
-.bg-success {
-  background-color: #dff0d8;
-}
-
 a.bg-success:hover {
   background-color: #c1e2b3;
 }
@@ -680,7 +676,7 @@ address {
 .container, .container-fluid {
   margin-right: auto;
   margin-left: auto;
-  padding-right: 7.5px;
+  padding: 7.5px;
 }
 
 @media (min-width: 768px) {
@@ -5150,15 +5146,18 @@ span.point-triangle-down::before  {
 span.truncated {
     opacity: 0.25;
 }
+
 div#hud {
-  background-color: #FFF;
   transition: ease 0.5s;
   z-index: 1;
   padding: 5px;
+  border: 1px solid #363636;
+  border-radius: .25rem;
 }
 
 div#hud.bg-danger {
   border-color: #540000;
+  background-image:none!important;
   background-color: rgba(241, 183, 183, 0.75);
 }
 
@@ -5234,6 +5233,7 @@ div.ag-header-cell .ag-header-cell-label i {
   div {
     display: inline-block;
     padding-top: 9px;
+    padding-bottom: 6px;
   }
 
   h2 {
@@ -5246,7 +5246,7 @@ div.ag-header-cell .ag-header-cell-label i {
 #openorders {
 
   h2 {
-    padding-bottom: 7px;
+    padding-bottom: 13px;
   }
 
   .fracwrap {
@@ -5289,6 +5289,10 @@ div.ag-header-cell .ag-header-cell-label i {
   .ag-cell {
     height: 34px!important;
   }
+}
+
+.beacon {
+  vertical-align: text-bottom;
 }
 
 #portfolios .ag-theme-big {

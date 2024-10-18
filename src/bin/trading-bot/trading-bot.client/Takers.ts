@@ -50,6 +50,7 @@ export class TakersComponent {
       field: 'price',
       width: 85,
       headerName: 'price',
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.product.quote.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -58,6 +59,7 @@ export class TakersComponent {
       field: 'quantity',
       width: 50,
       headerName: 'qty',
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.product.base.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -75,7 +77,6 @@ export class TakersComponent {
 
   private onGridReady($event: any) {
     if ($event.api) this.api = $event.api;
-    Shared.currencyHeaders(this.api, this.product.base, this.product.quote);
   };
 
   private onGridTheme() {
@@ -88,8 +89,8 @@ export class TakersComponent {
     if (o === null) this.api.setGridOption('rowData', []);
     else {
       this.api.applyTransaction({add: [{
-        price: o.price.toFixed(this.product.tickPrice),
-        quantity: o.quantity.toFixed(this.product.tickSize),
+        price: Shared.str(o.price, this.product.tickPrice),
+        quantity: Shared.str(o.quantity, this.product.tickSize),
         time: o.time,
         recent: true,
         side: Models.Side[o.side]

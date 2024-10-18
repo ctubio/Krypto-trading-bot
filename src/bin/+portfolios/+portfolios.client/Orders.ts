@@ -46,6 +46,8 @@ export class OrdersComponent {
 
   private best_ask: string;
   private best_bid: string;
+  private quote: string;
+  private base: string;
   private orders_market: string;
 
   private _markets: any = null;
@@ -98,7 +100,7 @@ export class OrdersComponent {
           showStepperButtons: true
         } };
       },
-      cellRenderer: (params) => Shared.str(params.value, params.data.pricePrecision) + ' <span style="transform: rotate(90deg);display: inline-block;">&#9998;</span>',
+      cellRenderer: (params) => Shared.str(params.value, params.data.pricePrecision) + ` <i class="beacon sym-_default-s sym-` + this.quote.toLowerCase() + `-s" ></i>` + ' <span title="double-click to edit" style="transform: rotate(90deg);display: inline-block;">&#9998;</span>',
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -108,15 +110,16 @@ export class OrdersComponent {
       field: 'quantity',
       headerName: 'qty',
       suppressSizeToFit: true,
-      cellRenderer: (params) => Shared.str(params.value, params.data.quantityPrecision),
+      cellRenderer: (params) => Shared.str(params.value, params.data.quantityPrecision) + ` <i class="beacon sym-_default-s sym-` + this.base.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
       }
     }, {
-      width: 40,
+      width: 80,
       field: 'side',
       headerName: 'side',
+      flex: 0,
       suppressSizeToFit: true,
       cellClassRules: {
         'sell': 'data.side == "Ask"',
@@ -131,14 +134,15 @@ export class OrdersComponent {
       width: 74,
       field: 'value',
       headerName: 'value',
-      cellRenderer: (params) => Shared.str(params.value, params.data.pricePrecision),
+      cellRenderer: (params) => Shared.str(params.value, params.data.pricePrecision) + ` <i class="beacon sym-_default-s sym-` + this.quote.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
       }
     }, {
-      width: 82,
+      width: 100,
       field: 'time',
+      flex: 0,
       headerName: 'time',
       suppressSizeToFit: true,
       cellRenderer: (params) => {
@@ -150,21 +154,25 @@ export class OrdersComponent {
           .padStart(3, "0");
       }
     }, {
-      width: 55,
+      width: 75,
       field: 'type',
       headerName: 'type',
+      flex: 0,
       suppressSizeToFit: true
     }, {
-      width: 40,
+      width: 50,
       field: 'tif',
+      flex: 0,
       headerName: 'tif'
     }, {
-      width: 45,
+      width: 75,
       field: 'lat',
+      flex: 0,
       headerName: 'lat'
     }, {
-      width: 110,
+      width: 130,
       field: 'exchangeId',
+      flex: 0,
       headerName: 'openOrderId',
       suppressSizeToFit: true,
       cellRenderer: (params) => params.value
@@ -201,7 +209,8 @@ export class OrdersComponent {
           this.best_ask = Shared.str(this._markets[x][z].ask, precision);
           this.best_bid = Shared.str(this._markets[x][z].bid, precision);
           this.orders_market = this._markets[x][z].web;
-          Shared.currencyHeaders(this.api, this._markets[x][z].base, this._markets[x][z].quote);
+          this.base = this._markets[x][z].base;
+          this.quote = this._markets[x][z].quote;
           break loops;
         }
   };

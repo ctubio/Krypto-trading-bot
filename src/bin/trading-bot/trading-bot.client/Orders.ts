@@ -71,6 +71,7 @@ export class OrdersComponent {
       field: 'price',
       headerName: 'price',
       sort: 'desc',
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.product.quote.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -80,6 +81,7 @@ export class OrdersComponent {
       field: 'quantity',
       headerName: 'qty',
       suppressSizeToFit: true,
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.product.base.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -88,6 +90,7 @@ export class OrdersComponent {
       width: 74,
       field: 'value',
       headerName: 'value',
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.product.quote.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'sell': 'data.side == "Ask"',
         'buy': 'data.side == "Bid"'
@@ -118,7 +121,6 @@ export class OrdersComponent {
 
   private onGridReady($event: any) {
     if ($event.api) this.api = $event.api;
-    Shared.currencyHeaders(this.api, this.product.base, this.product.quote);
   };
 
   private onCellClicked = ($event) => {
@@ -129,19 +131,19 @@ export class OrdersComponent {
   private addRowData = (o: Models.Order[]) => {
     if (!this.api) return;
 
-    var add = [];
+    var add: any[] = [];
 
     o.forEach(o => {
       add.push({
         orderId: o.orderId,
         exchangeId: o.exchangeId,
         side: Models.Side[o.side],
-        price: o.price.toFixed(this.product.tickPrice),
-        value: (Math.round(o.quantity * o.price * 100) / 100).toFixed(this.product.tickPrice),
+        price: Shared.str(o.price, this.product.tickPrice),
+        value: Shared.str(Math.round(o.quantity * o.price * 100) / 100, this.product.tickPrice),
         type: Models.OrderType[o.type],
         tif: Models.TimeInForce[o.timeInForce],
         lat: o.latency + 'ms',
-        quantity: o.quantity.toFixed(this.product.tickSize),
+        quantity: Shared.str(o.quantity, this.product.tickSize),
         pong: o.isPong,
         time: o.time
       });

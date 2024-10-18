@@ -83,7 +83,7 @@ export class WalletsComponent {
         var theme = document.getElementById("daynight") as HTMLLinkElement;
         detail.classList.add('ag-theme-alpine' + (theme.href.indexOf('-dark')?'-dark':''));
         detail.classList.remove('ag-theme-alpine' + (theme.href.indexOf('-dark')?'':'-dark'));
-        var row = document.querySelector("#portfolios ag-grid-angular div[row-id='" + node.data.currency + "'] div[aria-colindex='4']");
+        var row = document.querySelector("#portfolios ag-grid-angular div[row-id='" + node.data.currency + "'] div[aria-colindex='3']");
         if (row) row.appendChild(detail);
       }
       this.deferredRender = () => {
@@ -112,7 +112,7 @@ export class WalletsComponent {
       field: 'held',
       headerName: 'held',
       type: 'rightAligned',
-      cellRenderer: (params) => `<span class="val">` + params.value + `</span>`,
+      cellRenderer: (params) => `<span class="val">` + params.value + ` <i class="beacon sym-_default-s sym-` + params.data.currency.toLowerCase() + `-s" ></i></span>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
         'up-data': 'data.dir_held == "up-data"',
@@ -124,7 +124,7 @@ export class WalletsComponent {
       field: 'amount',
       headerName: 'available',
       type: 'rightAligned',
-      cellRenderer: (params) => `<span class="val">` + params.value + `</span>`,
+      cellRenderer: (params) => `<span class="val">` + params.value + ` <i class="beacon sym-_default-s sym-` + params.data.currency.toLowerCase() + `-s" ></i></span>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
         'up-data': 'data.dir_amount == "up-data"',
@@ -136,7 +136,7 @@ export class WalletsComponent {
       field: 'total',
       headerName: 'total',
       type: 'rightAligned',
-      cellRenderer: (params) => `<span class="val">` + params.value + `</span>`,
+      cellRenderer: (params) => `<span class="val">` + params.value + ` <i class="beacon sym-_default-s sym-` + params.data.currency.toLowerCase() + `-s" ></i></span>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
         'up-data': 'data.dir_total == "up-data"',
@@ -148,7 +148,6 @@ export class WalletsComponent {
       field: 'currency',
       headerName: 'currency',
       filter: true,
-      cellRenderer: (params) => '<span class="row_title"><i class="beacon sym-_default-s sym-' + params.value.toLowerCase() + '-s" ></i> ' + params.value + '</span>',
       cellClassRules: {
         'text-muted': '!parseFloat(data.total)'
       }
@@ -157,7 +156,7 @@ export class WalletsComponent {
       field: 'price',
       headerName: 'price',
       type: 'rightAligned',
-      cellRenderer: (params) => `<span class="val">` + params.value + `</span>`,
+      cellRenderer: (params) => `<span class="val">` + params.value + ` <i class="beacon sym-_default-s sym-` + this.settings.currency.toLowerCase() + `-s" ></i></span>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
         'up-data': 'data.dir_price == "up-data"',
@@ -170,7 +169,7 @@ export class WalletsComponent {
       headerName: 'balance',
       sort: 'desc',
       type: 'rightAligned',
-      cellRenderer: (params) => `<span class="val">` + params.value + `</span>`
+      cellRenderer: (params) => `<span class="val">` + params.value + ` <i class="beacon sym-_default-s sym-` + this.settings.currency.toLowerCase() + `-s" ></i></span>`
         + `<small class="balance_percent">` + (params.data.balance_percent||'0.00') + `</small>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
@@ -183,7 +182,6 @@ export class WalletsComponent {
 
   private onGridReady($event: any) {
     if ($event.api) this.api = $event.api;
-    Shared.currencyHeaders(this.api, this.settings.currency, this.settings.currency, true);
   };
 
   private onFilterChanged = ($event: any) => {

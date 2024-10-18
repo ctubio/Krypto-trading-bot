@@ -152,17 +152,19 @@ h4 {
   }
 }
 
-div#hud {
-  background-color: rgba(1,1,1,0.75);
-}
 div#hud.bg-danger {
   border-color: #540000;
-  background-color: #540000
+  background-image:none!important;
+  background-color: #540000;
 }
 
 #openorders {
   span.buy {
     color: #8de2ff;
+  }
+  .ag-body-viewport .ag-row-selected,
+  .ag-body-viewport .ag-row-hover {
+    background: #000!important;
   }
 }
 

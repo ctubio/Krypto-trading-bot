@@ -130,7 +130,8 @@ namespace analpaper {
            base,
            quote,
            symbol;
-     Price spread,
+     Price price,
+           spread,
            raw_spread,
            ask,
            bid;
@@ -144,6 +145,7 @@ namespace analpaper {
       {  "base", k.base  },
       { "quote", k.quote },
       {"symbol", k.symbol},
+      { "price", k.price },
       {"spread", k.spread},
       {   "ask", k.ask   },
       {   "bid", k.bid   },
@@ -167,6 +169,7 @@ namespace analpaper {
           raw.base,
           raw.quote,
           raw.symbol,
+          raw.price,
           0,
           raw.spread,
           raw.bestask,
@@ -177,8 +180,8 @@ namespace analpaper {
         };
       };
       void calc(const string &base, const string &quote, const Price &volume, const Price &spread) {
-        market[base][quote].spread = spread;
         market[base][quote].volume = volume;
+        market[base][quote].spread = spread;
         if (ratelimit()) return;
         broadcast();
       };

@@ -9,7 +9,7 @@ import {Shared, Models} from 'lib/K';
   template: `<ag-grid-angular id="markets"
     [hidden]="!(api ? api.getDisplayedRowCount() : 0)"
     class="ag-theme-alpine ag-theme-big"
-    style="width: 560px;margin: 6px 0px;"
+    style="width: 760px;margin: 6px 0px;"
     (window:resize)="onGridReady($event)"
     (gridReady)="onGridReady($event)"
     [gridOptions]="grid"></ag-grid-angular>`
@@ -38,7 +38,7 @@ export class MarketsComponent {
   private grid: GridOptions = <GridOptions>{
     overlayLoadingTemplate: `<span class="ag-overlay-no-rows-center">missing data</span>`,
     overlayNoRowsTemplate: `<span class="ag-overlay-no-rows-center">missing data</span>`,
-    defaultColDef: { sortable: true, resizable: true, flex: 1 },
+    defaultColDef: { sortable: true, resizable: true, flex: 0 },
     rowHeight:35,
     headerHeight:35,
     domLayout: 'autoHeight',
@@ -46,7 +46,7 @@ export class MarketsComponent {
     enableCellTextSelection: true,
     getRowId: (params: any) => params.data.currency,
     columnDefs: [{
-      width: 150,
+      width: 120,
       field: 'currency',
       headerName: 'markets',
       sort: 'asc',
@@ -55,11 +55,23 @@ export class MarketsComponent {
         title="` + params.data.web + `"
         href="` + params.data.web + `"><i class="beacon sym-_default-s sym-` + params.value.toLowerCase() + `-s" ></i> ` + params.value + `</a>`
     }, {
-      width: 200,
-      field: 'spread',
-      headerName: 'bid/ask spread',
+      width: 220,
+      field: 'price',
+      headerName: 'price',
       type: 'rightAligned',
-      cellRenderer: (params) => `<span class="val">` + params.value + `</span>`,
+      cellRenderer: (params) => `1 <i class="beacon sym-_default-s sym-` + params.data.base.toLowerCase() + `-s" ></i> = <span class="val">` + params.value + `</span> <i class="beacon sym-_default-s sym-` + params.data.quote.toLowerCase() + `-s" ></i>`,
+      cellClassRules: {
+        'text-muted': '!parseFloat(x)',
+        'up-data': 'data.dir_price == "up-data"',
+        'down-data': 'data.dir_price == "down-data"'
+      },
+      comparator: Shared.comparator
+    }, {
+      width: 170,
+      field: 'spread',
+      headerName: 'spread',
+      type: 'rightAligned',
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.settings.currency.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
         'up-data': 'data.dir_spread == "up-data"',
@@ -67,7 +79,7 @@ export class MarketsComponent {
       },
       comparator: Shared.comparator
     }, {
-      width: 70,
+      width: 80,
       field: 'open',
       headerName: '24h price',
       type: 'rightAligned',
@@ -83,7 +95,7 @@ export class MarketsComponent {
       field: 'volume',
       headerName: '24h volume',
       type: 'rightAligned',
-      cellRenderer: (params) => `<span class="val">` + params.value + `</span>`,
+      cellRenderer: (params) => `<span class="val">` + params.value + `</span>` + ` <i class="beacon sym-_default-s sym-` + this.settings.currency.toLowerCase() + `-s" ></i>`,
       cellClassRules: {
         'text-muted': '!parseFloat(x)',
         'up-data': 'data.dir_volume == "up-data"',
@@ -95,7 +107,6 @@ export class MarketsComponent {
 
   private onGridReady($event: any) {
     if ($event.api) this.api = $event.api;
-    Shared.currencyHeaders(this.api, this.settings.currency, this.settings.currency, true);
   };
 
   private addRowData = () => {
@@ -112,6 +123,7 @@ export class MarketsComponent {
     if (!Object.keys(o).length)
       return this.api.setGridOption('rowData', []);
     for (let x in o) {
+      const price  = Shared.str(o[x].price,  8);
       const spread = Shared.str(o[x].spread, 8);
       const open   = Shared.str(o[x].open,   2);
       const volume = Shared.str(o[x].volume, 0);
@@ -120,14 +132,18 @@ export class MarketsComponent {
         this.api.applyTransaction({add: [{
           currency: x,
           web: o[x].web,
-          spread: spread,
-          open: open,
-          volume: volume
+          base: o[x].base,
+          quote: o[x].quote,
+          price,
+          spread,
+          open,
+          volume
         }]});
       else
         this.api.flashCells({
           rowNodes: [node],
-          columns: [].concat(Shared.resetRowData('spread', spread, node))
+          columns: [].concat(Shared.resetRowData('price',  price,  node))
+                     .concat(Shared.resetRowData('spread', spread, node))
                      .concat(Shared.resetRowData('open',   open,   node))
                      .concat(Shared.resetRowData('volume', volume, node))
         });
