@@ -2127,7 +2127,7 @@ textarea.form-group-lg .form-control, select[multiple].form-group-lg .form-contr
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  &:hover, &:focus, &.focus {
+  &:hover {
     color: #333;
     text-decoration: none;
   }
@@ -2136,6 +2136,11 @@ textarea.form-group-lg .form-control, select[multiple].form-group-lg .form-contr
     background-image: none;
     -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
     box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+  }
+  &:active:hover, &.active.hover {
+    border-color: transparent;
+    -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.525);
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, .525);
   }
   &.disabled, &[disabled] {
     cursor: not-allowed;
@@ -2153,9 +2158,6 @@ textarea.form-group-lg .form-control, select[multiple].form-group-lg .form-contr
   }
   &:active:hover, &.active.hover {
     background-color:#00c500;
-    border-color: transparent;
-    -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.525);
-    box-shadow: inset 0 3px 5px rgba(0, 0, 0, .525);
   }
 }
 
@@ -2360,13 +2362,14 @@ fieldset[disabled] .btn-primary.active {
 }
 
 .btn-success {
-  color: #fff;
-  background-color: #5cb85c;
-  border-color: #4cae4c;
-  &:hover, &:focus, &.focus, &:active, &.active {
-    color: #fff;
-    background-color: #449d44;
-    border-color: #398439;
+  color: #00b789;
+  background-color: rgba(0, 255, 0, 24%);
+  border-color: #00ff00;
+  &:hover, &.hover {
+    background-color: #00ff00;
+  }
+  &:active:hover, &.active.hover {
+    background-color: #3a943a;
   }
 }
 
@@ -2464,13 +2467,14 @@ fieldset[disabled] .btn-success.active {
 }
 
 .btn-info {
-  color: #fff;
-  background-color: #508190;
-  border-color: #46b8da;
-  &:hover, &:focus, &.focus, &:active, &.active {
-    color: #fff;
-    background-color: #31b0d5;
-    border-color: #269abc;
+  color: #5eccff;
+  background-color: rgba(0, 0, 255, 0.1019607843);
+  border-color: #28b9b3;
+  &:hover, &.hover {
+    background-color: #53b0ef;
+  }
+  &:active:hover, &.active.hover {
+    background-color: #3879a4;
   }
 }
 
@@ -2478,12 +2482,6 @@ fieldset[disabled] .btn-success.active {
   color: #fff;
   background-color: #31b0d5;
   border-color: #269abc;
-}
-
-.btn-info {
-  &:active, &.active {
-    background-image: none;
-  }
 }
 
 .open > .dropdown-toggle.btn-info {
@@ -2568,13 +2566,14 @@ fieldset[disabled] .btn-info.active {
 }
 
 .btn-warning {
-  color: #fff;
-  background-color: #f0ad4e;
+  color: #eea236;
+  background-color: rgba(255, 225, 0, 0.102);
   border-color: #eea236;
-  &:hover, &:focus, &.focus, &:active, &.active {
-    color: #fff;
+  &:hover, &.hover {
     background-color: #ec971f;
-    border-color: #d58512;
+  }
+  &:active:hover, &.active.hover {
+    background-color: #ab7a36;
   }
 }
 
@@ -2672,13 +2671,14 @@ fieldset[disabled] .btn-warning.active {
 }
 
 .btn-danger {
-  color: #fff;
-  background-color: #c12e2a;
+  color: #ff0000;
+  background-color: rgba(255,0,0,.1019607843);
   border-color: #b92c28;
-  &:hover, &:focus, &.focus, &:active, &.active {
-    color: #fff;
-    background-color: #e21913;
-    border-color: #ac2925;
+  &:hover, &.hover {
+    background-color: #ff0900;
+  }
+  &:active:hover, &.active.hover {
+    background-color: #b40802;
   }
 }
 
@@ -5155,6 +5155,7 @@ div#hud {
   padding: 5px;
   border: 1px solid #363636;
   border-radius: .25rem;
+  // animation: entrance 400ms (800ms + 200ms * 3) linear backwards 1;
 }
 
 div#hud.bg-danger {
@@ -5392,12 +5393,8 @@ address {
 	  background-color: #00ff00;
 	  border-color: #00ff00;
 	}
-  }
-  
-  .ag-cell .btn {
-  position: relative;
-  top: -1px;
 }
+  
 
 .tradeSafety, .tradeSafety2 {
   background: white;
@@ -5525,4 +5522,10 @@ table.marketQuoting {
 
 input#filter_pattern {
   background-color: #00000024!important;
+}
+
+
+@keyframes entrance {
+	to, 20%, 40%, 60%, 80% { opacity: 1 }
+	from, 10%, 30%, 50%, 70%, 90% { opacity: 0 }
 }
