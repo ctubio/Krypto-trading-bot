@@ -14,6 +14,5 @@
   file( 03 , www/js/client.min.js            , /js/client.min.js            )  \
   file( 04 , www/css/bootstrap.min.css       , /css/bootstrap.min.css       )  \
   file( 05 , www/css/bootstrap-dark.min.css  , /css/bootstrap-dark.min.css  )  \
-  file( 06 , www/css/bootstrap-light.min.css , /css/bootstrap-light.min.css )  \
-  file( 07 , www/font/beacons.woff2          , /font/beacons.woff2          )  \
+  file( 06 , www/font/beacons.woff2          , /font/beacons.woff2          )  \
   file( 00 , www/.bomb.gzip                  ,                              )

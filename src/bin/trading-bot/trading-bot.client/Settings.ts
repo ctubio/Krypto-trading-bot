@@ -443,21 +443,20 @@ import {Socket, Models} from 'lib/K';
                          [(ngModel)]="params.audio">
                   </td>
                   <td style="text-align: center;border-bottom: 3px solid #A0A0A0;">
-                      <input class="btn btn-default btn"
-                          style="width:61px;margin-right: 6px;"
+                      <button class="btn btn-default btn"
+                          style="margin-right: 6px;"
                           type="button"
                           (click)="backup()"
-                          value="Backup" />
-                      <input class="btn btn-default btn"
-                          style="width:55px;margin-right: 20px;"
+                      >Backup</button>
+                      <button class="btn btn-default btn"
+                          style="margin-right: 20px;"
                           type="button"
                           (click)="resetSettings()"
-                          value="Reset" />
-                      <input class="btn btn-default btn"
-                          style="width:50px"
+                      >Reset</button>
+                      <button class="btn btn-default btn"
                           type="submit"
                           (click)="submitSettings()"
-                          value="Save" />
+                      >Save</button>
                   </td>
               </tr>
           </tbody>

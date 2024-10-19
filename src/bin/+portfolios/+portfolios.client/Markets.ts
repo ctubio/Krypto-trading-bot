@@ -8,7 +8,7 @@ import {Shared, Models} from 'lib/K';
   selector: 'markets',
   template: `<ag-grid-angular id="markets"
     [hidden]="!(api ? api.getDisplayedRowCount() : 0)"
-    class="ag-theme-alpine ag-theme-big"
+    class="ag-theme-alpine{{ onGridTheme() }} ag-theme-big"
     style="width: 760px;margin: 6px 0px;"
     (window:resize)="onGridReady($event)"
     (gridReady)="onGridReady($event)"
@@ -107,6 +107,11 @@ export class MarketsComponent {
 
   private onGridReady($event: any) {
     if ($event.api) this.api = $event.api;
+  };
+
+  private onGridTheme() {
+    return document.body.classList.contains('theme-dark')
+      ? '-dark' : '';
   };
 
   private addRowData = () => {

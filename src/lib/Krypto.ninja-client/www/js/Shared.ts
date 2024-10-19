@@ -38,36 +38,34 @@ import {Socket, Models} from 'lib/K';
       </div>
     </div>
     <address>
-      <small>
-        <a rel="noreferrer" target="_blank"
-          href="{{ homepage }}/blob/master/README.md">README</a> -
-        <a rel="noreferrer" target="_blank"
-          href="{{ homepage }}/blob/master/doc/MANUAL.md">MANUAL</a> -
-        <a rel="noreferrer" target="_blank"
-          href="{{ homepage }}">SOURCE</a> -
-        <span [hidden]="state.online === null">
-          <span [hidden]="!product.inet">
-            <span title="non-default Network Interface for outgoing traffic">{{ product.inet }}</span> -
-          </span>
-          <span title="Server used RAM"
-            style="margin-top: 6px;display: inline-block;">{{ server_memory }}</span> -
-          <span title="Client used RAM"
-            style="margin-top: 6px;display: inline-block;">{{ client_memory }}</span> -
-          <span title="Database Size"
-            style="margin-top: 6px;display: inline-block;">{{ db_size }}</span> -
-          <span [innerHTML]="footer"></span>
-          <a href="#"
-            (click)="changeTheme()">{{ system_theme == 'light' ? 'DARK' : 'LIGHT' }}</a> -
+      <a rel="noreferrer" target="_blank"
+        href="{{ homepage }}/blob/master/README.md">README</a> -
+      <a rel="noreferrer" target="_blank"
+        href="{{ homepage }}/blob/master/doc/MANUAL.md">MANUAL</a> -
+      <a rel="noreferrer" target="_blank"
+        href="{{ homepage }}">SOURCE</a> -
+      <span [hidden]="state.online === null">
+        <span [hidden]="!product.inet">
+          <span title="non-default Network Interface for outgoing traffic">{{ product.inet }}</span> -
         </span>
+        <span title="Server used RAM"
+          style="margin-top: 6px;display: inline-block;">{{ server_memory }}</span> -
+        <span title="Client used RAM"
+          style="margin-top: 6px;display: inline-block;">{{ client_memory }}</span> -
+        <span title="Database Size"
+          style="margin-top: 6px;display: inline-block;">{{ db_size }}</span> -
+        <span [innerHTML]="footer"></span>
         <a href="#"
-          (click)="openMatryoshka()">MATRYOSHKA</a> -
-        <a rel="noreferrer" target="_blank"
-          href="{{ homepage }}/issues/new?title=%5Btopic%5D%20short%20and%20sweet%20description&body=description%0Aplease,%20consider%20to%20add%20all%20possible%20details%20%28if%20any%29%20about%20your%20new%20feature%20request%20or%20bug%20report%0A%0A%2D%2D%2D%0A%60%60%60%0Aapp%20exchange%3A%20{{ product.exchange }}/{{ product.base+'/'+product.quote }}%0Aapp%20version%3A%20undisclosed%0AOS%20distro%3A%20undisclosed%0A%60%60%60%0A![300px-spock_vulcan-salute3](https://cloud.githubusercontent.com/assets/1634027/22077151/4110e73e-ddb3-11e6-9d84-358e9f133d34.png)">CREATE ISSUE</a> -
-        <a rel="noreferrer" target="_blank"
-          href="https://github.com/ctubio/Krypto-trading-bot/discussions/new">HELP</a> -
-        <a rel="noreferrer" target="_blank"
-          href="https://discord.gg/jAX7GEzcWD">CHAT</a>
-      </small>
+          (click)="changeTheme()">{{ system_theme == 'light' ? 'DARK' : 'LIGHT' }}</a> -
+      </span>
+      <a href="#"
+        (click)="openMatryoshka()">MATRYOSHKA</a> -
+      <a rel="noreferrer" target="_blank"
+        href="{{ homepage }}/issues/new?title=%5Btopic%5D%20short%20and%20sweet%20description&body=description%0Aplease,%20consider%20to%20add%20all%20possible%20details%20%28if%20any%29%20about%20your%20new%20feature%20request%20or%20bug%20report%0A%0A%2D%2D%2D%0A%60%60%60%0Aapp%20exchange%3A%20{{ product.exchange }}/{{ product.base+'/'+product.quote }}%0Aapp%20version%3A%20undisclosed%0AOS%20distro%3A%20undisclosed%0A%60%60%60%0A![300px-spock_vulcan-salute3](https://cloud.githubusercontent.com/assets/1634027/22077151/4110e73e-ddb3-11e6-9d84-358e9f133d34.png)">CREATE ISSUE</a> -
+      <a rel="noreferrer" target="_blank"
+        href="https://github.com/ctubio/Krypto-trading-bot/discussions/new">HELP</a> -
+      <a rel="noreferrer" target="_blank"
+        href="https://discord.gg/jAX7GEzcWD">CHAT</a>
     </address>
     <iframe
       (window:resize)="resizeMatryoshka()"
@@ -138,8 +136,8 @@ export class KComponent implements OnInit {
       ? 'radial-gradient(circle, #0a0b0d 0%, hwb('+rand+' 3% 87% / 0.69) 100%)'
       : 'radial-gradient(circle, hwb('+rand+'deg 75% 15%) 0%, hwb('+(rand+50)+'deg 75% 15% / 0.69) 100%)';
     document.getElementById('hud').style.backgroundImage = document.body.style.backgroundImage.replace('100%', '0%').replace(' 0.69) ', ' 1) ');    
-    if (document.getElementById('daynight').getAttribute('href') != '/css/bootstrap-' + this.system_theme + '.min.css')
-      document.getElementById('daynight').setAttribute('href', '/css/bootstrap-' + this.system_theme + '.min.css');
+    if (this.system_theme=='dark') document.body.classList.add('theme-dark');
+    else document.body.classList.remove('theme-dark');
     [...document.getElementsByTagName('ag-grid-angular')].forEach(o => {
       o.classList.add('ag-theme-alpine' + (this.system_theme=='dark'?'-dark':''));
       o.classList.remove('ag-theme-alpine' + (this.system_theme=='dark'?'':'-dark'));

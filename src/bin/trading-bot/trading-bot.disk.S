@@ -14,8 +14,7 @@
   file( 03 , www/js/client.min.js            , /js/client.min.js            )  \
   file( 04 , www/css/bootstrap.min.css       , /css/bootstrap.min.css       )  \
   file( 05 , www/css/bootstrap-dark.min.css  , /css/bootstrap-dark.min.css  )  \
-  file( 06 , www/css/bootstrap-light.min.css , /css/bootstrap-light.min.css )  \
-  file( 07 , www/font/beacons.woff2          , /font/beacons.woff2          )  \
-  file( 08 , www/audio/0.mp3                 , /audio/0.mp3                 )  \
-  file( 09 , www/audio/1.mp3                 , /audio/1.mp3                 )  \
+  file( 06 , www/font/beacons.woff2          , /font/beacons.woff2          )  \
+  file( 07 , www/audio/0.mp3                 , /audio/0.mp3                 )  \
+  file( 08 , www/audio/1.mp3                 , /audio/1.mp3                 )  \
   file( 00 , www/.bomb.gzip                  ,                              )

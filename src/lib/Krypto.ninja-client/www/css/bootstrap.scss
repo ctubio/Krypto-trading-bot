@@ -325,10 +325,12 @@ a {
   &:hover {
     color: #23527c;
     text-decoration: underline;
+    text-underline-offset: 0.25em !important;
   }
   &:focus {
     color: #23527c;
     text-decoration: underline;
+    text-underline-offset: 0.25em !important;
     outline: thin dotted;
     outline: 5px auto -webkit-focus-ring-color;
     outline-offset: -2px;
@@ -671,6 +673,8 @@ address {
   margin-bottom: 12px;
   font-style: normal;
   line-height: 1.1;
+  z-index: 1;
+  position: sticky;
 }
 
 .container, .container-fluid {
@@ -2095,6 +2099,14 @@ textarea.form-group-lg .form-control, select[multiple].form-group-lg .form-contr
   }
 }
 
+.buy {
+  color: #006aff;
+}
+
+.sell {
+  color: #920000;
+}
+
 .btn {
   display: inline-block;
   margin-bottom: 0;
@@ -2107,19 +2119,14 @@ textarea.form-group-lg .form-control, select[multiple].form-group-lg .form-contr
   background-image: none;
   border: 1px solid transparent;
   white-space: nowrap;
-  padding: 3px 8px;
-  font-size: 13px;
+  padding: 5px 10px;
+  font-size: 16px;
   line-height: 1.1;
-  border-radius: 4px;
+  border-radius: 7px;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  &:focus, &:active:focus, &.active:focus, &.focus, &:active.focus, &.active.focus {
-    outline: thin dotted;
-    outline: 5px auto -webkit-focus-ring-color;
-    outline-offset: -2px;
-  }
   &:hover, &:focus, &.focus {
     color: #333;
     text-decoration: none;
@@ -2140,6 +2147,18 @@ textarea.form-group-lg .form-control, select[multiple].form-group-lg .form-contr
   }
 }
 
+.btn-default {
+  &:hover, &.hover {
+    background-color:#89ff89;
+  }
+  &:active:hover, &.active.hover {
+    background-color:#00c500;
+    border-color: transparent;
+    -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.525);
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, .525);
+  }
+}
+
 fieldset[disabled] .btn {
   cursor: not-allowed;
   pointer-events: none;
@@ -2149,27 +2168,10 @@ fieldset[disabled] .btn {
   box-shadow: none;
 }
 
-.btn-default {
-  color: #333;
-  background-color: #fff;
-  border-color: #ccc;
-  &:hover, &:focus, &.focus, &:active, &.active {
-    color: #333;
-    background-color: #e6e6e6;
-    border-color: #adadad;
-  }
-}
-
 .open > .dropdown-toggle.btn-default {
   color: #333;
   background-color: #e6e6e6;
   border-color: #adadad;
-}
-
-.btn-default {
-  &:active, &.active {
-    background-image: none;
-  }
 }
 
 .open > .dropdown-toggle.btn-default {
@@ -5379,4 +5381,148 @@ address {
 @font-face {
   font-family: "beacons";
   src: url("../font/beacons.woff2") format("woff2");
+}
+
+.btn-default {
+	color: #008080;
+	background-color: #00ff001a;
+	border-color: #ccc;
+	&:hover, &:focus, &.focus, &:active, &.active {
+	  color: #333;
+	  background-color: #00ff00;
+	  border-color: #00ff00;
+	}
+  }
+  
+  .ag-cell .btn {
+  position: relative;
+  top: -1px;
+}
+
+.tradeSafety, .tradeSafety2 {
+  background: white;
+}
+
+.exchange {
+  background: white;
+  border: 1px #CCC solid;
+}
+
+.table.marketQuoting > {
+  thead > tr > td, tbody > tr, tbody > tr > td, tfoot > tr > td {
+    background-color: #e8e8e8;
+  }
+}
+
+.marketQuoting .success {
+  &.sell {
+    color: white;
+    background-color: #6e1515!important;
+  }
+  &.buy {
+    color: white;
+    background-color: #022dff!important;
+  }
+}
+
+
+td.params-title.params-1 {
+	width: 90px;
+	background: #ffffff;
+	text-align: center;
+	font-weight: bold;
+	border: 1px #cccccc solid;
+}
+td.params-title.params-2 {
+	width: 90px;
+	background: #ffffff;
+	text-align: center;
+	font-weight: bold;
+	border: 1px #cccccc solid;
+}
+td.params-title.params-3 {
+	width: 90px;
+	background: #ffffff;
+	text-align: center;
+	font-weight: bold;
+	border: 1px #cccccc solid;
+}
+table.parameters-inputs {
+	background: #fff;
+	padding: 10px;
+}
+.params-settings {
+	margin-bottom: 0px;
+	background: #EEE;
+	padding: 5px;
+	border: 1px #CCC solid;
+	padding-bottom: 0;
+	td {
+		border-left: 5px #EEE solid;
+		border-right: 5px #EEE solid;
+		padding: 0 !important;
+		text-align: center;
+		vertical-align: middle !important;
+	}
+	th {
+		border-left: 5px #EEE solid;
+		border-right: 5px #EEE solid;
+		padding: 0 !important;
+		text-align: center;
+		vertical-align: middle !important;
+	}
+}
+.form-control {
+	padding: 2px 5px;
+	box-shadow: none;
+	border-radius: 0;
+	&:focus {
+		box-shadow: none;
+	}
+}
+.tradeSafety {
+	span.param-label {
+		width: 125px;
+		text-align: right;
+		padding-right: 8px;
+	}
+	span.param-value {
+		padding-left: 8px;
+	}
+	.param-info {
+		display: flex;
+		padding: 2px 0;
+	}
+}
+.tradeSafety2 {
+	span.param-label {
+		width: 125px;
+		text-align: right;
+		padding-right: 8px;
+	}
+	span.param-value {
+		padding-left: 8px;
+	}
+	.param-info {
+		display: flex;
+		padding: 2px 0;
+	}
+}
+.levels {
+	border: 1px #CCC solid;
+	td {
+		border: none;
+	}
+}
+table.marketQuoting {
+	tr.info {
+		border: 1px #CCC solid;
+		border-bottom: none;
+		height: 25px;
+		background: #EEE;
+	}
+}
+
+input#filter_pattern {
+  background-color: #00000024!important;
 }

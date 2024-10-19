@@ -7,7 +7,7 @@ import {Shared, Models} from 'lib/K';
 @Component({
   selector: 'takers',
   template: `<ag-grid-angular
-    class="{{ onGridTheme() }} marketTrades"
+    class="ag-theme-alpine{{ onGridTheme() }} marketTrades"
     style="height: 616px;width: 100%;"
     (window:resize)="onGridReady($event)"
     (gridReady)="onGridReady($event)"
@@ -80,7 +80,8 @@ export class TakersComponent {
   };
 
   private onGridTheme() {
-    return "ag-theme-alpine"+((document.getElementById('daynight').getAttribute('href').indexOf('dark') != -1)?'-dark':'');
+    return document.body.classList.contains('theme-dark')
+      ? '-dark' : '';
   };
 
   private addRowData = (o: Models.MarketTrade) => {

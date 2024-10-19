@@ -80,9 +80,6 @@ export class WalletsComponent {
       if (!node) return this.api.onRowHeightChanged();
       var detail = document.getElementById('markets');
       if (detail) {
-        var theme = document.getElementById("daynight") as HTMLLinkElement;
-        detail.classList.add('ag-theme-alpine' + (theme.href.indexOf('-dark')?'-dark':''));
-        detail.classList.remove('ag-theme-alpine' + (theme.href.indexOf('-dark')?'':'-dark'));
         var row = document.querySelector("#portfolios ag-grid-angular div[row-id='" + node.data.currency + "'] div[aria-colindex='3']");
         if (row) row.appendChild(detail);
       }

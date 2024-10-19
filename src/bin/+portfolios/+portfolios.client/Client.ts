@@ -12,7 +12,7 @@ import {Socket, Models} from 'lib/K';
     <div class="col-md-12 col-xs-12">
       <div class="col-md-6">
         <button type="button"
-          class="btn btn-default" style="position: absolute; top: 10px;"
+          class="btn btn-default" style="position: absolute; top: 10px;left: 10px;"
           (click)="showSubmitOrder = !showSubmitOrder">New Order</button>
         <settings
           [product]="product"
