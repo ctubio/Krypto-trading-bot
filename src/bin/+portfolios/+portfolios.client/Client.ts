@@ -9,11 +9,11 @@ import {Socket, Models} from 'lib/K';
       <submit-order
         [markets]="markets"></submit-order>
     </div>
-    <div class="col-md-12 col-xs-12">
+    <div class="row col-md-12 col-xs-12">
       <div class="col-md-6">
         <button type="button"
-          class="btn btn-default" style="position: absolute; top: 10px;left: 10px;"
-          (click)="showSubmitOrder = !showSubmitOrder">New Order</button>
+          class="btn btn-default" style="float: left;position: relative;top: 10px;left: 10px;"
+          (click)="showSubmitOrder = !showSubmitOrder">{{showSubmitOrder ? 'Hide' : 'Show'}} New Order</button>
         <settings
           [product]="product"
           [settings]="settings"></settings>

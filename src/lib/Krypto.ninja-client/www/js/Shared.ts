@@ -19,7 +19,7 @@ import {Socket, Models} from 'lib/K';
     <div [hidden]="state.online !== null"
       style="padding:42px;transform:rotate(-6deg);">
       <h4 class="text-danger text-center">
-        <i class="beacon exc-{{ exchange_icon }}-s" style="font-size:30px;"></i>
+        <i class="beacon exc-{{ exchange_icon }}-s" style="font-size:69px;"></i>
         <br /><br />
         {{ product.environment ? product.environment+' is d' : 'D' }}isconnected
       </h4>
@@ -55,9 +55,9 @@ import {Socket, Models} from 'lib/K';
         <span title="Database Size"
           style="margin-top: 6px;display: inline-block;">{{ db_size }}</span> -
         <span [innerHTML]="footer"></span>
-        <a href="#"
-          (click)="changeTheme()">{{ system_theme == 'light' ? 'DARK' : 'LIGHT' }}</a> -
       </span>
+      <a href="#"
+        (click)="changeTheme()">{{ system_theme == 'light' ? 'DARK' : 'LIGHT' }}</a> -
       <a href="#"
         (click)="openMatryoshka()">MATRYOSHKA</a> -
       <a rel="noreferrer" target="_blank"
@@ -130,6 +130,8 @@ export class KComponent implements OnInit {
   };
 
   private setTheme = () => {
+    if (this.system_theme==(document.body.classList.contains('theme-dark')?'dark':'light'))
+      return;
     const rand = Math.random() * 360;
     document.body.style.backgroundColor = this.system_theme=='dark' ? '#222' : '#FFF';
     document.body.style.backgroundImage = this.system_theme=='dark'
@@ -177,7 +179,7 @@ export class KComponent implements OnInit {
     this.product = o;
     setTimeout(() => {window.dispatchEvent(new Event('resize'))}, 0);
     console.log(
-      "%c" + this.product.source + " started " + (new Date().toISOString().slice(11, -1)) + "  %c" + this.homepage,
+      "%c" + this.product.source + " started at " + (new Date().toISOString().slice(11, -1)) + "  %c" + this.homepage,
       "color:green;font-size:32px;",
       "color:red;font-size:16px;"
     );

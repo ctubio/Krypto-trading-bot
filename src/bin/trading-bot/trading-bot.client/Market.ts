@@ -4,20 +4,24 @@ import {Models} from 'lib/K';
 
 @Component({
   selector: 'market',
-  template: `<div class="col-md-6">
-    <div class="tradeSafety2">
-      <div>
-        <div class="param-info"><span class="param-label">Market Width</span>:<span class="param-value {{ marketWidth ? \'text-danger\' : \'text-muted\' }}">{{ marketWidth.toFixed(product.tickPrice) }}</span></div>
-        <div class="param-info"><span class="param-label">Quote Width</span>:<span class="param-value {{ ordersWidth ? \'text-danger\' : \'text-muted\' }}">{{ ordersWidth.toFixed(product.tickPrice) }}</span></div>
-        <div class="param-info"><span class="param-label">Quotes</span>:<span class="param-value"><span title="Quotes in memory Waiting status update" class="{{ status.quotesInMemoryWaiting ? \'text-danger\' : \'text-muted\' }}">{{ status.quotesInMemoryWaiting }}</span>/<span title="Quotes in memory Working" class="{{ status.quotesInMemoryWorking ? \'text-danger\' : \'text-muted\' }}">{{ status.quotesInMemoryWorking }}</span>/<span title="Quotes in memory Zombie" class="{{ status.quotesInMemoryZombies ? \'text-danger\' : \'text-muted\' }}">{{ status.quotesInMemoryZombies }}</span></span></div>
-        <div class="param-info"><span class="param-label">openOrders/60sec</span>:<span class="param-value {{ tradeFreq ? \'text-danger\' : \'text-muted\' }}">{{ tradeFreq }}</span></div>
-        <div class="param-info"><span class="param-label">Wallet TBP</span>:<span class="param-value text-danger">{{ targetBasePosition.tbp.toFixed(8) }}</span></div>
-        <div class="param-info"><span class="param-label">pDiv</span>:<span class="param-value text-danger">{{ targetBasePosition.pDiv.toFixed(8) }}</span></div>
-        <div class="param-info"><span class="param-label">APR</span>:<span class="param-value {{ status.sideAPR ? \'text-danger\' : \'text-muted\' }}">{{ getAPR() }}</span></div>
-      </div>
+  template: `<div class="tradeSafetyBg col-md-6">
+    <safety
+      [product]="product"
+      [fairValue]="fairValue"
+      [tradeSafety]="tradeSafety"></safety>
+  </div>
+  <div class="col-md-6 tradeSafetyBg tradeSafety2">
+    <div>
+      <div class="param-info"><span class="param-label">Market Width</span>:<span class="param-value {{ marketWidth ? \'text-danger\' : \'text-muted\' }}">{{ marketWidth.toFixed(product.tickPrice) }}</span></div>
+      <div class="param-info"><span class="param-label">Quote Width</span>:<span class="param-value {{ ordersWidth ? \'text-danger\' : \'text-muted\' }}">{{ ordersWidth.toFixed(product.tickPrice) }}</span></div>
+      <div class="param-info"><span class="param-label">Quotes</span>:<span class="param-value"><span title="Quotes in memory Waiting status update" class="{{ status.quotesInMemoryWaiting ? \'text-danger\' : \'text-muted\' }}">{{ status.quotesInMemoryWaiting }}</span>/<span title="Quotes in memory Working" class="{{ status.quotesInMemoryWorking ? \'text-danger\' : \'text-muted\' }}">{{ status.quotesInMemoryWorking }}</span>/<span title="Quotes in memory Zombie" class="{{ status.quotesInMemoryZombies ? \'text-danger\' : \'text-muted\' }}">{{ status.quotesInMemoryZombies }}</span></span></div>
+      <div class="param-info"><span class="param-label">openOrders/60sec</span>:<span class="param-value {{ tradeFreq ? \'text-danger\' : \'text-muted\' }}">{{ tradeFreq }}</span></div>
+      <div class="param-info"><span class="param-label">Wallet TBP</span>:<span class="param-value text-danger">{{ targetBasePosition.tbp.toFixed(8) }}</span></div>
+      <div class="param-info"><span class="param-label">pDiv</span>:<span class="param-value text-danger">{{ targetBasePosition.pDiv.toFixed(8) }}</span></div>
+      <div class="param-info"><span class="param-label">APR</span>:<span class="param-value {{ status.sideAPR ? \'text-danger\' : \'text-muted\' }}">{{ getAPR() }}</span></div>
     </div>
   </div>
-  <div style="padding-right:4px;padding-left:4px;padding-top:4px;line-height:1.3;">
+  <div style="padding-left: 0px;padding-right: 0px;padding-top:4px;line-height:1.3;">
     <table class="marketQuoting table table-hover table-responsive text-center">
       <tr class="info">
         <td>BID Size<i class="beacon sym-{{ product.base.toLowerCase() }}-s"></i></td>
@@ -90,6 +94,10 @@ export class MarketComponent {
   private noAskReason: string;
 
   @Input() product: Models.ProductAdvertisement;
+
+  @Input() fairValue: Models.FairValue;
+
+  @Input() tradeSafety: Models.TradeSafety;
 
   @Input() targetBasePosition: Models.TargetBasePositionValue;
 

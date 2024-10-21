@@ -55,7 +55,7 @@ export class TradesComponent {
       suppressSizeToFit: true,
       cellRenderer: (params) => {
         return `<button type="button" class="btn btn-danger btn-xs">
-          <span data-action-type="remove">&times;</span>
+          <span data-action-type="remove">&#10006;</span>
         </button>`;
       }
     }, {

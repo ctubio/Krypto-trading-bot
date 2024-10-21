@@ -20,6 +20,7 @@ STEP       = $(call TPUT,setaf 2)$(call TPUT,setab 0)[$(1)/$(STEPS)]$(call TPUT,
 STEP_1    := $(call STEP,1,npm packages)
 STEP_2    := $(call STEP,2,ts files)
 STEP_3    := $(call STEP,3,js zip file)
+STEP_4    := $(call STEP,4,font files)
 STEP_4    := $(call STEP,4,css files)
 
 all $(KSRC): js css
@@ -52,17 +53,25 @@ js: $(KCLIENT)/.main.ts lib
 	$(ESBUILD) $(KASSETS)/$@/$(notdir $(basename $<)).$@ | uglifyjs | gzip > $(KASSETS)/$@/client.min.$@
 
 css: www/css beacons
-	$(info $(STEP_4))
+	$(info $(STEP_5))
 	$(foreach x,$(wildcard $</*.scss),$(SASS) $(realpath $(x)):$(KASSETS)/$@/$(notdir $(basename $(x))).min.$@;)
-	cp -R $(NODE_PATH)/beacons $(KASSETS)/font
-	cat $(NODE_PATH)/ag-grid-community/styles/ag-grid.$@ $(KASSETS)/font/beacons.$@ $(NODE_PATH)/ag-grid-community/styles/ag-theme-alpine.min.$@ >> $(KASSETS)/$@/bootstrap.min.$@
+	cat $(NODE_PATH)/bootstrap/dist/$@/bootstrap.min.$@              \
+	    $(NODE_PATH)/ag-grid-community/styles/ag-grid.$@             \
+	    $(NODE_PATH)/ag-grid-community/styles/ag-theme-alpine.min.$@ \
+	    $(NODE_PATH)/beacons/beacons.$@                              \
+	    $(KASSETS)/$@/bootstrap.min.$@                               \
+	  > $(KASSETS)/$@/tmp.$@
+	mv  $(KASSETS)/$@/tmp.$@ $(KASSETS)/$@/bootstrap.min.$@
 
 beacons:
+	$(info $(STEP_4))
 	@test -d $(NODE_PATH)/$@ || (mkdir -p $(NODE_PATH)/$@ &&                  \
 	curl -sL https://raw.githubusercontent.com/ctubio/$@/master/dist/$@.css   \
 	| tail -n +7 > $(NODE_PATH)/$@/$@.css &&                                  \
 	curl -sL https://raw.githubusercontent.com/ctubio/$@/master/dist/$@.woff2 \
 	-o $(NODE_PATH)/$@/$@.woff2                                               )
+	@mkdir -p $(KASSETS)/font
+	cp $(NODE_PATH)/$@/$@.woff2 $(KASSETS)/font/$@.woff2
 
 export define PACKAGE_JSON
 {
@@ -77,6 +86,7 @@ export define PACKAGE_JSON
     "@types/node": "^22.7.6",
     "ag-grid-angular":   "^32.2.2",
     "ag-grid-community": "^32.2.2",
+    "bootstrap": "^5.3.3",
     "esbuild": "^0.24.0",
     "highcharts": "^11.4.8",
     "highcharts-angular": "^4.0.1",

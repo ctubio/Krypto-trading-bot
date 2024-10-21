@@ -4,7 +4,7 @@ import {Socket, Models} from 'lib/K';
 
 @Component({
   selector: 'submit-order',
-  template: `<table class="table table-responsive">
+  template: `<table class="table table-responsive" style="width: 715px;margin-left: 10px;">
     <thead>
       <tr>
         <th style="width:100px;">Symbol:</th>

@@ -29,7 +29,7 @@ body.theme-dark {
   }
 
   .text-muted {
-    color: #999999;
+    color: #999999!important;
   }
 
   .form-control {
@@ -113,6 +113,9 @@ body.theme-dark {
     color: #0d0 !important;
   }
 
+  .levels {
+    background: #232323;
+  }
   .exchange {
     background: #232323;
     border: 1px #313131 solid;
@@ -248,7 +251,7 @@ body.theme-dark {
       border: 1px #606060 solid;
     }
   }
-  .tradeSafety, .tradeSafety2 {
+  .tradeSafetyBg {
     background: #000000;
   }
   .tradeSafety {

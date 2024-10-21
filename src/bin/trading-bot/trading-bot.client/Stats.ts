@@ -4,7 +4,7 @@ import {Shared, Models} from 'lib/K';
 
 @Component({
   selector: 'stats',
-  template: `<div class="col-md-12 col-xs-12" style="height:622px;">
+  template: `<div class="col-md-12 col-xs-12 row" style="height:622px;">
     <div class="col-md-6 col-xs-6">
         <highcharts-chart
           [Highcharts]="Highcharts"

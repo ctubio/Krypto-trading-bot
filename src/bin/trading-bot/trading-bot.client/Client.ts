@@ -15,7 +15,7 @@ import {Socket, Shared, Models} from 'lib/K';
   </div>
   <div class="row">
     <div class="col-md-1 col-xs-12 text-center" style="padding-right:0px;">
-      <div class="row exchange">
+      <div class="exchange">
         <state-button
           [product]="product"
           [state]="state"
@@ -74,84 +74,81 @@ import {Socket, Shared, Models} from 'lib/K';
             </button>
           </div>
       </div>
-    </div>
-    <div [hidden]="!showSubmitOrder"
-      class="col-md-5 col-xs-12">
-      <submit-order
-        [product]="product"></submit-order>
-    </div>
-    <div [hidden]="!showStats"
-      [ngClass]="'col-md-11 col-xs-12  ' + (showStats == 2 ? 'absolute-charts' : 'relative-charts')">
-      <stats
-        ondblclick="this.style.opacity=this.style.opacity<1?1:0.4"
-        [marketWidth]="marketWidth"
-        [_showStats]="!!showStats"
-        [product]="product"
-        [quotingParameters]="quotingParameters"
-        [targetBasePosition]="targetBasePosition"
-        [marketChart]="marketChart"
-        [tradesChart]="tradesChart"
-        [position]="position"
-        [fairValue]="fairValue"></stats>
-    </div>
-    <div [hidden]="showStats === 1"
-      class="col-md-{{ showTakers ? '9' : '11' }} col-xs-12"
-      style="padding-left:0px;padding-bottom:0px;">
-      <div class="row" style="padding-top:0px;">
-        <div class="col-md-4 col-xs-12" style="padding-left:0px;padding-top:0px;padding-right:0px;">
-          <div class="row">
-            <div class="col-md-6">
-              <safety
-                [product]="product"
-                [fairValue]="fairValue"
-                [tradeSafety]="tradeSafety"></safety>
-            </div>
+      </div>
+    <div class="col-md-11 col-xs-12 row">
+      <div [hidden]="!showSubmitOrder"
+        class="col-md-6 col-xs-12">
+        <submit-order
+          [product]="product"></submit-order>
+      </div>
+      <div [hidden]="!showStats"
+        [ngClass]="'col-md-12 col-xs-12  ' + (showStats == 2 ? 'absolute-charts' : 'relative-charts')">
+        <stats
+          ondblclick="this.style.opacity=this.style.opacity<1?1:0.4"
+          [marketWidth]="marketWidth"
+          [_showStats]="!!showStats"
+          [product]="product"
+          [quotingParameters]="quotingParameters"
+          [targetBasePosition]="targetBasePosition"
+          [marketChart]="marketChart"
+          [tradesChart]="tradesChart"
+          [position]="position"
+          [fairValue]="fairValue"></stats>
+      </div>
+      <div [hidden]="showStats === 1"
+        class="col-md-{{ showTakers ? '10' : '12' }} col-xs-12">
+        <div class="row">
+          <div class="col-md-4 col-xs-12">
             <market
+              class="row" style="padding: 0px 5px;"
               [tradeFreq]="tradeFreq"
               (onBidsLength)="onBidsLength($event)"
               (onAsksLength)="onAsksLength($event)"
               (onMarketWidth)="onMarketWidth($event)"
               [product]="product"
               [addr]="addr"
+              [fairValue]="fairValue"
+              [tradeSafety]="tradeSafety"
               [status]="status"
               [market]="market"
               [orders]="orders"
               [targetBasePosition]="targetBasePosition"></market>
           </div>
-        </div>
-        <div class="col-md-8 col-xs-12" style="padding-left:0px;padding-right:0px;padding-top:0px;">
-          <div class="row">
-            <div class="notepad col-md-2 col-xs-12 text-center">
-              <textarea
-                [(ngModel)]="notepad"
-                (ngModelChange)="changeNotepad(notepad)"
-                placeholder="ephemeral notepad"
-                class="ephemeralnotepad"
-                style="height:131px;width: 100%;max-width: 100%;"></textarea>
+          <div class="col-md-8 col-xs-12">
+            <div class="row">
+              <div class="notepad col-md-2 col-xs-12 text-center">
+                <textarea
+                  [(ngModel)]="notepad"
+                  (ngModelChange)="changeNotepad(notepad)"
+                  placeholder="ephemeral notepad"
+                  class="ephemeralnotepad"
+                  style="height:131px;width: 100%;max-width: 100%;"></textarea>
+              </div>
+              <div class="col-md-10 col-xs-12" style="padding-left: 0px;">
+                <orders
+                  [product]="product"
+                  [orders]="orders"></orders>
+              </div>
             </div>
-            <div class="col-md-10 col-xs-12" style="padding-right:0px;padding-top:0px;">
-              <orders
+            <div class="row">
+              <trades
+                style="padding-left: 0px;"
+                (onTradesChartData)="onTradesChartData($event)"
+                (onTradesMatchedLength)="onTradesMatchedLength($event)"
+                (onTradesLength)="onTradesLength($event)"
                 [product]="product"
-                [orders]="orders"></orders>
+                [quotingParameters]="quotingParameters"
+                [trade]="trade"></trades>
             </div>
-          </div>
-          <div class="row">
-            <trades
-              (onTradesChartData)="onTradesChartData($event)"
-              (onTradesMatchedLength)="onTradesMatchedLength($event)"
-              (onTradesLength)="onTradesLength($event)"
-              [product]="product"
-              [quotingParameters]="quotingParameters"
-              [trade]="trade"></trades>
           </div>
         </div>
       </div>
-    </div>
-    <div *ngIf="showTakers && showStats !== 1"
-      class="col-md-2 col-xs-12" style="padding-left:0px;">
-      <takers
-        [product]="product"
-        [taker]="taker"></takers>
+      <div *ngIf="showTakers && showStats !== 1"
+        class="col-md-2 col-xs-12" style="padding-left:0px;">
+        <takers
+          [product]="product"
+          [taker]="taker"></takers>
+      </div>
     </div>
   </div>`
 })
@@ -344,7 +341,7 @@ export class ClientComponent implements OnInit {
       var div = document.createElement('div');
         div.className = 'dialog-box';
         div.id = uniqueId;
-        div.innerHTML = '<div class="dialog-content">&nbsp;</div><h3 class="dialog-title"><a href="javascript:;" class="dialog-close" title="Close">&times;</a></h3>';
+        div.innerHTML = '<div class="dialog-content">&nbsp;</div><h3 class="dialog-title"><a href="javascript:;" class="dialog-close" title="Close">&#10006;</a></h3>';
       document.body.appendChild(div);
     }
 

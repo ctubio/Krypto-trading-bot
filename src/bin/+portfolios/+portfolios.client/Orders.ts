@@ -14,7 +14,7 @@ import {Shared, Socket, Models} from 'lib/K';
           <span class="sell" title="Best Ask Price on {{ filter }}">{{ best_ask }}<i class="beacon sym-_default-s sym-{{ quote.toLowerCase() }}-s" ></i></span>
           <span class="buy" title="Best Bid Price on {{ filter }}">{{ best_bid }}<i class="beacon sym-_default-s sym-{{ quote.toLowerCase() }}-s" ></i></span>
       </a>
-      <a
+      <a href="#" 
         *ngFor="let x of symbols"
         (click)="applyFilter(x.symbol)"
         [ngStyle]="{'cursor':'pointer','padding': '0px 40px 0px 10px', 'font-weight': filter==x.symbol?600:300, 'opacity': filter==x.symbol?1.0:0.7}"
@@ -84,7 +84,7 @@ export class OrdersComponent {
       headerName: 'cxl',
       suppressSizeToFit: true,
       cellRenderer: (params) => `<button type="button" class="btn btn-danger btn-xs">
-          <span data-action-type="remove"'>&times;</span>
+          <span data-action-type="remove"'>&#10006;</span>
         </button>`
     }, {
       width: 74,
