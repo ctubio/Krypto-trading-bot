@@ -20,8 +20,8 @@ STEP       = $(call TPUT,setaf 2)$(call TPUT,setab 0)[$(1)/$(STEPS)]$(call TPUT,
 STEP_1    := $(call STEP,1,npm packages)
 STEP_2    := $(call STEP,2,ts files)
 STEP_3    := $(call STEP,3,js zip file)
-STEP_4    := $(call STEP,4,font files)
-STEP_4    := $(call STEP,4,css files)
+STEP_4    := $(call STEP,4,font file)
+STEP_5    := $(call STEP,4,css files)
 
 all $(KSRC): js css
 
@@ -83,7 +83,7 @@ export define PACKAGE_JSON
     "@angular/platform-browser":         "^18.2.8",
     "@angular/platform-browser-dynamic": "^18.2.8",
     "@angular/router":                   "^18.2.8",
-    "@types/node": "^22.7.6",
+    "@types/node": "^22.7.7",
     "ag-grid-angular":   "^32.2.2",
     "ag-grid-community": "^32.2.2",
     "bootstrap": "^5.3.3",
@@ -91,7 +91,7 @@ export define PACKAGE_JSON
     "highcharts": "^11.4.8",
     "highcharts-angular": "^4.0.1",
     "rxjs": "^7.8.1",
-    "sass": "^1.80.1",
+    "sass": "^1.80.3",
     "typescript": "^5.6.3",
     "uglify-js": "^3.19.3",
     "zone.js": "^0.14.10"

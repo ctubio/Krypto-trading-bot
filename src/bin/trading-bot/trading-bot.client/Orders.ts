@@ -29,7 +29,7 @@ export class OrdersComponent {
   private grid: GridOptions = <GridOptions>{
     suppressNoRowsOverlay: true,
     defaultColDef: { sortable: true, resizable: true, flex: 1 },
-    rowHeight:27,
+    rowHeight:28,
     headerHeight:25,
     columnDefs: [{
       width: 30,

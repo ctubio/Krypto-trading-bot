@@ -17,7 +17,7 @@ import {Socket, Models} from 'lib/K';
   selector: 'K',
   template: `<div>
     <div [hidden]="state.online !== null"
-      style="padding:42px;transform:rotate(-6deg);">
+      style="padding:42px;transform:rotate(-6deg);text-shadow: 1px 1px #0000009e;">
       <h4 class="text-danger text-center">
         <i class="beacon exc-{{ exchange_icon }}-s" style="font-size:69px;"></i>
         <br /><br />

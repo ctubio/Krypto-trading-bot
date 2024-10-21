@@ -625,7 +625,8 @@ table {
   width: 100%;
   height: 26px;
   padding: 6px 12px;
-  font-size: 15px;
+  font-size: 19px;
+  font-weight: 600;
   line-height: 1.1;
   color: #555;
   background-color: #fff;
@@ -638,7 +639,8 @@ table {
   -o-transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
   transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
   &:focus {
-    border-color: #66afe9;
+    border-color: #00ff43;
+    background-color: #eaeebd;
     outline: 0;
     -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
@@ -757,7 +759,6 @@ table {
 
 .btn {
   display: inline-block;
-  margin-bottom: 0;
   font-weight: normal;
   text-align: center;
   vertical-align: middle;
@@ -766,15 +767,18 @@ table {
   cursor: pointer;
   background-image: none;
   border: 1px solid transparent;
+  border-bottom-width: 3px;
   white-space: nowrap;
   padding: 5px 10px;
   font-size: 16px;
+  font-weight: 600;
   line-height: 1.1;
   border-radius: 7px;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  margin-bottom: 0px;
   &:hover {
     color: #333;
     text-decoration: none;
@@ -784,6 +788,9 @@ table {
     background-image: none;
     -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
     box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+    transform: translateY(2px);
+    border-bottom-width: 1px;
+    margin-bottom: 2px;
   }
   &:active:hover, &.active.hover {
     border-color: transparent;
@@ -1165,7 +1172,7 @@ table {
   background-color: rgba(255,0,0,.1019607843);
   border-color: #b92c28;
   &:hover, &.hover {
-    background-color: #f96964;
+    background-color: #ea3933;
   }
   &:active:hover, &.active.hover {
     background-color: #b40802;
@@ -1944,7 +1951,7 @@ button.close {
   }
 }
 
-.exchange {
+.hud {
   padding:5px;
 }
 
@@ -2270,10 +2277,12 @@ div.ag-header-cell .ag-header-cell-label i {
 }
 
 #zeroed_checkbox {
-  zoom: 200%;
-  margin-top: 2px;
+  height: 23px;
+  margin-top: 3px;
   margin-right: 20px;
   display: inline-block;
+  width: 23px;
+  margin-bottom: 11px;
 }
 
 #base_select{
@@ -2282,7 +2291,7 @@ div.ag-header-cell .ag-header-cell-label i {
   font-size: 19px;
   display: inline-block;
   position: relative;
-  top: -10px;
+  top: -6px;
   margin-right: 20px;
 }
 
@@ -2460,15 +2469,20 @@ address {
 
 .btn-default {
 	color: #008080;
-	background-color: #00ff001a;
+	background-color: #00ff0047;
 	border-color: #ccc;
-	&:hover, &:focus, &.focus, &:active, &.active {
+	&:hover, &:focus, &.focus, &:active, &.active, &.btn:first-child:active {
 	  color: #333;
 	  background-color: #00ff00;
 	  border-color: #00ff00;
 	}
 }
-  
+
+:not(.btn-check)+.btn:active {
+  color: #333;
+  background-color: #00ff00;
+  border-color: #00ff00;
+}
 
 .tradeSafetyBg {
   background: white;
@@ -2478,7 +2492,7 @@ address {
   background: white;
 }
 
-.exchange {
+.hud {
   background: white;
   border: 1px #CCC solid;
 }
@@ -2600,6 +2614,11 @@ table.marketQuoting {
 
 input#filter_pattern {
   background-color: #00000024!important;
+}
+
+.radio input[type="radio"], .checkbox input[type="checkbox"] {
+  height: 20px;
+  width: 20px;
 }
 
 @keyframes entrance {

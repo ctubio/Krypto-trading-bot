@@ -15,7 +15,7 @@ import {Socket, Shared, Models} from 'lib/K';
   </div>
   <div class="row">
     <div class="col-md-1 col-xs-12 text-center" style="padding-right:0px;">
-      <div class="exchange">
+      <div class="hud">
         <state-button
           [product]="product"
           [state]="state"
@@ -38,14 +38,13 @@ import {Socket, Shared, Models} from 'lib/K';
               class="btn btn-default"
               (click)="showSubmitOrder = !showSubmitOrder">Submit Order</button>
           </div>
-          <div style="padding-top: 2px;padding-bottom: 2px;">
+          <div style="padding-top: 7px;padding-bottom: 7px;">
             <button type="button"
               class="btn btn-danger"
-              style="margin:5px 0px;"
               (click)="cancelAllOrders()"
               data-placement="bottom">Cancel Orders</button>
           </div>
-          <div style="padding-bottom: 2px;">
+          <div style="padding-bottom: 7px;">
             <button type="button"
               class="btn btn-info"
               (click)="cleanAllClosedOrders()"

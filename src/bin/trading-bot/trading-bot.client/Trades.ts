@@ -44,7 +44,7 @@ export class TradesComponent {
     overlayLoadingTemplate: `<span class="ag-overlay-no-rows-center">0 closed orders</span>`,
     overlayNoRowsTemplate: `<span class="ag-overlay-no-rows-center">0 closed orders</span>`,
     defaultColDef: { sortable: true, resizable: true, flex: 1 },
-    rowHeight:27,
+    rowHeight:28,
     headerHeight:25,
     animateRows:true,
     getRowId: (params: any) => params.data.tradeId,

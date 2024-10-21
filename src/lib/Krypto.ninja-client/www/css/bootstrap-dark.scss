@@ -32,10 +32,6 @@ body.theme-dark {
     color: #999999!important;
   }
 
-  .form-control {
-    color: #ffff00;
-    background-color: #2b2b2b;
-  }
   .btn {
     &:active:hover, &.active.hover {
       border-color: #000;
@@ -116,7 +112,7 @@ body.theme-dark {
   .levels {
     background: #232323;
   }
-  .exchange {
+  .hud {
     background: #232323;
     border: 1px #313131 solid;
   }
@@ -245,10 +241,13 @@ body.theme-dark {
     padding: 2px 5px;
     box-shadow: none;
     border-radius: 0;
-    border: 1px #2b2b2b solid;
+    border: 1px #64fcb500 solid;
+    color: #ffff00;
+    background-color: #0b361f;
     &:focus {
       box-shadow: none;
-      border: 1px #606060 solid;
+      border-color: #64fcb5;
+      background-color: #2ea264;
     }
   }
   .tradeSafetyBg {
