@@ -5,10 +5,10 @@ $(if $(subst 0,,${MAKELEVEL}),,$(warning $(ERR));$(error $(HINT)))
 V_ZLIB  = 1.3.1
 V_SSL   = 3.3.2
 V_CURL  = 8.10.1
-V_SQL   = 3460100
+V_SQL   = 3470000
 V_JSON  = 3.11.3
 V_CATCH = 2.13.10
-V_UV    = 1.49.1
+V_UV    = 1.49.2
 
 KBUILD := $(abspath ../../build-$(KHOST))
 
