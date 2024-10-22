@@ -613,8 +613,8 @@ namespace ₿ {
       };
   };
 
-class GwApiWsFix: public GwApiWs,
-                  public Curl::FixSocket {
+  class GwApiWsFix: public GwApiWs,
+                    public Curl::FixSocket {
     public:
       GwApiWsFix(const string &t)
         : FixSocket(t, apikey)
@@ -771,6 +771,16 @@ class GwApiWsFix: public GwApiWs,
           return json::object();
         }
         return reply.at(0);
+      };
+  }; 
+  class GwBinanceUS: virtual public GwBinance {
+    public:
+      GwBinanceUS()
+      {
+        http   = "https://api.binance.us";
+        ws     = "wss://stream.binance.us:9443/ws";
+        webMarket = "https://www.binance.us/en/trade/";
+        webOrders = "https://www.binance.us/en/orders";
       };
   };
   class GwBitmex: public GwApiWs {

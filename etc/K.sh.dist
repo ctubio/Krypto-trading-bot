@@ -46,6 +46,7 @@ OPTIONAL_ARGUMENTS="--colors --naked --heartbeat"
 #  ██                                                   .
 #API_EXCHANGE="COINBASE"
 #API_EXCHANGE="BINANCE"
+#API_EXCHANGE="BINANCE_US"
 #API_EXCHANGE="KRAKEN"
 #API_EXCHANGE="BITMEX"
 #API_EXCHANGE="KUCOIN"
