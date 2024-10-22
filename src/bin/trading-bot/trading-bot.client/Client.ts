@@ -167,7 +167,7 @@ export class ClientComponent implements OnInit {
   private orders: Models.Order[] = [];
   private market: Models.Market = null;
   private trade: Models.Trade = null;
-  private taker: Models.MarketTrade = null;
+  private taker: Models.MarketTrade[] = [];
   private tradesChart: Models.TradeChart = new Models.TradeChart();
   private marketChart: Models.MarketChart = new Models.MarketChart();
   private status: Models.TwoSidedQuoteStatus = new Models.TwoSidedQuoteStatus();
@@ -220,8 +220,8 @@ export class ClientComponent implements OnInit {
       .registerDisconnectedHandler(() => { this.trade = null; });
 
     new Socket.Subscriber(Models.Topics.MarketTrade)
-      .registerSubscriber((o: Models.MarketTrade) => { this.taker = o; })
-      .registerDisconnectedHandler(() => { this.taker = null; });
+      .registerSubscriber((o: Models.MarketTrade[]) => { this.taker = o; })
+      .registerDisconnectedHandler(() => { this.taker = []; });
 
     new Socket.Subscriber(Models.Topics.QuoteStatus)
       .registerSubscriber((o: Models.TwoSidedQuoteStatus) => { this.status = o; })

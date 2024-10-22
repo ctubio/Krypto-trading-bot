@@ -17,7 +17,7 @@ export class TakersComponent {
 
   @Input() product: Models.ProductAdvertisement;
 
-  @Input() set taker(o: Models.MarketTrade) {
+  @Input() set taker(o: Models.MarketTrade[]) {
     this.addRowData(o);
   };
 
@@ -29,6 +29,8 @@ export class TakersComponent {
     defaultColDef: { sortable: true, resizable: true, flex: 1 },
     rowHeight:25,
     headerHeight:25,
+    animateRows:false,
+    getRowId: (params: any) => params.data.id,
     columnDefs: [{
       field: 'time',
       width: 82,
@@ -84,24 +86,35 @@ export class TakersComponent {
       ? '-dark' : '';
   };
 
-  private addRowData = (o: Models.MarketTrade) => {
+  private addRowData = (o: Models.MarketTrade[]) => {
     if (!this.api) return;
 
-    if (o === null) this.api.setGridOption('rowData', []);
+    if (!o.length) this.api.setGridOption('rowData', []);
     else {
-      this.api.applyTransaction({add: [{
-        price: Shared.str(o.price, this.product.tickPrice),
-        quantity: Shared.str(o.quantity, this.product.tickSize),
-        time: o.time,
-        recent: true,
-        side: Models.Side[o.side]
-      }]});
+      var add: any[] = [];
+      o.forEach(o => {
+        add.push({
+          id: Math.random().toString(),
+          price: Shared.str(o.price, this.product.tickPrice),
+          quantity: Shared.str(o.quantity, this.product.tickSize),
+          time: o.time,
+          recent: true,
+          side: Models.Side[o.side]
+        });
+      });
 
-      this.api.forEachNode((node: RowNode) => {
-        if (Math.abs(o.time - node.data.time) > 3600000)
-          this.api.applyTransaction({remove: [node.data]});
-        else if (node.data.recent && Math.abs(o.time - node.data.time) > 7000)
-          node.setData(Object.assign(node.data, {recent: false}));
+      this.api.applyTransactionAsync({add}, () => {
+        var txn: any = {
+          update: [],
+          remove: []
+        };
+        this.api.forEachNodeAfterFilterAndSort((node: RowNode, index: number) => {
+          if (index > 30)
+            txn.remove.push({id: node.data.id});
+          else if (node.data.recent && Math.abs(o[o.length-1].time - node.data.time) > 7000)
+            txn.update.push(Object.assign(node.data, {recent: false}));
+        });
+        this.api.applyTransaction(txn);
       });
     }
   };

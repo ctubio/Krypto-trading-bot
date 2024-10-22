@@ -332,7 +332,8 @@ namespace tribeca {
   };
 
   struct MarketTakers: public Client::Broadcast<Trade> {
-    vector<Trade>  trades;
+    vector<Trade>  trades,
+                   lastTrades;
             Amount takersBuySize60s  = 0,
                    takersSellSize60s = 0;
     public:
@@ -350,16 +351,23 @@ namespace tribeca {
       };
       void read_from_gw(const Trade &raw) {
         trades.push_back(raw);
-        broadcast();
+        lastTrades.push_back(raw);
+        if (lastTrades.size() > 30)
+          lastTrades.erase(lastTrades.begin());
+        if (broadcast())
+          lastTrades.clear();
       };
       mMatter about() const override {
         return mMatter::MarketTrade;
       };
       json blob() const override {
-        return trades.back();
+        return lastTrades;
       };
-      json hello() override {
-        return trades;
+      bool realtime() const override {
+        return false;
+      };
+      bool read_asap() const override {
+        return false;
       };
   };
 
