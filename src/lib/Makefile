@@ -108,7 +108,7 @@ uv:
 
 pvs:
 ifndef V_PVS
-	$(MAKE) $@ V_PVS=$(shell curl -s https://pvs-studio.com/en/pvs-studio/download-all/ | grep x86_64.tgz | cut -d'"' -f2 | cut -d'-' -f2- | cut -d'.' -f-4 | head -n1)
+	$(MAKE) $@ V_PVS=$(shell curl -s https://pvs-studio.com/en/pvs-studio/download-all/ | grep x86_64.tgz | cut -d'"' -f2 | cut -d'-' -f2- | cut -d'.' -f-4 | tail -n1)
 else
 	test -d $(KBUILD)/var/pvs-$(V_PVS) || (                    \
 	curl -L https://files.pvs-studio.com/pvs-$(V_PVS).tgz      \
