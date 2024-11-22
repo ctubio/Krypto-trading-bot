@@ -83,7 +83,7 @@ export define PACKAGE_JSON
     "@angular/platform-browser":         "^18.2.8",
     "@angular/platform-browser-dynamic": "^18.2.8",
     "@angular/router":                   "^18.2.8",
-    "@types/node": "^22.7.7",
+    "@types/node": "^22.7.8",
     "ag-grid-angular":   "^32.2.2",
     "ag-grid-community": "^32.2.2",
     "bootstrap": "^5.3.3",

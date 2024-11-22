@@ -2374,6 +2374,10 @@ div.ag-header-cell .ag-header-cell-label i {
   }
   .ag-cell {
     padding-top: 4px;
+    
+    .ag-number-field-input {
+      margin-top: -4px;
+    }
   }
 }
 
