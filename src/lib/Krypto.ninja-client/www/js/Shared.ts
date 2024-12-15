@@ -4,7 +4,7 @@ import {BrowserModule}                               from '@angular/platform-bro
 import {FormsModule}                                 from '@angular/forms';
 
 import * as Highcharts         from 'highcharts';
-require('highcharts/highcharts-more')(Highcharts);
+require('highcharts/highcharts-more');
 export {Highcharts};
 import {HighchartsChartModule} from 'highcharts-angular';
 
